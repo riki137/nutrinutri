@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -63,15 +64,29 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   icon: const Icon(Icons.chevron_left),
                   onPressed: () => _updateDate(-1),
                 ),
-                Text(
-                  _isToday
-                      ? "Today"
-                      : "${_selectedDate.day}/${_selectedDate.month}",
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                const Gap(16),
+                Column(
+                  children: [
+                    Text(
+                      _isToday
+                          ? "Today"
+                          : DateFormat('EEEE').format(_selectedDate),
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      DateFormat('d MMM y').format(_selectedDate),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
+                const Gap(16),
                 IconButton(
                   icon: const Icon(Icons.chevron_right),
                   onPressed: _isToday ? null : () => _updateDate(1),
@@ -260,8 +275,14 @@ class _EntriesList extends ConsumerWidget {
                   leading: const CircleAvatar(
                     child: Icon(Icons.fastfood),
                   ), // Todo: Show image thumbnail
-                  title: Text(entry.name),
-                  subtitle: Text('${entry.calories} kcal'),
+                  title: Text(
+                    entry.name,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    '${DateFormat('HH:mm').format(entry.timestamp)} • ${entry.calories} kcal',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete, color: Colors.red),
                     onPressed: () async {

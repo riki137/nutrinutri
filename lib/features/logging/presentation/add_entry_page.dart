@@ -202,80 +202,87 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Image Section
-            GestureDetector(
-              onTap: () => _pickImage(ImageSource.gallery),
-              child: Container(
-                height: 200,
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(12),
-                  image: _image != null
-                      ? DecorationImage(
-                          image: FileImage(_image!),
-                          fit: BoxFit.cover,
+            if (!isEditing) ...[
+              // Image Section
+              GestureDetector(
+                onTap: () => _pickImage(ImageSource.gallery),
+                child: Container(
+                  height: 200,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(12),
+                    image: _image != null
+                        ? DecorationImage(
+                            image: FileImage(_image!),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                  ),
+                  child: _image == null
+                      ? const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.add_a_photo,
+                              size: 40,
+                              color: Colors.grey,
+                            ),
+                            Gap(8),
+                            Text(
+                              'Tap to add photo',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          ],
                         )
                       : null,
                 ),
-                child: _image == null
-                    ? const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.add_a_photo, size: 40, color: Colors.grey),
-                          Gap(8),
-                          Text(
-                            'Tap to add photo',
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        ],
+              ),
+              const Gap(16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  TextButton.icon(
+                    onPressed: () => _pickImage(ImageSource.camera),
+                    icon: const Icon(Icons.camera_alt),
+                    label: const Text('Camera'),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => _pickImage(ImageSource.gallery),
+                    icon: const Icon(Icons.photo_library),
+                    label: const Text('Gallery'),
+                  ),
+                ],
+              ),
+              const Gap(16),
+
+              // Text Input for AI
+              TextField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(
+                  labelText: 'Describe the food (optional if image provided)',
+                  border: OutlineInputBorder(),
+                  hintText: 'e.g. 2 eggs and toast',
+                ),
+                maxLines: 3,
+              ),
+              const Gap(24),
+
+              // Analyze Button
+              FilledButton.icon(
+                onPressed: _isAnalyzing ? null : _analyze,
+                icon: _isAnalyzing
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : null,
-              ),
-            ),
-            const Gap(16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                TextButton.icon(
-                  onPressed: () => _pickImage(ImageSource.camera),
-                  icon: const Icon(Icons.camera_alt),
-                  label: const Text('Camera'),
+                    : const Icon(Icons.auto_awesome),
+                label: Text(_isAnalyzing ? 'Analyzing...' : 'Analyze with AI'),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.all(16),
                 ),
-                TextButton.icon(
-                  onPressed: () => _pickImage(ImageSource.gallery),
-                  icon: const Icon(Icons.photo_library),
-                  label: const Text('Gallery'),
-                ),
-              ],
-            ),
-            const Gap(16),
-
-            // Text Input for AI (only show if not just editing pure data, or let it overwrite?)
-            // Let's allow re-analyzing even in edit mode if they want to replace data
-            TextField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Describe the food (optional if image provided)',
-                border: OutlineInputBorder(),
-                hintText: 'e.g. 2 eggs and toast',
               ),
-              maxLines: 3,
-            ),
-            const Gap(24),
-
-            // Analyze Button
-            FilledButton.icon(
-              onPressed: _isAnalyzing ? null : _analyze,
-              icon: _isAnalyzing
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.auto_awesome),
-              label: Text(_isAnalyzing ? 'Analyzing...' : 'Analyze with AI'),
-              style: FilledButton.styleFrom(padding: const EdgeInsets.all(16)),
-            ),
+            ],
 
             if (_showForm) ...[
               const Gap(32),

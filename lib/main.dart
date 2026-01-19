@@ -25,7 +25,7 @@ class MyApp extends ConsumerWidget {
       title: 'NutriNutri',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.green,
+          seedColor: const Color(0xFFFF6F61), // Vibrant Coral
           brightness: Brightness.light,
         ),
         useMaterial3: true,
@@ -33,7 +33,7 @@ class MyApp extends ConsumerWidget {
       ),
       darkTheme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.green,
+          seedColor: const Color(0xFFFF6F61), // Vibrant Coral
           brightness: Brightness.dark,
         ),
         useMaterial3: true,

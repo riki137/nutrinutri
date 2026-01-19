@@ -62,7 +62,9 @@ class DiaryService {
     if (data == null) return [];
 
     final List<dynamic> entriesJson = data['entries'];
-    return entriesJson.map((e) => FoodEntry.fromJson(e)).toList();
+    final entries = entriesJson.map((e) => FoodEntry.fromJson(e)).toList();
+    entries.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    return entries;
   }
 
   Future<void> addEntry(FoodEntry entry) async {
