@@ -6,6 +6,7 @@ import 'package:nutrinutri/features/dashboard/presentation/dashboard_page.dart';
 import 'package:nutrinutri/features/onboarding/presentation/onboarding_page.dart';
 import 'package:nutrinutri/features/settings/presentation/settings_page.dart';
 import 'package:nutrinutri/features/logging/presentation/add_entry_page.dart';
+import 'package:nutrinutri/features/diary/data/diary_service.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final settingsService = ref.watch(settingsServiceProvider);
@@ -40,7 +41,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/add-entry',
-        builder: (context, state) => const AddEntryPage(),
+        builder: (context, state) {
+          final entry = state.extra as FoodEntry?;
+          return AddEntryPage(existingEntry: entry);
+        },
       ),
     ],
   );

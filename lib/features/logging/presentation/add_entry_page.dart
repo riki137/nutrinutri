@@ -10,18 +10,59 @@ import 'package:nutrinutri/features/diary/data/diary_service.dart';
 import 'package:uuid/uuid.dart';
 
 class AddEntryPage extends ConsumerStatefulWidget {
-  const AddEntryPage({super.key});
+  final FoodEntry? existingEntry; // If null, we are adding a new entry
+  const AddEntryPage({super.key, this.existingEntry});
 
   @override
   ConsumerState<AddEntryPage> createState() => _AddEntryPageState();
 }
 
 class _AddEntryPageState extends ConsumerState<AddEntryPage> {
-  final _textController = TextEditingController();
+  final _descriptionController = TextEditingController();
   final _picker = ImagePicker();
+
+  // Form controllers
+  final _nameController = TextEditingController();
+  final _caloriesController = TextEditingController();
+  final _proteinController = TextEditingController();
+  final _carbsController = TextEditingController();
+  final _fatsController = TextEditingController();
+
   File? _image;
   bool _isAnalyzing = false;
-  Map<String, dynamic>? _analysisResult;
+  bool _showForm = false; // Show form after analysis or if editing
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.existingEntry != null) {
+      _initializeWithEntry(widget.existingEntry!);
+    }
+  }
+
+  void _initializeWithEntry(FoodEntry entry) {
+    _nameController.text = entry.name;
+    _caloriesController.text = entry.calories.toString();
+    _proteinController.text = entry.protein.toString();
+    _carbsController.text = entry.carbs.toString();
+    _fatsController.text = entry.fats.toString();
+
+    if (entry.imagePath != null) {
+      _image = File(entry.imagePath!);
+    }
+    _showForm = true;
+  }
+
+  @override
+  void dispose() {
+    _descriptionController.dispose();
+    _nameController.dispose();
+    _caloriesController.dispose();
+    _proteinController.dispose();
+    _carbsController.dispose();
+    _fatsController.dispose();
+    super.dispose();
+  }
 
   Future<void> _pickImage(ImageSource source) async {
     final pickedFile = await _picker.pickImage(
@@ -36,7 +77,7 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
   }
 
   Future<void> _analyze() async {
-    if (_textController.text.isEmpty && _image == null) {
+    if (_descriptionController.text.isEmpty && _image == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please provide text or an image.')),
       );
@@ -45,7 +86,7 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
 
     setState(() {
       _isAnalyzing = true;
-      _analysisResult = null;
+      _showForm = false;
     });
 
     try {
@@ -58,13 +99,21 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
       }
 
       final result = await aiService.analyzeFood(
-        textDescription: _textController.text.isNotEmpty
-            ? _textController.text
+        textDescription: _descriptionController.text.isNotEmpty
+            ? _descriptionController.text
             : null,
         base64Image: base64Image,
       );
 
-      setState(() => _analysisResult = result);
+      // Populate form with AI results
+      setState(() {
+        _nameController.text = result['food_name'] ?? 'Unknown Food';
+        _caloriesController.text = (result['calories'] as num).toString();
+        _proteinController.text = (result['protein'] as num).toString();
+        _carbsController.text = (result['carbs'] as num).toString();
+        _fatsController.text = (result['fats'] as num).toString();
+        _showForm = true;
+      });
     } catch (e) {
       if (mounted) {
         final message = e.toString();
@@ -91,23 +140,46 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
   }
 
   Future<void> _saveEntry() async {
-    if (_analysisResult == null) return;
+    if (!_showForm) return;
 
     try {
       final diaryService = ref.read(diaryServiceProvider);
 
-      final entry = FoodEntry(
-        id: const Uuid().v4(),
-        name: _analysisResult!['food_name'] ?? 'Unknown Food',
-        calories: (_analysisResult!['calories'] as num).toInt(),
-        protein: (_analysisResult!['protein'] as num).toDouble(),
-        carbs: (_analysisResult!['carbs'] as num).toDouble(),
-        fats: (_analysisResult!['fats'] as num).toDouble(),
-        timestamp: DateTime.now(),
-        imagePath: _image?.path, // Store local path for now
-      );
+      final name = _nameController.text.trim().isEmpty
+          ? 'Unknown Food'
+          : _nameController.text.trim();
+      final calories = int.tryParse(_caloriesController.text) ?? 0;
+      final protein = double.tryParse(_proteinController.text) ?? 0.0;
+      final carbs = double.tryParse(_carbsController.text) ?? 0.0;
+      final fats = double.tryParse(_fatsController.text) ?? 0.0;
 
-      await diaryService.addEntry(entry);
+      if (widget.existingEntry != null) {
+        // Update existing
+        final updatedEntry = FoodEntry(
+          id: widget.existingEntry!.id,
+          name: name,
+          calories: calories,
+          protein: protein,
+          carbs: carbs,
+          fats: fats,
+          timestamp: widget.existingEntry!.timestamp, // Keep original timestamp
+          imagePath: _image?.path,
+        );
+        await diaryService.updateEntry(updatedEntry);
+      } else {
+        // Add new
+        final entry = FoodEntry(
+          id: const Uuid().v4(),
+          name: name,
+          calories: calories,
+          protein: protein,
+          carbs: carbs,
+          fats: fats,
+          timestamp: DateTime.now(),
+          imagePath: _image?.path,
+        );
+        await diaryService.addEntry(entry);
+      }
 
       if (mounted) {
         context.pop();
@@ -121,8 +193,10 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isEditing = widget.existingEntry != null;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Log Food')),
+      appBar: AppBar(title: Text(isEditing ? 'Edit Entry' : 'Log Food')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -158,7 +232,7 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
                     : null,
               ),
             ),
-            const Gap(8),
+            const Gap(16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -176,9 +250,10 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
             ),
             const Gap(16),
 
-            // Text Input
+            // Text Input for AI (only show if not just editing pure data, or let it overwrite?)
+            // Let's allow re-analyzing even in edit mode if they want to replace data
             TextField(
-              controller: _textController,
+              controller: _descriptionController,
               decoration: const InputDecoration(
                 labelText: 'Describe the food (optional if image provided)',
                 border: OutlineInputBorder(),
@@ -202,75 +277,92 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
               style: FilledButton.styleFrom(padding: const EdgeInsets.all(16)),
             ),
 
-            // Result Section
-            if (_analysisResult != null) ...[
+            if (_showForm) ...[
               const Gap(32),
               const Text(
-                'Analysis Result',
+                'Entry Details',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const Gap(16),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      Text(
-                        _analysisResult!['food_name'] ?? 'Unknown',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Gap(16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _MacroStat(
-                            'Calories',
-                            "${_analysisResult!['calories']}",
-                          ),
-                          _MacroStat(
-                            'Protein',
-                            "${_analysisResult!['protein']}g",
-                          ),
-                          _MacroStat('Carbs', "${_analysisResult!['carbs']}g"),
-                          _MacroStat('Fat', "${_analysisResult!['fats']}g"),
-                        ],
-                      ),
-                    ],
-                  ),
+              TextField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Food Name',
+                  border: OutlineInputBorder(),
                 ),
               ),
               const Gap(16),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _caloriesController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Calories',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  const Gap(16),
+                  Expanded(
+                    child: TextField(
+                      controller: _proteinController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: 'Protein (g)',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const Gap(16),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _carbsController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: 'Carbs (g)',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  const Gap(16),
+                  Expanded(
+                    child: TextField(
+                      controller: _fatsController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: 'Fats (g)',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const Gap(24),
               FilledButton(
                 onPressed: _saveEntry,
-                style: FilledButton.styleFrom(backgroundColor: Colors.green),
-                child: const Text('Save to Diary'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  minimumSize: const Size.fromHeight(50),
+                ),
+                child: Text(isEditing ? 'Update Entry' : 'Save to Diary'),
               ),
+              const Gap(32),
             ],
           ],
         ),
       ),
-    );
-  }
-}
-
-class _MacroStat extends StatelessWidget {
-  final String label;
-  final String value;
-  const _MacroStat(this.label, this.value);
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-      ],
     );
   }
 }

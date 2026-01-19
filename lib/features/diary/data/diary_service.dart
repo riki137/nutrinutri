@@ -80,11 +80,22 @@ class DiaryService {
     final key = _getDateKey(entry.timestamp);
     final currentEntries = await getEntriesForDate(entry.timestamp);
 
-    currentEntries.removeWhere((e) => e.id == entry.id);
-
     await _kv.put(key, {
       'entries': currentEntries.map((e) => e.toJson()).toList(),
     });
+  }
+
+  Future<void> updateEntry(FoodEntry entry) async {
+    final key = _getDateKey(entry.timestamp);
+    final currentEntries = await getEntriesForDate(entry.timestamp);
+
+    final index = currentEntries.indexWhere((e) => e.id == entry.id);
+    if (index != -1) {
+      currentEntries[index] = entry;
+      await _kv.put(key, {
+        'entries': currentEntries.map((e) => e.toJson()).toList(),
+      });
+    }
   }
 
   /// Get summary for a date

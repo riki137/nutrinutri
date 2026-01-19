@@ -253,6 +253,10 @@ class _EntriesList extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final entry = entries[index];
                 return ListTile(
+                  onTap: () async {
+                    await context.push('/add-entry', extra: entry);
+                    onRefresh();
+                  },
                   leading: const CircleAvatar(
                     child: Icon(Icons.fastfood),
                   ), // Todo: Show image thumbnail
