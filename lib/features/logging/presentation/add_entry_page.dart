@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -118,7 +119,19 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
     super.dispose();
   }
 
+  bool get _canUseCamera {
+    if (kIsWeb) return false;
+    return Platform.isAndroid || Platform.isIOS;
+  }
+
   Future<void> _pickImage(ImageSource source) async {
+    if (source == ImageSource.camera && !_canUseCamera) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Camera not supported on this device')),
+      );
+      return;
+    }
+
     final pickedFile = await _picker.pickImage(
       source: source,
       maxWidth: 800,
@@ -335,7 +348,9 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   TextButton.icon(
-                    onPressed: () => _pickImage(ImageSource.camera),
+                    onPressed: _canUseCamera
+                        ? () => _pickImage(ImageSource.camera)
+                        : null,
                     icon: const Icon(Icons.camera_alt),
                     label: const Text('Camera'),
                   ),
