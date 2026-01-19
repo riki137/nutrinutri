@@ -6,6 +6,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:gap/gap.dart';
 import 'package:nutrinutri/core/providers.dart';
 import 'package:nutrinutri/features/diary/data/diary_service.dart';
+import 'package:nutrinutri/core/widgets/confirm_dialog.dart';
 
 class DashboardPage extends ConsumerStatefulWidget {
   const DashboardPage({super.key});
@@ -396,8 +397,19 @@ class _EntriesList extends ConsumerWidget {
                   trailing: IconButton(
                     icon: const Icon(Icons.delete, color: Colors.red),
                     onPressed: () async {
-                      await ref.read(diaryServiceProvider).deleteEntry(entry);
-                      onRefresh();
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => const ConfirmDialog(
+                          title: 'Delete Entry',
+                          content:
+                              'Are you sure you want to delete this entry?',
+                        ),
+                      );
+
+                      if (confirmed == true) {
+                        await ref.read(diaryServiceProvider).deleteEntry(entry);
+                        onRefresh();
+                      }
                     },
                   ),
                 );

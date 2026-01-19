@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:nutrinutri/core/providers.dart';
 import 'package:nutrinutri/features/diary/data/diary_service.dart';
+import 'package:nutrinutri/core/widgets/confirm_dialog.dart';
 import 'package:uuid/uuid.dart';
 
 class AddEntryPage extends ConsumerStatefulWidget {
@@ -537,6 +538,42 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
                 ),
                 child: Text(isEditing ? 'Update Entry' : 'Save to Diary'),
               ),
+              if (isEditing) ...[
+                const Gap(16),
+                FilledButton(
+                  onPressed: () async {
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => const ConfirmDialog(
+                        title: 'Delete Entry',
+                        content: 'Are you sure you want to delete this entry?',
+                      ),
+                    );
+
+                    if (confirmed == true) {
+                      try {
+                        await ref
+                            .read(diaryServiceProvider)
+                            .deleteEntry(widget.existingEntry!);
+                        if (mounted) {
+                          context.pop();
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Failed to delete: $e')),
+                          );
+                        }
+                      }
+                    }
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    minimumSize: const Size.fromHeight(50),
+                  ),
+                  child: const Text('Delete Entry'),
+                ),
+              ],
               const Gap(32),
             ],
           ],

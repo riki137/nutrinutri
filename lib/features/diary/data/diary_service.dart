@@ -85,6 +85,8 @@ class DiaryService {
     final key = _getDateKey(entry.timestamp);
     final currentEntries = await getEntriesForDate(entry.timestamp);
 
+    currentEntries.removeWhere((e) => e.id == entry.id);
+
     await _kv.put(key, {
       'entries': currentEntries.map((e) => e.toJson()).toList(),
     });
