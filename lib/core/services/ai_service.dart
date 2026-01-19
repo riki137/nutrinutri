@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class AIService {
@@ -89,7 +90,7 @@ If unclear, provide best guess with lower confidence.
         throw Exception('AI Error: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      print('AI Service Error: $e');
+      debugPrint('AI Service Error: $e');
       rethrow;
     }
   }

@@ -7,8 +7,8 @@ import 'package:google_fonts/google_fonts.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Create a container to initialize the database before the UI starts
   final container = ProviderContainer();
+  // Initialize KV store before UI
   await container.read(keyValueStoreProvider.future);
 
   runApp(UncontrolledProviderScope(container: container, child: const MyApp()));

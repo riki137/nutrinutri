@@ -11,6 +11,7 @@ import 'package:nutrinutri/core/providers.dart';
 import 'package:nutrinutri/features/diary/data/diary_service.dart';
 import 'package:nutrinutri/core/widgets/confirm_dialog.dart';
 import 'package:uuid/uuid.dart';
+import 'package:nutrinutri/core/utils/icon_utils.dart';
 
 class AddEntryPage extends ConsumerStatefulWidget {
   final FoodEntry? existingEntry; // If null, we are adding a new entry
@@ -40,47 +41,7 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
 
   // Icon handling
   String _selectedIcon = 'restaurant';
-  static const List<String> _availableIcons = [
-    'bakery_dining',
-    'brunch_dining',
-    'bento',
-    'cake',
-    'coffee',
-    'cookie',
-    'egg_alt',
-    'fastfood',
-    'flatware',
-    'liquor',
-    'microwave',
-    'nightlife',
-    'outdoor_grill',
-    'ramen_dining',
-    'restaurant',
-    'rice_bowl',
-    'sports_bar',
-    'tapas',
-  ];
-
-  static const Map<String, IconData> _iconMap = {
-    'bakery_dining': Icons.bakery_dining,
-    'brunch_dining': Icons.brunch_dining,
-    'bento': Icons.bento,
-    'cake': Icons.cake,
-    'coffee': Icons.coffee,
-    'cookie': Icons.cookie,
-    'egg_alt': Icons.egg_alt,
-    'fastfood': Icons.fastfood,
-    'flatware': Icons.flatware,
-    'liquor': Icons.liquor,
-    'microwave': Icons.microwave,
-    'nightlife': Icons.nightlife,
-    'outdoor_grill': Icons.outdoor_grill,
-    'ramen_dining': Icons.ramen_dining,
-    'restaurant': Icons.restaurant,
-    'rice_bowl': Icons.rice_bowl,
-    'sports_bar': Icons.sports_bar,
-    'tapas': Icons.tapas,
-  };
+  final List<String> _availableIcons = IconUtils.availableIcons;
 
   @override
   void initState() {
@@ -411,7 +372,7 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
 
               // Icon Selector
               DropdownButtonFormField<String>(
-                value: _selectedIcon,
+                initialValue: _selectedIcon,
                 decoration: const InputDecoration(
                   labelText: 'Icon',
                   border: OutlineInputBorder(),
@@ -423,7 +384,7 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(_iconMap[iconKey]),
+                        Icon(IconUtils.getIcon(iconKey)),
                         const Gap(8),
                         Text(
                           iconKey

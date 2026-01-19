@@ -6,7 +6,7 @@ part of 'providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$keyValueStoreHash() => r'8fa3f345a9b74915a75fb8c9351848b44804f221';
+String _$keyValueStoreHash() => r'78b920813d032d9e9a1cea015c77bf446a256a8c';
 
 /// See also [keyValueStore].
 @ProviderFor(keyValueStore)
@@ -23,7 +23,7 @@ final keyValueStoreProvider = FutureProvider<KVStore>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef KeyValueStoreRef = FutureProviderRef<KVStore>;
-String _$settingsServiceHash() => r'9c2f87e61c85455d55a854972ebd1362f7047a37';
+String _$settingsServiceHash() => r'ea09814a0aa21a0f1fe7696df556e15a2baab86b';
 
 /// See also [settingsService].
 @ProviderFor(settingsService)
@@ -40,7 +40,7 @@ final settingsServiceProvider = Provider<SettingsService>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef SettingsServiceRef = ProviderRef<SettingsService>;
-String _$apiKeyHash() => r'32ca15eedf5179eb2af8815ea038c3bc29e47369';
+String _$apiKeyHash() => r'f57f2517816f8b768ac9ffbb591baefc9b6f2de0';
 
 /// See also [apiKey].
 @ProviderFor(apiKey)
@@ -57,7 +57,7 @@ final apiKeyProvider = FutureProvider<String?>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef ApiKeyRef = FutureProviderRef<String?>;
-String _$aiServiceHash() => r'8634879cd94fac64a90fdbe8f5cdd1540b6e6dcd';
+String _$aiServiceHash() => r'b5d640fa6d61a0435966283e3d0eb4cc8ed2fc6c';
 
 /// See also [aiService].
 @ProviderFor(aiService)
@@ -74,7 +74,7 @@ final aiServiceProvider = FutureProvider<AIService>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AiServiceRef = FutureProviderRef<AIService>;
-String _$diaryServiceHash() => r'4865348ac56d2a6a88e1958def0e4d9099f692ae';
+String _$diaryServiceHash() => r'20a5f67093c14abed9e2898d33373579615e7ba9';
 
 /// See also [diaryService].
 @ProviderFor(diaryService)

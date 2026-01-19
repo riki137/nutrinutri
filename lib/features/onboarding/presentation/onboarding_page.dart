@@ -128,7 +128,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                   const Gap(16),
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: _gender,
+                      initialValue: _gender,
                       decoration: const InputDecoration(
                         labelText: 'Gender',
                         border: OutlineInputBorder(),
@@ -182,7 +182,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               ),
               const Gap(16),
               DropdownButtonFormField<String>(
-                value: _activityLevel,
+                initialValue: _activityLevel,
                 decoration: const InputDecoration(
                   labelText: 'Activity Level',
                   border: OutlineInputBorder(),
