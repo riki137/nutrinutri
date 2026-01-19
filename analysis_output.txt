@@ -1,0 +1,19 @@
+Analyzing nutrinutri...                                         
+
+warning • The include file 'package:flutter_lints/flutter.yaml' in '/Users/riki137/Documents/NutriNutri/nutrinutri/analysis_options.yaml' can't be found when analyzing '/Users/riki137/Documents/NutriNutri/nutrinutri' • analysis_options.yaml:1:10 • include_file_not_found
+   info • 'KeyValueStoreRef' is deprecated and shouldn't be used. Will be removed in 3.0. Use Ref instead • lib/core/providers.dart:10:31 • deprecated_member_use_from_same_package
+   info • 'SettingsServiceRef' is deprecated and shouldn't be used. Will be removed in 3.0. Use Ref instead • lib/core/providers.dart:17:33 • deprecated_member_use_from_same_package
+   info • 'ApiKeyRef' is deprecated and shouldn't be used. Will be removed in 3.0. Use Ref instead • lib/core/providers.dart:24:24 • deprecated_member_use_from_same_package
+   info • 'AiServiceRef' is deprecated and shouldn't be used. Will be removed in 3.0. Use Ref instead • lib/core/providers.dart:30:29 • deprecated_member_use_from_same_package
+   info • 'DiaryServiceRef' is deprecated and shouldn't be used. Will be removed in 3.0. Use Ref instead • lib/core/providers.dart:38:27 • deprecated_member_use_from_same_package
+warning • Unused import: 'package:flutter/material.dart' • lib/core/router.dart:1:8 • unused_import
+warning • The value of the field '_collection' isn't used • lib/core/services/settings_service.dart:6:23 • unused_field
+warning • Unnecessary cast • lib/features/dashboard/presentation/dashboard_page.dart:146:25 • unnecessary_cast
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/dashboard/presentation/dashboard_page.dart:301:36 • deprecated_member_use
+warning • Unused import: 'package:uuid/uuid.dart' • lib/features/diary/data/diary_service.dart:3:8 • unused_import
+   info • 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre • lib/features/onboarding/presentation/onboarding_page.dart:131:23 • deprecated_member_use
+   info • 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre • lib/features/onboarding/presentation/onboarding_page.dart:185:17 • deprecated_member_use
+   info • 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre • lib/features/settings/presentation/settings_page.dart:190:13 • deprecated_member_use
+   info • 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre • lib/features/settings/presentation/settings_page.dart:241:19 • deprecated_member_use
+   info • 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre • lib/features/settings/presentation/settings_page.dart:290:13 • deprecated_member_use
+

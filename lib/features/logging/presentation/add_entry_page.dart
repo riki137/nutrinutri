@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
@@ -28,6 +29,9 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
   final _carbsController = TextEditingController();
   final _fatsController = TextEditingController();
 
+  late DateTime _selectedDate;
+  late TimeOfDay _selectedTime;
+
   File? _image;
   bool _isAnalyzing = false;
   bool _showForm = false; // Show form after analysis or if editing
@@ -37,6 +41,9 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
     super.initState();
     if (widget.existingEntry != null) {
       _initializeWithEntry(widget.existingEntry!);
+    } else {
+      _selectedDate = DateTime.now();
+      _selectedTime = TimeOfDay.now();
     }
   }
 
@@ -50,6 +57,8 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
     if (entry.imagePath != null) {
       _image = File(entry.imagePath!);
     }
+    _selectedDate = entry.timestamp;
+    _selectedTime = TimeOfDay.fromDateTime(entry.timestamp);
     _showForm = true;
   }
 
@@ -139,6 +148,28 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
     }
   }
 
+  Future<void> _pickDate() async {
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (pickedDate != null) {
+      setState(() => _selectedDate = pickedDate);
+    }
+  }
+
+  Future<void> _pickTime() async {
+    final pickedTime = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime,
+    );
+    if (pickedTime != null) {
+      setState(() => _selectedTime = pickedTime);
+    }
+  }
+
   Future<void> _saveEntry() async {
     if (!_showForm) return;
 
@@ -153,6 +184,14 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
       final carbs = double.tryParse(_carbsController.text) ?? 0.0;
       final fats = double.tryParse(_fatsController.text) ?? 0.0;
 
+      final timestamp = DateTime(
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+        _selectedTime.hour,
+        _selectedTime.minute,
+      );
+
       if (widget.existingEntry != null) {
         // Update existing
         final updatedEntry = FoodEntry(
@@ -162,7 +201,7 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
           protein: protein,
           carbs: carbs,
           fats: fats,
-          timestamp: widget.existingEntry!.timestamp, // Keep original timestamp
+          timestamp: timestamp, // Use selected timestamp
           imagePath: _image?.path,
         );
         await diaryService.updateEntry(updatedEntry);
@@ -175,7 +214,7 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
           protein: protein,
           carbs: carbs,
           fats: fats,
-          timestamp: DateTime.now(),
+          timestamp: timestamp,
           imagePath: _image?.path,
         );
         await diaryService.addEntry(entry);
@@ -297,6 +336,31 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
                   labelText: 'Food Name',
                   border: OutlineInputBorder(),
                 ),
+              ),
+              const Gap(16),
+
+              const Gap(16),
+              // Date & Time Picker
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _pickDate,
+                      icon: const Icon(Icons.calendar_today),
+                      label: Text(
+                        DateFormat('yyyy-MM-dd').format(_selectedDate),
+                      ),
+                    ),
+                  ),
+                  const Gap(16),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _pickTime,
+                      icon: const Icon(Icons.access_time),
+                      label: Text(_selectedTime.format(context)),
+                    ),
+                  ),
+                ],
               ),
               const Gap(16),
               Row(

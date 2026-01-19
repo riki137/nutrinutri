@@ -3,7 +3,6 @@ import 'package:nutrinutri/core/services/kv_store.dart';
 class SettingsService {
   final KVStore _kv;
 
-  static const String _collection = 'settings';
   static const String _profileKey = 'user_profile';
   static const String _apiKeyKey = 'api_key';
 
