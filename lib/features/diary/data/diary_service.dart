@@ -1,6 +1,5 @@
 import 'package:intl/intl.dart';
 import 'package:nutrinutri/core/services/kv_store.dart';
-import 'package:uuid/uuid.dart';
 
 class FoodEntry {
   final String id;
@@ -11,6 +10,7 @@ class FoodEntry {
   final double fats;
   final DateTime timestamp;
   final String? imagePath; // Base64 or local path
+  final String? icon;
 
   FoodEntry({
     required this.id,
@@ -21,6 +21,7 @@ class FoodEntry {
     required this.fats,
     required this.timestamp,
     this.imagePath,
+    this.icon,
   });
 
   Map<String, dynamic> toJson() => {
@@ -32,6 +33,7 @@ class FoodEntry {
     'fats': fats,
     'timestamp': timestamp.toIso8601String(),
     'imagePath': imagePath,
+    'icon': icon,
   };
 
   factory FoodEntry.fromJson(Map<String, dynamic> json) => FoodEntry(
@@ -43,6 +45,7 @@ class FoodEntry {
     fats: (json['fats'] as num).toDouble(),
     timestamp: DateTime.parse(json['timestamp']),
     imagePath: json['imagePath'],
+    icon: json['icon'],
   );
 }
 

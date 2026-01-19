@@ -36,6 +36,50 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
   bool _isAnalyzing = false;
   bool _showForm = false; // Show form after analysis or if editing
 
+  // Icon handling
+  String _selectedIcon = 'restaurant';
+  static const List<String> _availableIcons = [
+    'bakery_dining',
+    'brunch_dining',
+    'bento',
+    'cake',
+    'coffee',
+    'cookie',
+    'egg_alt',
+    'fastfood',
+    'flatware',
+    'liquor',
+    'microwave',
+    'nightlife',
+    'outdoor_grill',
+    'ramen_dining',
+    'restaurant',
+    'rice_bowl',
+    'sports_bar',
+    'tapas',
+  ];
+
+  static const Map<String, IconData> _iconMap = {
+    'bakery_dining': Icons.bakery_dining,
+    'brunch_dining': Icons.brunch_dining,
+    'bento': Icons.bento,
+    'cake': Icons.cake,
+    'coffee': Icons.coffee,
+    'cookie': Icons.cookie,
+    'egg_alt': Icons.egg_alt,
+    'fastfood': Icons.fastfood,
+    'flatware': Icons.flatware,
+    'liquor': Icons.liquor,
+    'microwave': Icons.microwave,
+    'nightlife': Icons.nightlife,
+    'outdoor_grill': Icons.outdoor_grill,
+    'ramen_dining': Icons.ramen_dining,
+    'restaurant': Icons.restaurant,
+    'rice_bowl': Icons.rice_bowl,
+    'sports_bar': Icons.sports_bar,
+    'tapas': Icons.tapas,
+  };
+
   @override
   void initState() {
     super.initState();
@@ -57,6 +101,7 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
     if (entry.imagePath != null) {
       _image = File(entry.imagePath!);
     }
+    _selectedIcon = entry.icon ?? 'restaurant';
     _selectedDate = entry.timestamp;
     _selectedTime = TimeOfDay.fromDateTime(entry.timestamp);
     _showForm = true;
@@ -121,6 +166,13 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
         _proteinController.text = (result['protein'] as num).toString();
         _carbsController.text = (result['carbs'] as num).toString();
         _fatsController.text = (result['fats'] as num).toString();
+
+        // Handle icon
+        final aiIcon = result['icon'] as String?;
+        if (aiIcon != null && _availableIcons.contains(aiIcon)) {
+          _selectedIcon = aiIcon;
+        }
+
         _showForm = true;
       });
     } catch (e) {
@@ -203,6 +255,7 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
           fats: fats,
           timestamp: timestamp, // Use selected timestamp
           imagePath: _image?.path,
+          icon: _selectedIcon,
         );
         await diaryService.updateEntry(updatedEntry);
       } else {
@@ -216,6 +269,7 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
           fats: fats,
           timestamp: timestamp,
           imagePath: _image?.path,
+          icon: _selectedIcon,
         );
         await diaryService.addEntry(entry);
       }
@@ -336,6 +390,45 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
                   labelText: 'Food Name',
                   border: OutlineInputBorder(),
                 ),
+              ),
+              const Gap(16),
+
+              // Icon Selector
+              DropdownButtonFormField<String>(
+                value: _selectedIcon,
+                decoration: const InputDecoration(
+                  labelText: 'Icon',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.emoji_food_beverage),
+                ),
+                items: _availableIcons.map((iconKey) {
+                  return DropdownMenuItem(
+                    value: iconKey,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(_iconMap[iconKey]),
+                        const Gap(8),
+                        Text(
+                          iconKey
+                              .replaceAll('_', ' ')
+                              .split(' ')
+                              .map(
+                                (word) => word.isNotEmpty
+                                    ? '${word[0].toUpperCase()}${word.substring(1)}'
+                                    : '',
+                              )
+                              .join(' '),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() => _selectedIcon = value);
+                  }
+                },
               ),
               const Gap(16),
 

@@ -333,6 +333,27 @@ class _EntriesList extends ConsumerWidget {
 
   const _EntriesList({required this.today, required this.onRefresh});
 
+  static const Map<String, IconData> _iconMap = {
+    'bakery_dining': Icons.bakery_dining,
+    'brunch_dining': Icons.brunch_dining,
+    'bento': Icons.bento,
+    'cake': Icons.cake,
+    'coffee': Icons.coffee,
+    'cookie': Icons.cookie,
+    'egg_alt': Icons.egg_alt,
+    'fastfood': Icons.fastfood,
+    'flatware': Icons.flatware,
+    'liquor': Icons.liquor,
+    'microwave': Icons.microwave,
+    'nightlife': Icons.nightlife,
+    'outdoor_grill': Icons.outdoor_grill,
+    'ramen_dining': Icons.ramen_dining,
+    'restaurant': Icons.restaurant,
+    'rice_bowl': Icons.rice_bowl,
+    'sports_bar': Icons.sports_bar,
+    'tapas': Icons.tapas,
+  };
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return FutureBuilder<List<FoodEntry>>(
@@ -356,14 +377,14 @@ class _EntriesList extends ConsumerWidget {
               itemCount: entries.length,
               itemBuilder: (context, index) {
                 final entry = entries[index];
+                final iconData = _iconMap[entry.icon] ?? Icons.fastfood;
+
                 return ListTile(
                   onTap: () async {
                     await context.push('/add-entry', extra: entry);
                     onRefresh();
                   },
-                  leading: const CircleAvatar(
-                    child: Icon(Icons.fastfood),
-                  ), // Todo: Show image thumbnail
+                  leading: CircleAvatar(child: Icon(iconData)),
                   title: Text(
                     entry.name,
                     style: const TextStyle(fontWeight: FontWeight.w600),

@@ -32,6 +32,9 @@ class AIService {
         'content': '''
 You are a nutritionist AI. Analyze the food provided (text or image).
 Return STRICT JSON ONLY. No markdown, no intro/outro.
+Select the most appropriate icon from this list:
+[bakery_dining, brunch_dining, bento, cake, coffee, cookie, egg_alt, fastfood, flatware, liquor, microwave, nightlife, outdoor_grill, ramen_dining, restaurant, rice_bowl, sports_bar, tapas]
+
 Structure:
 {
   "food_name": "Short descriptive name",
@@ -39,6 +42,7 @@ Structure:
   "protein": 10,
   "carbs": 20,
   "fats": 5,
+  "icon": "fastfood",
   "confidence": 0.9
 }
 If unclear, provide best guess with lower confidence.
