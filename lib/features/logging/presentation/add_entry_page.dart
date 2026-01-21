@@ -12,6 +12,7 @@ import 'package:nutrinutri/features/diary/application/diary_controller.dart';
 import 'package:nutrinutri/core/widgets/confirm_dialog.dart';
 import 'package:uuid/uuid.dart';
 import 'package:nutrinutri/core/utils/icon_utils.dart';
+import 'package:nutrinutri/core/widgets/responsive_center.dart';
 
 class AddEntryPage extends ConsumerStatefulWidget {
   final FoodEntry? existingEntry; // If null, we are adding a new entry
@@ -247,272 +248,275 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
     return Scaffold(
       appBar: AppBar(title: Text(isEditing ? 'Edit Entry' : 'Log Food')),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (!isEditing) ...[
-              // Image Section
-              GestureDetector(
-                onTap: () => _pickImage(ImageSource.gallery),
-                child: Container(
-                  height: 200,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(12),
-                    image: _image != null
-                        ? DecorationImage(
-                            image: FileImage(_image!),
-                            fit: BoxFit.cover,
+        child: ResponsiveCenter(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (!isEditing) ...[
+                // Image Section
+                GestureDetector(
+                  onTap: () => _pickImage(ImageSource.gallery),
+                  child: Container(
+                    height: 200,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(12),
+                      image: _image != null
+                          ? DecorationImage(
+                              image: FileImage(_image!),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
+                    ),
+                    child: _image == null
+                        ? const Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.add_a_photo,
+                                size: 40,
+                                color: Colors.grey,
+                              ),
+                              Gap(8),
+                              Text(
+                                'Tap to add photo',
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            ],
                           )
                         : null,
                   ),
-                  child: _image == null
-                      ? const Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.add_a_photo,
-                              size: 40,
-                              color: Colors.grey,
-                            ),
-                            Gap(8),
-                            Text(
-                              'Tap to add photo',
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                          ],
-                        )
-                      : null,
                 ),
-              ),
-              const Gap(16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  TextButton.icon(
-                    onPressed: _canUseCamera
-                        ? () => _pickImage(ImageSource.camera)
-                        : null,
-                    icon: const Icon(Icons.camera_alt),
-                    label: const Text('Camera'),
-                  ),
-                  TextButton.icon(
-                    onPressed: () => _pickImage(ImageSource.gallery),
-                    icon: const Icon(Icons.photo_library),
-                    label: const Text('Gallery'),
-                  ),
-                ],
-              ),
-              const Gap(16),
-
-              // Text Input for AI
-              TextField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Describe the food (optional if image provided)',
-                  border: OutlineInputBorder(),
-                  hintText: 'e.g. 2 eggs and toast',
-                ),
-                maxLines: 3,
-              ),
-              const Gap(24),
-
-              // Analyze Button
-              FilledButton.icon(
-                onPressed: _addOptimistic,
-                icon: const Icon(Icons.auto_awesome),
-                label: const Text('Add Entry'),
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.all(16),
-                ),
-              ),
-            ],
-
-            if (_showForm) ...[
-              const Gap(32),
-              const Text(
-                'Entry Details',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const Gap(16),
-              TextField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Food Name',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const Gap(16),
-
-              // Icon Selector
-              DropdownButtonFormField<String>(
-                initialValue: _selectedIcon,
-                decoration: const InputDecoration(
-                  labelText: 'Icon',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.emoji_food_beverage),
-                ),
-                items: _availableIcons.map((iconKey) {
-                  return DropdownMenuItem(
-                    value: iconKey,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(IconUtils.getIcon(iconKey)),
-                        const Gap(8),
-                        Text(
-                          iconKey
-                              .replaceAll('_', ' ')
-                              .split(' ')
-                              .map(
-                                (word) => word.isNotEmpty
-                                    ? '${word[0].toUpperCase()}${word.substring(1)}'
-                                    : '',
-                              )
-                              .join(' '),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() => _selectedIcon = value);
-                  }
-                },
-              ),
-              const Gap(16),
-
-              const Gap(16),
-              // Date & Time Picker
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _pickDate,
-                      icon: const Icon(Icons.calendar_today),
-                      label: Text(
-                        DateFormat('yyyy-MM-dd').format(_selectedDate),
-                      ),
-                    ),
-                  ),
-                  const Gap(16),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _pickTime,
-                      icon: const Icon(Icons.access_time),
-                      label: Text(_selectedTime.format(context)),
-                    ),
-                  ),
-                ],
-              ),
-              const Gap(16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _caloriesController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Calories',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  const Gap(16),
-                  Expanded(
-                    child: TextField(
-                      controller: _proteinController,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      decoration: const InputDecoration(
-                        labelText: 'Protein (g)',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const Gap(16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _carbsController,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      decoration: const InputDecoration(
-                        labelText: 'Carbs (g)',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  const Gap(16),
-                  Expanded(
-                    child: TextField(
-                      controller: _fatsController,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      decoration: const InputDecoration(
-                        labelText: 'Fats (g)',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const Gap(24),
-              FilledButton(
-                onPressed: _saveEntry,
-                style: FilledButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  minimumSize: const Size.fromHeight(50),
-                ),
-                child: Text(isEditing ? 'Update Entry' : 'Save to Diary'),
-              ),
-              if (isEditing) ...[
                 const Gap(16),
-                FilledButton(
-                  onPressed: () async {
-                    final confirmed = await showDialog<bool>(
-                      context: context,
-                      builder: (context) => const ConfirmDialog(
-                        title: 'Delete Entry',
-                        content: 'Are you sure you want to delete this entry?',
-                      ),
-                    );
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    TextButton.icon(
+                      onPressed: _canUseCamera
+                          ? () => _pickImage(ImageSource.camera)
+                          : null,
+                      icon: const Icon(Icons.camera_alt),
+                      label: const Text('Camera'),
+                    ),
+                    TextButton.icon(
+                      onPressed: () => _pickImage(ImageSource.gallery),
+                      icon: const Icon(Icons.photo_library),
+                      label: const Text('Gallery'),
+                    ),
+                  ],
+                ),
+                const Gap(16),
 
-                    if (confirmed == true) {
-                      try {
-                        await ref
-                            .read(diaryServiceProvider)
-                            .deleteEntry(widget.existingEntry!);
-                        if (mounted) {
-                          context.pop();
-                        }
-                      } catch (e) {
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Failed to delete: $e')),
-                          );
-                        }
-                      }
-                    }
-                  },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    minimumSize: const Size.fromHeight(50),
+                // Text Input for AI
+                TextField(
+                  controller: _descriptionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Describe the food (optional if image provided)',
+                    border: OutlineInputBorder(),
+                    hintText: 'e.g. 2 eggs and toast',
                   ),
-                  child: const Text('Delete Entry'),
+                  maxLines: 3,
+                ),
+                const Gap(24),
+
+                // Analyze Button
+                FilledButton.icon(
+                  onPressed: _addOptimistic,
+                  icon: const Icon(Icons.auto_awesome),
+                  label: const Text('Add Entry'),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.all(16),
+                  ),
                 ),
               ],
-              const Gap(32),
+
+              if (_showForm) ...[
+                const Gap(32),
+                const Text(
+                  'Entry Details',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const Gap(16),
+                TextField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Food Name',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const Gap(16),
+
+                // Icon Selector
+                DropdownButtonFormField<String>(
+                  initialValue: _selectedIcon,
+                  decoration: const InputDecoration(
+                    labelText: 'Icon',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.emoji_food_beverage),
+                  ),
+                  items: _availableIcons.map((iconKey) {
+                    return DropdownMenuItem(
+                      value: iconKey,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(IconUtils.getIcon(iconKey)),
+                          const Gap(8),
+                          Text(
+                            iconKey
+                                .replaceAll('_', ' ')
+                                .split(' ')
+                                .map(
+                                  (word) => word.isNotEmpty
+                                      ? '${word[0].toUpperCase()}${word.substring(1)}'
+                                      : '',
+                                )
+                                .join(' '),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => _selectedIcon = value);
+                    }
+                  },
+                ),
+                const Gap(16),
+
+                const Gap(16),
+                // Date & Time Picker
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _pickDate,
+                        icon: const Icon(Icons.calendar_today),
+                        label: Text(
+                          DateFormat('yyyy-MM-dd').format(_selectedDate),
+                        ),
+                      ),
+                    ),
+                    const Gap(16),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _pickTime,
+                        icon: const Icon(Icons.access_time),
+                        label: Text(_selectedTime.format(context)),
+                      ),
+                    ),
+                  ],
+                ),
+                const Gap(16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _caloriesController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Calories',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    const Gap(16),
+                    Expanded(
+                      child: TextField(
+                        controller: _proteinController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: const InputDecoration(
+                          labelText: 'Protein (g)',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const Gap(16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _carbsController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: const InputDecoration(
+                          labelText: 'Carbs (g)',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    const Gap(16),
+                    Expanded(
+                      child: TextField(
+                        controller: _fatsController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: const InputDecoration(
+                          labelText: 'Fats (g)',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const Gap(24),
+                FilledButton(
+                  onPressed: _saveEntry,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    minimumSize: const Size.fromHeight(50),
+                  ),
+                  child: Text(isEditing ? 'Update Entry' : 'Save to Diary'),
+                ),
+                if (isEditing) ...[
+                  const Gap(16),
+                  FilledButton(
+                    onPressed: () async {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => const ConfirmDialog(
+                          title: 'Delete Entry',
+                          content:
+                              'Are you sure you want to delete this entry?',
+                        ),
+                      );
+
+                      if (confirmed == true) {
+                        try {
+                          await ref
+                              .read(diaryServiceProvider)
+                              .deleteEntry(widget.existingEntry!);
+                          if (mounted) {
+                            context.pop();
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Failed to delete: $e')),
+                            );
+                          }
+                        }
+                      }
+                    },
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      minimumSize: const Size.fromHeight(50),
+                    ),
+                    child: const Text('Delete Entry'),
+                  ),
+                ],
+                const Gap(32),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

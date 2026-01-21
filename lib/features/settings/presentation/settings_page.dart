@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nutrinutri/core/providers.dart';
 import 'package:gap/gap.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:intl/intl.dart';
+
+import 'package:nutrinutri/core/widgets/responsive_center.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
@@ -221,257 +222,265 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const Text(
-            'AI Configuration',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const Gap(16),
-          const Text(
-            'This app uses OpenRouter to analyze your food. You need to provide your own API Key.',
-            style: TextStyle(color: Colors.grey),
-          ),
-          const Gap(8),
-          TextField(
-            controller: _apiKeyController,
-            decoration: const InputDecoration(
-              labelText: 'OpenRouter API Key',
-              border: OutlineInputBorder(),
-              hintText: 'sk-or-...',
+      body: ResponsiveCenter(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            const Text(
+              'AI Configuration',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            obscureText: true,
-          ),
-          const Gap(16),
-          InputDecorator(
-            decoration: const InputDecoration(
-              labelText: 'AI Model',
-              border: OutlineInputBorder(),
-              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            const Gap(16),
+            const Text(
+              'This app uses OpenRouter to analyze your food. You need to provide your own API Key.',
+              style: TextStyle(color: Colors.grey),
             ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: _selectedModel,
-                isExpanded: true,
-                items: _models.entries.map((e) {
-                  return DropdownMenuItem(value: e.key, child: Text(e.value));
-                }).toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() => _selectedModel = value);
-                  }
-                },
-              ),
-            ),
-          ),
-          if (_selectedModel == 'custom') ...[
             const Gap(8),
             TextField(
-              controller: _customModelController,
+              controller: _apiKeyController,
               decoration: const InputDecoration(
-                labelText: 'Custom Model ID (OpenRouter)',
+                labelText: 'OpenRouter API Key',
                 border: OutlineInputBorder(),
-                hintText: 'e.g. meta-llama/llama-3-70b-instruct',
+                hintText: 'sk-or-...',
+              ),
+              obscureText: true,
+            ),
+            const Gap(16),
+            InputDecorator(
+              decoration: const InputDecoration(
+                labelText: 'AI Model',
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _selectedModel,
+                  isExpanded: true,
+                  items: _models.entries.map((e) {
+                    return DropdownMenuItem(value: e.key, child: Text(e.value));
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => _selectedModel = value);
+                    }
+                  },
+                ),
               ),
             ),
-          ],
-
-          const Gap(32),
-          const Divider(),
-          const Gap(16),
-
-          const Text(
-            'Data Synchronization',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const Gap(8),
-          const Text(
-            'Sync your diary with Google Drive.',
-            style: TextStyle(color: Colors.grey),
-          ),
-          const Gap(16),
-          if (_currentUser == null)
-            FilledButton.icon(
-              onPressed: _handleSignIn,
-              icon: const Icon(Icons.login),
-              label: const Text('Sign in with Google'),
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black,
-                side: const BorderSide(color: Colors.grey),
+            if (_selectedModel == 'custom') ...[
+              const Gap(8),
+              TextField(
+                controller: _customModelController,
+                decoration: const InputDecoration(
+                  labelText: 'Custom Model ID (OpenRouter)',
+                  border: OutlineInputBorder(),
+                  hintText: 'e.g. meta-llama/llama-3-70b-instruct',
+                ),
               ),
-            )
-          else ...[
-            ListTile(
-              leading: GoogleUserCircleAvatar(identity: _currentUser!),
-              title: Text(_currentUser!.displayName ?? ''),
-              subtitle: Text(_currentUser!.email),
-              trailing: IconButton(
-                icon: const Icon(Icons.logout),
-                onPressed: _handleSignOut,
-              ),
+            ],
+
+            const Gap(32),
+            const Divider(),
+            const Gap(16),
+
+            const Text(
+              'Data Synchronization',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const Gap(8),
-            FilledButton.icon(
-              onPressed: _isSyncing ? null : _handleSync,
-              icon: _isSyncing
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Icon(Icons.sync),
-              label: Text(_isSyncing ? 'Syncing...' : 'Sync Now'),
+            const Text(
+              'Sync your diary with Google Drive.',
+              style: TextStyle(color: Colors.grey),
             ),
-          ],
-
-          const Gap(32),
-          const Divider(),
-          const Gap(16),
-
-          const Text(
-            'Personal Profile',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const Gap(16),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _ageController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Age',
-                    border: OutlineInputBorder(),
-                  ),
-                  onChanged: (_) => _calculateRecommendedCalories(),
+            const Gap(16),
+            if (_currentUser == null)
+              FilledButton.icon(
+                onPressed: _handleSignIn,
+                icon: const Icon(Icons.login),
+                label: const Text('Sign in with Google'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
+                  side: const BorderSide(color: Colors.grey),
+                ),
+              )
+            else ...[
+              ListTile(
+                leading: GoogleUserCircleAvatar(identity: _currentUser!),
+                title: Text(_currentUser!.displayName ?? ''),
+                subtitle: Text(_currentUser!.email),
+                trailing: IconButton(
+                  icon: const Icon(Icons.logout),
+                  onPressed: _handleSignOut,
                 ),
               ),
-              const Gap(16),
-              Expanded(
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: 'Gender',
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
-                    ),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _gender,
-                      isExpanded: true,
-                      items: const [
-                        DropdownMenuItem(value: 'male', child: Text('Male')),
-                        DropdownMenuItem(
-                          value: 'female',
-                          child: Text('Female'),
+              const Gap(8),
+              FilledButton.icon(
+                onPressed: _isSyncing ? null : _handleSync,
+                icon: _isSyncing
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
                         ),
-                      ],
-                      onChanged: (v) {
-                        setState(() => _gender = v!);
-                        _calculateRecommendedCalories();
-                      },
+                      )
+                    : const Icon(Icons.sync),
+                label: Text(_isSyncing ? 'Syncing...' : 'Sync Now'),
+              ),
+            ],
+
+            const Gap(32),
+            const Divider(),
+            const Gap(16),
+
+            const Text(
+              'Personal Profile',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const Gap(16),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _ageController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Age',
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (_) => _calculateRecommendedCalories(),
+                  ),
+                ),
+                const Gap(16),
+                Expanded(
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Gender',
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _gender,
+                        isExpanded: true,
+                        items: const [
+                          DropdownMenuItem(value: 'male', child: Text('Male')),
+                          DropdownMenuItem(
+                            value: 'female',
+                            child: Text('Female'),
+                          ),
+                        ],
+                        onChanged: (v) {
+                          setState(() => _gender = v!);
+                          _calculateRecommendedCalories();
+                        },
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          const Gap(16),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _weightController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Weight (kg)',
-                    border: OutlineInputBorder(),
-                    suffixText: 'kg',
+              ],
+            ),
+            const Gap(16),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _weightController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Weight (kg)',
+                      border: OutlineInputBorder(),
+                      suffixText: 'kg',
+                    ),
+                    onChanged: (_) => _calculateRecommendedCalories(),
                   ),
-                  onChanged: (_) => _calculateRecommendedCalories(),
+                ),
+                const Gap(16),
+                Expanded(
+                  child: TextField(
+                    controller: _heightController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Height (cm)',
+                      border: OutlineInputBorder(),
+                      suffixText: 'cm',
+                    ),
+                    onChanged: (_) => _calculateRecommendedCalories(),
+                  ),
+                ),
+              ],
+            ),
+            const Gap(16),
+            InputDecorator(
+              decoration: const InputDecoration(
+                labelText: 'Activity Level',
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
                 ),
               ),
-              const Gap(16),
-              Expanded(
-                child: TextField(
-                  controller: _heightController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Height (cm)',
-                    border: OutlineInputBorder(),
-                    suffixText: 'cm',
-                  ),
-                  onChanged: (_) => _calculateRecommendedCalories(),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _activityLevel,
+                  isExpanded: true,
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'sedentary',
+                      child: Text('Sedentary (Office job)'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'light',
+                      child: Text('Light (Exercise 1-3x/week)'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'moderate',
+                      child: Text('Moderate (Exercise 3-5x/week)'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'very_active',
+                      child: Text('Active (Exercise 6-7x/week)'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'super_active',
+                      child: Text('Super Active (Physical job)'),
+                    ),
+                  ],
+                  onChanged: (v) {
+                    setState(() => _activityLevel = v!);
+                    _calculateRecommendedCalories();
+                  },
                 ),
               ),
-            ],
-          ),
-          const Gap(16),
-          InputDecorator(
-            decoration: const InputDecoration(
-              labelText: 'Activity Level',
-              border: OutlineInputBorder(),
-              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: _activityLevel,
-                isExpanded: true,
-                items: const [
-                  DropdownMenuItem(
-                    value: 'sedentary',
-                    child: Text('Sedentary (Office job)'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'light',
-                    child: Text('Light (Exercise 1-3x/week)'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'moderate',
-                    child: Text('Moderate (Exercise 3-5x/week)'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'very_active',
-                    child: Text('Active (Exercise 6-7x/week)'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'super_active',
-                    child: Text('Super Active (Physical job)'),
-                  ),
-                ],
-                onChanged: (v) {
-                  setState(() => _activityLevel = v!);
-                  _calculateRecommendedCalories();
-                },
+            const Gap(16),
+            TextField(
+              controller: _goalController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Daily Calorie Goal',
+                border: OutlineInputBorder(),
+                helperText: 'Auto-calculated (Maintenance - 250)',
               ),
             ),
-          ),
-          const Gap(16),
-          TextField(
-            controller: _goalController,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: 'Daily Calorie Goal',
-              border: OutlineInputBorder(),
-              helperText: 'Auto-calculated (Maintenance - 250)',
-            ),
-          ),
 
-          const Gap(24),
-          FilledButton.icon(
-            onPressed: _isLoading ? null : _save,
-            icon: const Icon(Icons.save),
-            label: const Text('Save Settings'),
-          ),
-          const Gap(40),
-        ],
+            const Gap(24),
+            FilledButton.icon(
+              onPressed: _isLoading ? null : _save,
+              icon: const Icon(Icons.save),
+              label: const Text('Save Settings'),
+            ),
+            const Gap(40),
+          ],
+        ),
       ),
     );
   }

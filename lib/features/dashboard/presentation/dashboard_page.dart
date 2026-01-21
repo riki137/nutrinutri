@@ -55,58 +55,155 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          children: [
-            // Date Switcher
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16.0),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.chevron_left),
-                    onPressed: () => _updateDate(-1),
-                  ),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        Text(
-                          _isToday
-                              ? "Today"
-                              : DateFormat('EEEE').format(_selectedDate),
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth >= 900;
+
+          if (isWide) {
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1200),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Left Column: Date & Summary
+                      SizedBox(
+                        width: 400,
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16.0,
+                                ),
+                                child: Row(
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.chevron_left),
+                                      onPressed: () => _updateDate(-1),
+                                    ),
+                                    Expanded(
+                                      child: Column(
+                                        children: [
+                                          Text(
+                                            _isToday
+                                                ? "Today"
+                                                : DateFormat(
+                                                    'EEEE',
+                                                  ).format(_selectedDate),
+                                            style: const TextStyle(
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          Text(
+                                            DateFormat(
+                                              'd MMM y',
+                                            ).format(_selectedDate),
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.grey[600],
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.chevron_right),
+                                      onPressed: _isToday
+                                          ? null
+                                          : () => _updateDate(1),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Gap(8),
+                              DailySummarySection(today: _selectedDate),
+                            ],
                           ),
                         ),
-                        Text(
-                          DateFormat('d MMM y').format(_selectedDate),
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w500,
+                      ),
+                      const Gap(24),
+                      // Right Column: Entries
+                      Expanded(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: [
+                              const Gap(16),
+                              EntriesList(
+                                today: _selectedDate,
+                                onRefresh: _refresh,
+                              ),
+                              const Gap(80),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.chevron_right),
-                    onPressed: _isToday ? null : () => _updateDate(1),
-                  ),
-                ],
+                ),
               ),
+            );
+          }
+
+          // Mobile Layout
+          return SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              children: [
+                // Date Switcher
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.chevron_left),
+                        onPressed: () => _updateDate(-1),
+                      ),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Text(
+                              _isToday
+                                  ? "Today"
+                                  : DateFormat('EEEE').format(_selectedDate),
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              DateFormat('d MMM y').format(_selectedDate),
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.chevron_right),
+                        onPressed: _isToday ? null : () => _updateDate(1),
+                      ),
+                    ],
+                  ),
+                ),
+                const Gap(8),
+                // Summary Card
+                DailySummarySection(today: _selectedDate),
+                const Gap(24),
+                // Entries
+                EntriesList(today: _selectedDate, onRefresh: _refresh),
+                const Gap(80), // Bottom padding for FAB
+              ],
             ),
-            const Gap(8),
-            // Summary Card
-            DailySummarySection(today: _selectedDate),
-            const Gap(24),
-            // Entries
-            EntriesList(today: _selectedDate, onRefresh: _refresh),
-            const Gap(80), // Bottom padding for FAB
-          ],
-        ),
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
