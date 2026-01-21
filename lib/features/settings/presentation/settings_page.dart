@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nutrinutri/core/providers.dart';
 import 'package:gap/gap.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:nutrinutri/core/widgets/responsive_center.dart';
 
@@ -34,11 +35,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   final Map<String, String> _models = {
     'google/gemini-3-flash-preview':
-        'Gemini 3 Flash (Recommended, Default, Fast, Accurate)',
-    'google/gemini-3-pro-preview': 'Gemini 3 Pro (Best, expensive)',
-    'google/gemini-2.0-flash-exp:free': 'Gemini 2.0 Flash (Free)',
-    'openai/gpt-5.2': 'GPT-5.2 (Expensive, good)',
-    'openai/gpt-5-mini': 'GPT-5 Mini (Cheaper, less knowledge)',
+        'Gemini 3 Flash [~\$0.008]\n(Recommended, Default, Fast, Accurate)',
+    'google/gemini-3-pro-preview': 'Gemini 3 Pro [~\$0.04]\n(Best, expensive)',
+    'openai/gpt-5.2': 'GPT-5.2 [~\$0.008]\n(Reliable, Accurate)',
+    'openai/gpt-5-mini': 'GPT-5 Mini [~\$0.003]\n(Cheaper, less knowledge)',
     'anthropic/claude-sonnet-4.5':
         'Claude Sonnet 4.5 (Expensive, not accurate)',
     'anthropic/claude-opus-4.5':
@@ -52,6 +52,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     super.initState();
     _loadSettings();
     _initSync();
+    _apiKeyController.addListener(() {
+      if (mounted) setState(() {});
+    });
   }
 
   void _initSync() {
@@ -325,44 +328,63 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 ),
                 obscureText: true,
               ),
-              const Gap(16),
-              InputDecorator(
-                decoration: const InputDecoration(
-                  labelText: 'AI Model',
-                  border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedModel,
-                    isExpanded: true,
-                    items: _models.entries.map((e) {
-                      return DropdownMenuItem(
-                        value: e.key,
-                        child: Text(e.value),
+              if (_apiKeyController.text.isEmpty) ...[
+                const Gap(8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      final url = Uri.parse(
+                        'https://openrouter.ai/settings/keys',
                       );
-                    }).toList(),
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() => _selectedModel = value);
+                      if (await canLaunchUrl(url)) {
+                        await launchUrl(url);
                       }
                     },
+                    icon: const Icon(Icons.open_in_new),
+                    label: const Text('Get API Key'),
                   ),
                 ),
-              ),
-              if (_selectedModel == 'custom') ...[
-                const Gap(8),
-                TextField(
-                  controller: _customModelController,
+              ] else ...[
+                const Gap(16),
+                InputDecorator(
                   decoration: const InputDecoration(
-                    labelText: 'Custom Model ID (OpenRouter)',
+                    labelText: 'AI Model',
                     border: OutlineInputBorder(),
-                    hintText: 'e.g. meta-llama/llama-3-70b-instruct',
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _selectedModel,
+                      isExpanded: true,
+                      items: _models.entries.map((e) {
+                        return DropdownMenuItem(
+                          value: e.key,
+                          child: Text(e.value),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() => _selectedModel = value);
+                        }
+                      },
+                    ),
                   ),
                 ),
+                if (_selectedModel == 'custom') ...[
+                  const Gap(8),
+                  TextField(
+                    controller: _customModelController,
+                    decoration: const InputDecoration(
+                      labelText: 'Custom Model ID (OpenRouter)',
+                      border: OutlineInputBorder(),
+                      hintText: 'e.g. meta-llama/llama-3-70b-instruct',
+                    ),
+                  ),
+                ],
               ],
 
               const Gap(32),
