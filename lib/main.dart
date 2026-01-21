@@ -11,6 +11,12 @@ Future<void> main() async {
   // Initialize KV store before UI
   await container.read(keyValueStoreProvider.future);
 
+  // Initialize Sync Service & Restore Session
+  final syncService = container.read(syncServiceProvider);
+  // We don't await this to keep startup fast.
+  // The UI listeners will update when the user is restored.
+  syncService.restoreSession();
+
   runApp(UncontrolledProviderScope(container: container, child: const MyApp()));
 }
 

@@ -57,9 +57,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       if (mounted) setState(() => _currentUser = account);
     });
     // Silent sign-in to restore session if available
-    syncService.signIn().catchError((e) {
-      debugPrint('Silent sign-in failed (expected if not signed in): $e');
-    });
+    syncService.restoreSession();
   }
 
   Future<void> _handleSignIn() async {

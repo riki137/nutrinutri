@@ -26,6 +26,14 @@ class SyncService {
     }
   }
 
+  Future<void> restoreSession() async {
+    try {
+      await _googleSignIn.signInSilently();
+    } catch (e) {
+      debugPrint('Restore session failed: $e');
+    }
+  }
+
   Future<void> signOut() async {
     await _googleSignIn.signOut();
   }
