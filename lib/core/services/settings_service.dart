@@ -51,6 +51,6 @@ class SettingsService {
 
   Future<String> getAIModel() async {
     final data = await _kv.get('ai_model');
-    return data?['model'] as String? ?? 'openai/gpt-4o-mini';
+    return data?['model'] as String? ?? 'google/gemini-3-flash-preview';
   }
 }
