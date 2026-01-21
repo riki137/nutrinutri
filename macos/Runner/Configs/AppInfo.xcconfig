@@ -8,7 +8,7 @@
 PRODUCT_NAME = nutrinutri
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.example.nutrinutri
+PRODUCT_BUNDLE_IDENTIFIER = sk.popelis.nutrinutri
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 com.example. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 sk.popelis. All rights reserved.

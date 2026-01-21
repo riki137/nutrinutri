@@ -32,5 +32,18 @@
 	<string>This app needs camera access to take photos of food for analysis</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app needs photo library access to select photos of food for analysis</string>
+	<key>GIDClientID</key>
+	<string>887373478837-5rdnlv5lnv09rjroajo0ip4d1j80i01b.apps.googleusercontent.com</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.887373478837-5rdnlv5lnv09rjroajo0ip4d1j80i01b</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

@@ -91,5 +91,22 @@ final diaryServiceProvider = Provider<DiaryService>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef DiaryServiceRef = ProviderRef<DiaryService>;
+String _$syncServiceHash() => r'37c64bbe5dc8030dd13b40a270dd62778b0e21c6';
+
+/// See also [syncService].
+@ProviderFor(syncService)
+final syncServiceProvider = Provider<SyncService>.internal(
+  syncService,
+  name: r'syncServiceProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$syncServiceHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef SyncServiceRef = ProviderRef<SyncService>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

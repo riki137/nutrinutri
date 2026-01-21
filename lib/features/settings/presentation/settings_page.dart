@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nutrinutri/core/providers.dart';
 import 'package:gap/gap.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:intl/intl.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
@@ -22,6 +24,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   String _gender = 'male';
   String _activityLevel = 'sedentary';
   bool _isLoading = false;
+  bool _isSyncing = false;
+  GoogleSignInAccount? _currentUser;
 
   final Map<String, String> _models = {
     'google/gemini-3-flash-preview':
@@ -42,6 +46,55 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   void initState() {
     super.initState();
     _loadSettings();
+    _initSync();
+  }
+
+  void _initSync() {
+    final syncService = ref.read(syncServiceProvider);
+    _currentUser = syncService.currentUser;
+    syncService.onCurrentUserChanged.listen((account) {
+      if (mounted) setState(() => _currentUser = account);
+    });
+    // Silent sign-in to restore session if available
+    syncService.signIn().catchError((e) {
+      debugPrint('Silent sign-in failed (expected if not signed in): $e');
+    });
+  }
+
+  Future<void> _handleSignIn() async {
+    try {
+      await ref.read(syncServiceProvider).signIn();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Sign in failed: $e')));
+      }
+    }
+  }
+
+  Future<void> _handleSignOut() async {
+    await ref.read(syncServiceProvider).signOut();
+  }
+
+  Future<void> _handleSync() async {
+    setState(() => _isSyncing = true);
+    try {
+      final count = await ref.read(syncServiceProvider).sync();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Sync complete. $count items updated.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Sync failed: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isSyncing = false);
+    }
   }
 
   Future<void> _loadSettings() async {
@@ -221,6 +274,58 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 border: OutlineInputBorder(),
                 hintText: 'e.g. meta-llama/llama-3-70b-instruct',
               ),
+            ),
+          ],
+
+          const Gap(32),
+          const Divider(),
+          const Gap(16),
+
+          const Text(
+            'Data Synchronization',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const Gap(8),
+          const Text(
+            'Sync your diary with Google Drive.',
+            style: TextStyle(color: Colors.grey),
+          ),
+          const Gap(16),
+          if (_currentUser == null)
+            FilledButton.icon(
+              onPressed: _handleSignIn,
+              icon: const Icon(Icons.login),
+              label: const Text('Sign in with Google'),
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+                side: const BorderSide(color: Colors.grey),
+              ),
+            )
+          else ...[
+            ListTile(
+              leading: GoogleUserCircleAvatar(identity: _currentUser!),
+              title: Text(_currentUser!.displayName ?? ''),
+              subtitle: Text(_currentUser!.email),
+              trailing: IconButton(
+                icon: const Icon(Icons.logout),
+                onPressed: _handleSignOut,
+              ),
+            ),
+            const Gap(8),
+            FilledButton.icon(
+              onPressed: _isSyncing ? null : _handleSync,
+              icon: _isSyncing
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.sync),
+              label: Text(_isSyncing ? 'Syncing...' : 'Sync Now'),
             ),
           ],
 

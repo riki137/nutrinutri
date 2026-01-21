@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:nutrinutri/core/services/kv_store.dart';
 import 'package:nutrinutri/core/services/ai_service.dart';
 import 'package:nutrinutri/core/services/settings_service.dart';
+import 'package:nutrinutri/core/services/sync_service.dart';
 import 'package:nutrinutri/features/diary/data/diary_service.dart';
 
 part 'providers.g.dart';
@@ -40,4 +41,11 @@ DiaryService diaryService(Ref ref) {
   final kv = ref.watch(keyValueStoreProvider).valueOrNull;
   if (kv == null) throw UnimplementedError('KVStore not initialized');
   return DiaryService(kv);
+}
+
+@Riverpod(keepAlive: true)
+SyncService syncService(Ref ref) {
+  final kv = ref.watch(keyValueStoreProvider).valueOrNull;
+  if (kv == null) throw UnimplementedError('KVStore not initialized');
+  return SyncService(kv);
 }

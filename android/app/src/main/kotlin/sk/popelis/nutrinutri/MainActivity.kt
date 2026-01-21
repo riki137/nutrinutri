@@ -1,4 +1,4 @@
-package com.example.nutrinutri
+package sk.popelis.nutrinutri
 
 import io.flutter.embedding.android.FlutterActivity
 
