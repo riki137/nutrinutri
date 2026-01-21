@@ -20,7 +20,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   @override
   void initState() {
     super.initState();
-    _selectedDate = DateTime.now();
+    final now = DateTime.now();
+    _selectedDate = DateTime(now.year, now.month, now.day);
   }
 
   void _updateDate(int days) {

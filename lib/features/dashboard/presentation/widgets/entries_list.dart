@@ -7,6 +7,7 @@ import 'package:nutrinutri/core/providers.dart';
 import 'package:nutrinutri/core/utils/icon_utils.dart';
 import 'package:nutrinutri/core/widgets/confirm_dialog.dart';
 import 'package:nutrinutri/features/dashboard/presentation/dashboard_providers.dart';
+import 'package:nutrinutri/features/diary/data/diary_service.dart';
 
 class EntriesList extends ConsumerWidget {
   final DateTime today;
@@ -38,43 +39,69 @@ class EntriesList extends ConsumerWidget {
                 final entry = entries[index];
                 final iconData = IconUtils.getIcon(entry.icon);
 
+                // Determine if we should show loading or error
+                final isProcessing = entry.status == FoodEntryStatus.processing;
+                final isFailed = entry.status == FoodEntryStatus.failed;
+
                 return ListTile(
                   onTap: () async {
+                    if (isProcessing) return; // Ignore taps while processing
+
                     await context.push('/add-entry', extra: entry);
                     // Invalidating the provider to refresh data
                     ref.invalidate(dayEntriesProvider(today));
                     ref.invalidate(dailySummaryProvider(today));
                     onRefresh();
                   },
-                  leading: CircleAvatar(child: Icon(iconData)),
+                  leading: CircleAvatar(
+                    child: isProcessing
+                        ? const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : isFailed
+                        ? const Icon(Icons.error, color: Colors.orange)
+                        : Icon(iconData),
+                  ),
                   title: Text(
                     entry.name,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: isFailed ? Colors.red : null,
+                    ),
                   ),
                   subtitle: Text(
-                    '${DateFormat('HH:mm').format(entry.timestamp)} • ${entry.calories} kcal',
+                    isProcessing
+                        ? 'Analyzing with AI...'
+                        : isFailed
+                        ? 'AI Analysis Failed. Tap to retry/edit.'
+                        : '${DateFormat('HH:mm').format(entry.timestamp)} • ${entry.calories} kcal',
                     style: TextStyle(color: Colors.grey[600]),
                   ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () async {
-                      final confirmed = await showDialog<bool>(
-                        context: context,
-                        builder: (context) => const ConfirmDialog(
-                          title: 'Delete Entry',
-                          content:
-                              'Are you sure you want to delete this entry?',
-                        ),
-                      );
+                  trailing: isProcessing
+                      ? null // No delete button while processing
+                      : IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () async {
+                            final confirmed = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => const ConfirmDialog(
+                                title: 'Delete Entry',
+                                content:
+                                    'Are you sure you want to delete this entry?',
+                              ),
+                            );
 
-                      if (confirmed == true) {
-                        await ref.read(diaryServiceProvider).deleteEntry(entry);
-                        ref.invalidate(dayEntriesProvider(today));
-                        ref.invalidate(dailySummaryProvider(today));
-                        onRefresh();
-                      }
-                    },
-                  ),
+                            if (confirmed == true) {
+                              await ref
+                                  .read(diaryServiceProvider)
+                                  .deleteEntry(entry);
+                              ref.invalidate(dayEntriesProvider(today));
+                              ref.invalidate(dailySummaryProvider(today));
+                              onRefresh();
+                            }
+                          },
+                        ),
                 );
               },
             ),

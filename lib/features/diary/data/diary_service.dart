@@ -1,6 +1,8 @@
 import 'package:intl/intl.dart';
 import 'package:nutrinutri/core/services/kv_store.dart';
 
+enum FoodEntryStatus { synced, processing, failed }
+
 class FoodEntry {
   final String id;
   final String name;
@@ -11,6 +13,8 @@ class FoodEntry {
   final DateTime timestamp;
   final String? imagePath; // Base64 or local path
   final String? icon;
+  final FoodEntryStatus status;
+  final String? description;
 
   FoodEntry({
     required this.id,
@@ -22,6 +26,8 @@ class FoodEntry {
     required this.timestamp,
     this.imagePath,
     this.icon,
+    this.status = FoodEntryStatus.synced,
+    this.description,
   });
 
   Map<String, dynamic> toJson() => {
@@ -34,6 +40,8 @@ class FoodEntry {
     'timestamp': timestamp.toIso8601String(),
     'imagePath': imagePath,
     'icon': icon,
+    'status': status.index,
+    'description': description,
   };
 
   factory FoodEntry.fromJson(Map<String, dynamic> json) => FoodEntry(
@@ -46,6 +54,10 @@ class FoodEntry {
     timestamp: DateTime.parse(json['timestamp']),
     imagePath: json['imagePath'],
     icon: json['icon'],
+    status: json['status'] != null
+        ? FoodEntryStatus.values[json['status']]
+        : FoodEntryStatus.synced,
+    description: json['description'],
   );
 }
 

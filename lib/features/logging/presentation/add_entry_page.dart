@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:nutrinutri/core/providers.dart';
 import 'package:nutrinutri/features/diary/data/diary_service.dart';
+import 'package:nutrinutri/features/diary/application/diary_controller.dart';
 import 'package:nutrinutri/core/widgets/confirm_dialog.dart';
 import 'package:uuid/uuid.dart';
 import 'package:nutrinutri/core/utils/icon_utils.dart';
@@ -36,7 +36,6 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
   late TimeOfDay _selectedTime;
 
   File? _image;
-  bool _isAnalyzing = false;
   bool _showForm = false; // Show form after analysis or if editing
 
   // Icon handling
@@ -49,7 +48,8 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
     if (widget.existingEntry != null) {
       _initializeWithEntry(widget.existingEntry!);
     } else {
-      _selectedDate = DateTime.now();
+      final now = DateTime.now();
+      _selectedDate = DateTime(now.year, now.month, now.day);
       _selectedTime = TimeOfDay.now();
     }
   }
@@ -105,7 +105,7 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
     }
   }
 
-  Future<void> _analyze() async {
+  Future<void> _addOptimistic() async {
     if (_descriptionController.text.isEmpty && _image == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please provide text or an image.')),
@@ -113,65 +113,46 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
       return;
     }
 
-    setState(() {
-      _isAnalyzing = true;
-      _showForm = false;
-    });
+    // Try to check for API key before proceeding to avoid immediate failure in background
+    // (Optional, but good UX)
+    final aiService = await ref.read(aiServiceProvider.future);
+    if (aiService.apiKey.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Please set your API Key in Settings'),
+            action: SnackBarAction(
+              label: 'Settings',
+              onPressed: () => context.push('/settings'),
+            ),
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+      return;
+    }
 
     try {
-      final aiService = await ref.read(aiServiceProvider.future);
-      String? base64Image;
+      await ref
+          .read(diaryControllerProvider.notifier)
+          .addOptimisticEntry(
+            date: _selectedDate,
+            time: _selectedTime,
+            description: _descriptionController.text.isNotEmpty
+                ? _descriptionController.text
+                : null,
+            imagePath: _image?.path,
+          );
 
-      if (_image != null) {
-        final bytes = await _image!.readAsBytes();
-        base64Image = base64Encode(bytes);
+      if (mounted) {
+        context.pop();
       }
-
-      final result = await aiService.analyzeFood(
-        textDescription: _descriptionController.text.isNotEmpty
-            ? _descriptionController.text
-            : null,
-        base64Image: base64Image,
-      );
-
-      // Populate form with AI results
-      setState(() {
-        _nameController.text = result['food_name'] ?? 'Unknown Food';
-        _caloriesController.text = (result['calories'] as num).toString();
-        _proteinController.text = (result['protein'] as num).toString();
-        _carbsController.text = (result['carbs'] as num).toString();
-        _fatsController.text = (result['fats'] as num).toString();
-
-        // Handle icon
-        final aiIcon = result['icon'] as String?;
-        if (aiIcon != null && _availableIcons.contains(aiIcon)) {
-          _selectedIcon = aiIcon;
-        }
-
-        _showForm = true;
-      });
     } catch (e) {
       if (mounted) {
-        final message = e.toString();
-        if (message.contains('API Key is missing')) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Please set your API Key in Settings'),
-              action: SnackBarAction(
-                label: 'Settings',
-                onPressed: () => context.push('/settings'),
-              ),
-              duration: const Duration(seconds: 5),
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Analysis failed: $e')));
-        }
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to add entry: $e')));
       }
-    } finally {
-      if (mounted) setState(() => _isAnalyzing = false);
     }
   }
 
@@ -339,15 +320,9 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
 
               // Analyze Button
               FilledButton.icon(
-                onPressed: _isAnalyzing ? null : _analyze,
-                icon: _isAnalyzing
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.auto_awesome),
-                label: Text(_isAnalyzing ? 'Analyzing...' : 'Analyze with AI'),
+                onPressed: _addOptimistic,
+                icon: const Icon(Icons.auto_awesome),
+                label: const Text('Add Entry'),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.all(16),
                 ),
