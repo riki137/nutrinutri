@@ -60,7 +60,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           final isWide = constraints.maxWidth >= 900;
 
           if (isWide) {
-            return Center(
+            return Align(
+              alignment: Alignment.topCenter,
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 1200),
                 child: Padding(
