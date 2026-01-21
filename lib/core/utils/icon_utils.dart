@@ -20,6 +20,7 @@ class IconUtils {
     'rice_bowl': Icons.rice_bowl,
     'sports_bar': Icons.sports_bar,
     'tapas': Icons.tapas,
+    'warning': Icons.warning_amber_rounded,
   };
 
   static List<String> get availableIcons => iconMap.keys.toList();

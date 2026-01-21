@@ -85,7 +85,7 @@ If unclear, provide best guess with lower confidence.
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final content = data['choices'][0]['message']['content'];
-        return jsonDecode(content);
+        return jsonDecode(_extractJson(content));
       } else {
         throw Exception('AI Error: ${response.statusCode} - ${response.body}');
       }
@@ -93,5 +93,22 @@ If unclear, provide best guess with lower confidence.
       debugPrint('AI Service Error: $e');
       rethrow;
     }
+  }
+
+  String _extractJson(String content) {
+    if (content.contains('```json')) {
+      final startIndex = content.indexOf('```json') + 7;
+      final endIndex = content.lastIndexOf('```');
+      if (endIndex > startIndex) {
+        return content.substring(startIndex, endIndex).trim();
+      }
+    } else if (content.contains('```')) {
+      final startIndex = content.indexOf('```') + 3;
+      final endIndex = content.lastIndexOf('```');
+      if (endIndex > startIndex) {
+        return content.substring(startIndex, endIndex).trim();
+      }
+    }
+    return content.trim();
   }
 }

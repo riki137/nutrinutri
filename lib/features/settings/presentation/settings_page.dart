@@ -15,6 +15,22 @@ class SettingsPage extends ConsumerStatefulWidget {
   ConsumerState<SettingsPage> createState() => _SettingsPageState();
 }
 
+class AIModelInfo {
+  final String id;
+  final String name;
+  final String price;
+  final String description;
+  final List<String> tags;
+
+  const AIModelInfo({
+    required this.id,
+    required this.name,
+    required this.price,
+    this.description = '',
+    this.tags = const [],
+  });
+}
+
 class _SettingsPageState extends ConsumerState<SettingsPage> {
   final _apiKeyController = TextEditingController();
   final _customModelController = TextEditingController();
@@ -26,26 +42,63 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   final _carbsController = TextEditingController();
   final _fatsController = TextEditingController();
 
-  String _selectedModel = 'google/gemini-3-flash-preview';
+  String _selectedModel = 'google/gemini-2.0-flash-exp:free';
   String _gender = 'male';
   String _activityLevel = 'sedentary';
   bool _isLoading = false;
   bool _isSyncing = false;
   GoogleSignInAccount? _currentUser;
 
-  final Map<String, String> _models = {
-    'google/gemini-3-flash-preview':
-        'Gemini 3 Flash [~\$0.008]\n(Recommended, Default, Fast, Accurate)',
-    'google/gemini-3-pro-preview': 'Gemini 3 Pro [~\$0.04]\n(Best, expensive)',
-    'openai/gpt-5.2': 'GPT-5.2 [~\$0.008]\n(Reliable, Accurate)',
-    'openai/gpt-5-mini': 'GPT-5 Mini [~\$0.003]\n(Cheaper, less knowledge)',
-    'anthropic/claude-sonnet-4.5':
-        'Claude Sonnet 4.5 (Expensive, not accurate)',
-    'anthropic/claude-opus-4.5':
-        'Claude Opus 4.5 (More expensive than accurate)',
-    'x-ai/grok-4': 'Grok 4',
-    'custom': 'Custom OpenRouter model (Advanced, not recommended)',
-  };
+  final List<AIModelInfo> _availableModels = [
+    const AIModelInfo(
+      id: 'google/gemini-3-flash-preview',
+      name: 'Gemini 3 Flash',
+      price: r'~$0.008',
+      description: 'Recommended, Default, Fast, Accurate',
+    ),
+    const AIModelInfo(
+      id: 'google/gemini-3-pro-preview',
+      name: 'Gemini 3 Pro',
+      price: r'~$0.04',
+      description: 'Best, expensive',
+    ),
+    const AIModelInfo(
+      id: 'openai/gpt-5.2',
+      name: 'GPT-5.2',
+      price: r'~$0.008',
+      description: 'Reliable, Accurate',
+    ),
+    const AIModelInfo(
+      id: 'openai/gpt-5-mini',
+      name: 'GPT-5 Mini',
+      price: r'~$0.003',
+      description: 'Cheaper, less knowledge',
+    ),
+    const AIModelInfo(
+      id: 'anthropic/claude-sonnet-4.5',
+      name: 'Claude Sonnet 4.5',
+      price: r'~$0.007',
+      description: 'Not very accurate',
+    ),
+    const AIModelInfo(
+      id: 'anthropic/claude-opus-4.5',
+      name: 'Claude Opus 4.5',
+      price: r'~$0.01',
+      description: 'Not very accurate',
+    ),
+    const AIModelInfo(
+      id: 'x-ai/grok-4',
+      name: 'Grok 4',
+      price: '?',
+      description: 'Latest model from xAI',
+    ),
+    const AIModelInfo(
+      id: 'custom',
+      name: 'Custom OpenRouter model',
+      price: 'Varies',
+      description: 'Advanced, not recommended',
+    ),
+  ];
 
   @override
   void initState() {
@@ -112,7 +165,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       _apiKeyController.text = key;
     }
     final model = await settings.getAIModel();
-    if (_models.containsKey(model)) {
+    if (_availableModels.any((m) => m.id == model)) {
       _selectedModel = model;
     } else {
       _selectedModel = 'custom';
@@ -360,12 +413,108 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     child: DropdownButton<String>(
                       value: _selectedModel,
                       isExpanded: true,
-                      items: _models.entries.map((e) {
+                      itemHeight: null, // Allow items to be taller
+                      items: _availableModels.map((model) {
                         return DropdownMenuItem(
-                          value: e.key,
-                          child: Text(e.value),
+                          value: model.id,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      model.name,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primaryContainer,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        model.price,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onPrimaryContainer,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const Gap(4),
+                                Text(
+                                  model.description,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                                if (model.tags.isNotEmpty) ...[
+                                  const Gap(4),
+                                  Wrap(
+                                    spacing: 4,
+                                    runSpacing: 4,
+                                    children: model.tags.map((tag) {
+                                      return Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 1,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue.withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.blue.withOpacity(0.3),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          tag,
+                                          style: const TextStyle(
+                                            fontSize: 10,
+                                            color: Colors.blue,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
                         );
                       }).toList(),
+                      selectedItemBuilder: (context) {
+                        return _availableModels.map((model) {
+                          return Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              model.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.normal,
+                              ),
+                            ),
+                          );
+                        }).toList();
+                      },
                       onChanged: (value) {
                         if (value != null) {
                           setState(() => _selectedModel = value);

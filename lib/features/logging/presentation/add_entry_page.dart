@@ -65,7 +65,8 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
     if (entry.imagePath != null) {
       _image = File(entry.imagePath!);
     }
-    _selectedIcon = entry.icon ?? 'restaurant';
+    final icon = entry.icon ?? 'restaurant';
+    _selectedIcon = _availableIcons.contains(icon) ? icon : 'restaurant';
     _selectedDate = entry.timestamp;
     _selectedTime = TimeOfDay.fromDateTime(entry.timestamp);
     _showForm = true;
@@ -353,7 +354,6 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
                   decoration: const InputDecoration(
                     labelText: 'Icon',
                     border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.emoji_food_beverage),
                   ),
                   items: _availableIcons.map((iconKey) {
                     return DropdownMenuItem(
