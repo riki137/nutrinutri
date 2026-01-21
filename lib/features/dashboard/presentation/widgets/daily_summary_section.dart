@@ -45,9 +45,26 @@ class DailySummarySection extends ConsumerWidget {
     final progress = (consumed / goal).clamp(0.0, 1.0);
 
     // Macro Goals Calculation (Default split: 30% P, 40% C, 30% F)
-    final proteinGoal = (goal * 0.30) / 4;
-    final carbsGoal = (goal * 0.40) / 4;
-    final fatsGoal = (goal * 0.30) / 9;
+    final double proteinGoal;
+    if (profile['goalProtein'] != null && profile['goalProtein'] > 0) {
+      proteinGoal = (profile['goalProtein'] as int).toDouble();
+    } else {
+      proteinGoal = (goal * 0.30) / 4;
+    }
+
+    final double carbsGoal;
+    if (profile['goalCarbs'] != null && profile['goalCarbs'] > 0) {
+      carbsGoal = (profile['goalCarbs'] as int).toDouble();
+    } else {
+      carbsGoal = (goal * 0.40) / 4;
+    }
+
+    final double fatsGoal;
+    if (profile['goalFat'] != null && profile['goalFat'] > 0) {
+      fatsGoal = (profile['goalFat'] as int).toDouble();
+    } else {
+      fatsGoal = (goal * 0.30) / 9;
+    }
 
     return Card(
       elevation: 4,

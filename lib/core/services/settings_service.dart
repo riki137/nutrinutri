@@ -24,6 +24,9 @@ class SettingsService {
     required String gender, // 'male' or 'female'
     required String activityLevel, // 'sedentary', 'active', etc.
     required int goalCalories,
+    int? goalProtein,
+    int? goalCarbs,
+    int? goalFat,
   }) async {
     await _kv.put(_profileKey, {
       'age': age,
@@ -32,6 +35,9 @@ class SettingsService {
       'gender': gender,
       'activityLevel': activityLevel,
       'goalCalories': goalCalories,
+      'goalProtein': goalProtein,
+      'goalCarbs': goalCarbs,
+      'goalFat': goalFat,
       'isConfigured': true,
     });
   }

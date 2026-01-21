@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nutrinutri/core/providers.dart';
 import 'package:gap/gap.dart';
@@ -20,6 +21,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   final _weightController = TextEditingController();
   final _heightController = TextEditingController();
   final _goalController = TextEditingController();
+  final _proteinController = TextEditingController();
+  final _carbsController = TextEditingController();
+  final _fatsController = TextEditingController();
 
   String _selectedModel = 'google/gemini-3-flash-preview';
   String _gender = 'male';
@@ -115,17 +119,22 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     // Load Profile
     final profile = await settings.getUserProfile();
     if (profile != null) {
-      _ageController.text = profile['age'].toString();
-      _weightController.text = profile['weight'].toString();
-      _heightController.text = profile['height'].toString();
-      _goalController.text = profile['goalCalories'].toString();
+      _ageController.text = profile['age']?.toString() ?? '';
+      _weightController.text = profile['weight']?.toString() ?? '';
+      _heightController.text = profile['height']?.toString() ?? '';
+      _goalController.text = profile['goalCalories']?.toString() ?? '';
       setState(() {
         _gender = profile['gender'] ?? 'male';
         _activityLevel = profile['activityLevel'] ?? 'sedentary';
+        _proteinController.text = profile['goalProtein']?.toString() ?? '';
+        _carbsController.text = profile['goalCarbs']?.toString() ?? '';
+        _fatsController.text = profile['goalFat']?.toString() ?? '';
       });
     }
 
-    setState(() {});
+    setState(() {
+      _initialHash = _computeHash();
+    });
   }
 
   void _calculateRecommendedCalories() {
@@ -195,6 +204,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           gender: _gender,
           activityLevel: _activityLevel,
           goalCalories: int.parse(_goalController.text),
+          goalProtein: int.tryParse(_proteinController.text),
+          goalCarbs: int.tryParse(_carbsController.text),
+          goalFat: int.tryParse(_fatsController.text),
         );
       }
 
@@ -202,6 +214,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Settings saved')));
+
+        setState(() {
+          _initialHash = _computeHash();
+        });
+
         ref.invalidate(apiKeyProvider);
         ref.invalidate(aiServiceProvider);
       }
@@ -216,268 +233,386 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
   }
 
+  Future<bool> _onWillPop() async {
+    if (!_hasChanges()) return true;
+
+    final shouldPop = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Unsaved Changes'),
+        content: const Text(
+          'You have unsaved changes. Do you want to save them before leaving?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false), // Stay
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true), // Leave
+            child: const Text('Discard'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              await _save();
+              if (context.mounted) Navigator.of(context).pop(true);
+            },
+            child: const Text('Save & Leave'),
+          ),
+        ],
+      ),
+    );
+
+    return shouldPop ?? false;
+  }
+
+  bool _hasChanges() {
+    return _initialHash != _computeHash();
+  }
+
+  String _computeHash() {
+    return Object.hash(
+      _apiKeyController.text,
+      _selectedModel,
+      _customModelController.text,
+      _ageController.text,
+      _weightController.text,
+      _heightController.text,
+      _gender,
+      _activityLevel,
+      _goalController.text,
+      _proteinController.text,
+      _carbsController.text,
+      _fatsController.text,
+    ).toString();
+  }
+
+  late String _initialHash = '';
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
-      body: ResponsiveCenter(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            const Text(
-              'AI Configuration',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const Gap(16),
-            const Text(
-              'This app uses OpenRouter to analyze your food. You need to provide your own API Key.',
-              style: TextStyle(color: Colors.grey),
-            ),
-            const Gap(8),
-            TextField(
-              controller: _apiKeyController,
-              decoration: const InputDecoration(
-                labelText: 'OpenRouter API Key',
-                border: OutlineInputBorder(),
-                hintText: 'sk-or-...',
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final shouldPop = await _onWillPop();
+        if (shouldPop && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Settings')),
+        body: ResponsiveCenter(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              const Text(
+                'AI Configuration',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
-              obscureText: true,
-            ),
-            const Gap(16),
-            InputDecorator(
-              decoration: const InputDecoration(
-                labelText: 'AI Model',
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
-                ),
+              const Gap(16),
+              const Text(
+                'This app uses OpenRouter to analyze your food. You need to provide your own API Key.',
+                style: TextStyle(color: Colors.grey),
               ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _selectedModel,
-                  isExpanded: true,
-                  items: _models.entries.map((e) {
-                    return DropdownMenuItem(value: e.key, child: Text(e.value));
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() => _selectedModel = value);
-                    }
-                  },
-                ),
-              ),
-            ),
-            if (_selectedModel == 'custom') ...[
               const Gap(8),
               TextField(
-                controller: _customModelController,
+                controller: _apiKeyController,
                 decoration: const InputDecoration(
-                  labelText: 'Custom Model ID (OpenRouter)',
+                  labelText: 'OpenRouter API Key',
                   border: OutlineInputBorder(),
-                  hintText: 'e.g. meta-llama/llama-3-70b-instruct',
+                  hintText: 'sk-or-...',
+                ),
+                obscureText: true,
+              ),
+              const Gap(16),
+              InputDecorator(
+                decoration: const InputDecoration(
+                  labelText: 'AI Model',
+                  border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedModel,
+                    isExpanded: true,
+                    items: _models.entries.map((e) {
+                      return DropdownMenuItem(
+                        value: e.key,
+                        child: Text(e.value),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() => _selectedModel = value);
+                      }
+                    },
+                  ),
                 ),
               ),
-            ],
-
-            const Gap(32),
-            const Divider(),
-            const Gap(16),
-
-            const Text(
-              'Data Synchronization',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const Gap(8),
-            const Text(
-              'Sync your diary with Google Drive.',
-              style: TextStyle(color: Colors.grey),
-            ),
-            const Gap(16),
-            if (_currentUser == null)
-              FilledButton.icon(
-                onPressed: _handleSignIn,
-                icon: const Icon(Icons.login),
-                label: const Text('Sign in with Google'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black,
-                  side: const BorderSide(color: Colors.grey),
+              if (_selectedModel == 'custom') ...[
+                const Gap(8),
+                TextField(
+                  controller: _customModelController,
+                  decoration: const InputDecoration(
+                    labelText: 'Custom Model ID (OpenRouter)',
+                    border: OutlineInputBorder(),
+                    hintText: 'e.g. meta-llama/llama-3-70b-instruct',
+                  ),
                 ),
-              )
-            else ...[
-              ListTile(
-                leading: GoogleUserCircleAvatar(identity: _currentUser!),
-                title: Text(_currentUser!.displayName ?? ''),
-                subtitle: Text(_currentUser!.email),
-                trailing: IconButton(
-                  icon: const Icon(Icons.logout),
-                  onPressed: _handleSignOut,
-                ),
+              ],
+
+              const Gap(32),
+              const Divider(),
+              const Gap(16),
+
+              const Text(
+                'Data Synchronization',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const Gap(8),
-              FilledButton.icon(
-                onPressed: _isSyncing ? null : _handleSync,
-                icon: _isSyncing
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.sync),
-                label: Text(_isSyncing ? 'Syncing...' : 'Sync Now'),
+              const Text(
+                'Sync your diary with Google Drive.',
+                style: TextStyle(color: Colors.grey),
               ),
-            ],
-
-            const Gap(32),
-            const Divider(),
-            const Gap(16),
-
-            const Text(
-              'Personal Profile',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const Gap(16),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _ageController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Age',
-                      border: OutlineInputBorder(),
-                    ),
-                    onChanged: (_) => _calculateRecommendedCalories(),
+              const Gap(16),
+              if (_currentUser == null)
+                FilledButton.icon(
+                  onPressed: _handleSignIn,
+                  icon: const Icon(Icons.login),
+                  label: const Text('Sign in with Google'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    side: const BorderSide(color: Colors.grey),
+                  ),
+                )
+              else ...[
+                ListTile(
+                  leading: GoogleUserCircleAvatar(identity: _currentUser!),
+                  title: Text(_currentUser!.displayName ?? ''),
+                  subtitle: Text(_currentUser!.email),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.logout),
+                    onPressed: _handleSignOut,
                   ),
                 ),
-                const Gap(16),
-                Expanded(
-                  child: InputDecorator(
-                    decoration: const InputDecoration(
-                      labelText: 'Gender',
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
-                      ),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _gender,
-                        isExpanded: true,
-                        items: const [
-                          DropdownMenuItem(value: 'male', child: Text('Male')),
-                          DropdownMenuItem(
-                            value: 'female',
-                            child: Text('Female'),
+                const Gap(8),
+                FilledButton.icon(
+                  onPressed: _isSyncing ? null : _handleSync,
+                  icon: _isSyncing
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
                           ),
-                        ],
-                        onChanged: (v) {
-                          setState(() => _gender = v!);
-                          _calculateRecommendedCalories();
-                        },
+                        )
+                      : const Icon(Icons.sync),
+                  label: Text(_isSyncing ? 'Syncing...' : 'Sync Now'),
+                ),
+              ],
+
+              const Gap(32),
+              const Divider(),
+              const Gap(16),
+
+              const Text(
+                'Personal Profile',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const Gap(16),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _ageController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Age',
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (_) => _calculateRecommendedCalories(),
+                    ),
+                  ),
+                  const Gap(16),
+                  Expanded(
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Gender',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _gender,
+                          isExpanded: true,
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'male',
+                              child: Text('Male'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'female',
+                              child: Text('Female'),
+                            ),
+                          ],
+                          onChanged: (v) {
+                            setState(() => _gender = v!);
+                            _calculateRecommendedCalories();
+                          },
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            const Gap(16),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _weightController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Weight (kg)',
-                      border: OutlineInputBorder(),
-                      suffixText: 'kg',
+                ],
+              ),
+              const Gap(16),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _weightController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Weight (kg)',
+                        border: OutlineInputBorder(),
+                        suffixText: 'kg',
+                      ),
+                      onChanged: (_) => _calculateRecommendedCalories(),
                     ),
-                    onChanged: (_) => _calculateRecommendedCalories(),
+                  ),
+                  const Gap(16),
+                  Expanded(
+                    child: TextField(
+                      controller: _heightController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Height (cm)',
+                        border: OutlineInputBorder(),
+                        suffixText: 'cm',
+                      ),
+                      onChanged: (_) => _calculateRecommendedCalories(),
+                    ),
+                  ),
+                ],
+              ),
+              const Gap(16),
+              InputDecorator(
+                decoration: const InputDecoration(
+                  labelText: 'Activity Level',
+                  border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
                   ),
                 ),
-                const Gap(16),
-                Expanded(
-                  child: TextField(
-                    controller: _heightController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Height (cm)',
-                      border: OutlineInputBorder(),
-                      suffixText: 'cm',
-                    ),
-                    onChanged: (_) => _calculateRecommendedCalories(),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _activityLevel,
+                    isExpanded: true,
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'sedentary',
+                        child: Text('Sedentary (Office job)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'light',
+                        child: Text('Light (Exercise 1-3x/week)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'moderate',
+                        child: Text('Moderate (Exercise 3-5x/week)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'very_active',
+                        child: Text('Active (Exercise 6-7x/week)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'super_active',
+                        child: Text('Super Active (Physical job)'),
+                      ),
+                    ],
+                    onChanged: (v) {
+                      setState(() => _activityLevel = v!);
+                      _calculateRecommendedCalories();
+                    },
                   ),
                 ),
-              ],
-            ),
-            const Gap(16),
-            InputDecorator(
-              decoration: const InputDecoration(
-                labelText: 'Activity Level',
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
+              ),
+              const Gap(16),
+              TextField(
+                controller: _goalController,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: const InputDecoration(
+                  labelText: 'Daily Calorie Goal',
+                  border: OutlineInputBorder(),
+                  helperText: 'Auto-calculated (Maintenance - 250)',
                 ),
               ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _activityLevel,
-                  isExpanded: true,
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'sedentary',
-                      child: Text('Sedentary (Office job)'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'light',
-                      child: Text('Light (Exercise 1-3x/week)'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'moderate',
-                      child: Text('Moderate (Exercise 3-5x/week)'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'very_active',
-                      child: Text('Active (Exercise 6-7x/week)'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'super_active',
-                      child: Text('Super Active (Physical job)'),
-                    ),
-                  ],
-                  onChanged: (v) {
-                    setState(() => _activityLevel = v!);
-                    _calculateRecommendedCalories();
-                  },
-                ),
+              const Gap(16),
+              const Text(
+                'Macro Goals (Optional)',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
-            ),
-            const Gap(16),
-            TextField(
-              controller: _goalController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Daily Calorie Goal',
-                border: OutlineInputBorder(),
-                helperText: 'Auto-calculated (Maintenance - 250)',
+              const Gap(8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _proteinController,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      decoration: const InputDecoration(
+                        labelText: 'Protein (g)',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  const Gap(8),
+                  Expanded(
+                    child: TextField(
+                      controller: _carbsController,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      decoration: const InputDecoration(
+                        labelText: 'Carbs (g)',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  const Gap(8),
+                  Expanded(
+                    child: TextField(
+                      controller: _fatsController,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      decoration: const InputDecoration(
+                        labelText: 'Fats (g)',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
 
-            const Gap(24),
-            FilledButton.icon(
-              onPressed: _isLoading ? null : _save,
-              icon: const Icon(Icons.save),
-              label: const Text('Save Settings'),
-            ),
-            const Gap(40),
-          ],
+              const Gap(24),
+              FilledButton.icon(
+                onPressed: _isLoading ? null : _save,
+                icon: const Icon(Icons.save),
+                label: const Text('Save Settings'),
+              ),
+              const Gap(40),
+            ],
+          ),
         ),
       ),
     );
