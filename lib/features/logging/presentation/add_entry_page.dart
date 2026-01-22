@@ -5,10 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:nutrinutri/core/widgets/confirm_dialog.dart';
 import 'package:nutrinutri/core/widgets/responsive_center.dart';
 import 'package:nutrinutri/features/diary/data/diary_service.dart';
 import 'package:nutrinutri/features/logging/presentation/add_entry_controller.dart';
+import 'package:nutrinutri/features/logging/presentation/widgets/entry_action_buttons.dart';
 import 'package:nutrinutri/features/logging/presentation/widgets/entry_form.dart';
 import 'package:nutrinutri/features/logging/presentation/widgets/food_image_picker.dart';
 
@@ -207,72 +207,23 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
                   onPickTime: _pickTime,
                 ),
                 const Gap(24),
-                Row(
-                  children: [
-                    if (isEditing) ...[
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () async {
-                            final confirmed = await showDialog<bool>(
-                              context: context,
-                              builder: (context) => const ConfirmDialog(
-                                title: 'Delete Entry',
-                                content:
-                                    'Are you sure you want to delete this entry?',
-                              ),
-                            );
-
-                            if (confirmed == true) {
-                              try {
-                                await ref
-                                    .read(addEntryControllerProvider.notifier)
-                                    .deleteEntry(widget.existingEntry!);
-                                if (mounted) context.pop();
-                              } catch (e) {
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Failed to delete: $e'),
-                                    ),
-                                  );
-                                }
-                              }
-                            }
-                          },
-                          icon: const Icon(Icons.delete_outline),
-                          label: const Text('Delete'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Theme.of(
-                              context,
-                            ).colorScheme.error,
-                            side: BorderSide(
-                              color: Theme.of(context).colorScheme.error,
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const Gap(16),
-                    ],
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: _saveEntry,
-                        icon: const Icon(Icons.check_circle_outline),
-                        label: Text(
-                          isEditing ? 'Update Entry' : 'Save to Diary',
-                        ),
-                        style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                EntryActionButtons(
+                  isEditing: isEditing,
+                  onSave: _saveEntry,
+                  onDeleteConfirmed: () async {
+                    try {
+                      await ref
+                          .read(addEntryControllerProvider.notifier)
+                          .deleteEntry(widget.existingEntry!);
+                      if (mounted) context.pop();
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Failed to delete: $e')),
+                        );
+                      }
+                    }
+                  },
                 ),
                 const Gap(32),
               ],

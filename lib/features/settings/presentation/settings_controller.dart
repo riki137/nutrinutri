@@ -206,4 +206,42 @@ class SettingsController extends _$SettingsController {
       description: 'Advanced, not recommended',
     ),
   ];
+
+  int calculateDailyCalories({
+    required int age,
+    required double weight,
+    required double height,
+    required String gender,
+    required String activityLevel,
+  }) {
+    double bmr;
+    if (gender == 'male') {
+      bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
+    } else {
+      bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161;
+    }
+
+    double multiplier;
+    switch (activityLevel) {
+      case 'sedentary':
+        multiplier = 1.2;
+        break;
+      case 'light':
+        multiplier = 1.375;
+        break;
+      case 'moderate':
+        multiplier = 1.55;
+        break;
+      case 'very_active':
+        multiplier = 1.725;
+        break;
+      case 'super_active':
+        multiplier = 1.9;
+        break;
+      default:
+        multiplier = 1.2;
+    }
+
+    return (bmr * multiplier).round() - 250;
+  }
 }

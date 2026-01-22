@@ -86,36 +86,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final state = ref.read(settingsControllerProvider);
 
     if (age != null && weight != null && height != null) {
-      double bmr;
-      if (state.gender == 'male') {
-        bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
-      } else {
-        bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161;
-      }
-
-      double multiplier;
-      switch (state.activityLevel) {
-        case 'sedentary':
-          multiplier = 1.2;
-          break;
-        case 'light':
-          multiplier = 1.375;
-          break;
-        case 'moderate':
-          multiplier = 1.55;
-          break;
-        case 'very_active':
-          multiplier = 1.725;
-          break;
-        case 'super_active':
-          multiplier = 1.9;
-          break;
-        default:
-          multiplier = 1.2;
-      }
-
-      final tdee = (bmr * multiplier).round();
-      _goalController.text = (tdee - 250).toString();
+      final calories = ref
+          .read(settingsControllerProvider.notifier)
+          .calculateDailyCalories(
+            age: age,
+            weight: weight,
+            height: height,
+            gender: state.gender,
+            activityLevel: state.activityLevel,
+          );
+      _goalController.text = calories.toString();
     }
   }
 
