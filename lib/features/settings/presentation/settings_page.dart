@@ -229,9 +229,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 apiKeyController: _apiKeyController,
                 customModelController: _customModelController,
                 selectedModel: state.selectedModel,
+                fallbackModel: state.fallbackModel,
                 availableModels: controller.availableModels,
                 onModelChanged: (v) =>
                     v != null ? controller.updateModel(v) : null,
+                onFallbackModelChanged: controller.updateFallbackModel,
               ),
               const Gap(32),
               const Divider(),

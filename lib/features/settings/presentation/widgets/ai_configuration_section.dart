@@ -7,16 +7,20 @@ class AIConfigurationSection extends StatelessWidget {
   final TextEditingController apiKeyController;
   final TextEditingController customModelController;
   final String selectedModel;
+  final String? fallbackModel;
   final List<AIModelInfo> availableModels;
   final ValueChanged<String?> onModelChanged;
+  final ValueChanged<String?> onFallbackModelChanged;
 
   const AIConfigurationSection({
     super.key,
     required this.apiKeyController,
     required this.customModelController,
     required this.selectedModel,
+    this.fallbackModel,
     required this.availableModels,
     required this.onModelChanged,
+    required this.onFallbackModelChanged,
   });
 
   @override
@@ -153,6 +157,103 @@ class AIConfigurationSection extends StatelessWidget {
               ),
             ),
           ],
+          const Gap(16),
+          InputDecorator(
+            decoration: const InputDecoration(
+              labelText: 'Fallback Model (Optional)',
+              border: OutlineInputBorder(),
+              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              helperText: 'Used if the primary model fails',
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: fallbackModel,
+                isExpanded: true,
+                itemHeight: null,
+                hint: const Text('None'),
+                items: [
+                  const DropdownMenuItem<String>(
+                    value: null,
+                    child: Text('None'),
+                  ),
+                  ...availableModels.map((model) {
+                    return DropdownMenuItem(
+                      value: model.id,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  model.name,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primaryContainer,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    model.price,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onPrimaryContainer,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const Gap(4),
+                            Text(
+                              model.description,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+                selectedItemBuilder: (context) {
+                  return [
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text('None'),
+                    ),
+                    ...availableModels.map((model) {
+                      return Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          model.name,
+                          style: const TextStyle(fontWeight: FontWeight.normal),
+                        ),
+                      );
+                    }),
+                  ];
+                },
+                onChanged: onFallbackModelChanged,
+              ),
+            ),
+          ),
         ],
       ],
     );

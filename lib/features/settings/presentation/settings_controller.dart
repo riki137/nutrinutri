@@ -17,16 +17,20 @@ class SettingsState {
     this.isLoading = false,
     this.isSyncing = false,
     this.initialHash,
-    this.selectedModel = 'google/gemini-2.0-flash-exp:free',
+    this.selectedModel = 'google/gemini-3-flash-preview',
+    this.fallbackModel,
     this.gender = 'male',
     this.activityLevel = 'sedentary',
   });
+
+  final String? fallbackModel;
 
   SettingsState copyWith({
     bool? isLoading,
     bool? isSyncing,
     String? initialHash,
     String? selectedModel,
+    String? fallbackModel,
     String? gender,
     String? activityLevel,
   }) {
@@ -35,6 +39,7 @@ class SettingsState {
       isSyncing: isSyncing ?? this.isSyncing,
       initialHash: initialHash ?? this.initialHash,
       selectedModel: selectedModel ?? this.selectedModel,
+      fallbackModel: fallbackModel ?? this.fallbackModel,
       gender: gender ?? this.gender,
       activityLevel: activityLevel ?? this.activityLevel,
     );
@@ -70,6 +75,11 @@ class SettingsController extends _$SettingsController {
       onCustomModelLoaded(model);
     }
 
+    final fallback = await settings.getFallbackModel();
+    if (fallback != null) {
+      state = state.copyWith(fallbackModel: fallback);
+    }
+
     final profile = await settings.getUserProfile();
     if (profile != null) {
       state = state.copyWith(
@@ -82,6 +92,10 @@ class SettingsController extends _$SettingsController {
 
   void updateModel(String modelId) {
     state = state.copyWith(selectedModel: modelId);
+  }
+
+  void updateFallbackModel(String? modelId) {
+    state = state.copyWith(fallbackModel: modelId);
   }
 
   void updateGender(String gender) {
@@ -114,6 +128,8 @@ class SettingsController extends _$SettingsController {
       if (modelToSave.isNotEmpty) {
         await settings.saveAIModel(modelToSave);
       }
+
+      await settings.saveFallbackModel(state.fallbackModel);
 
       if (age.isNotEmpty &&
           weight.isNotEmpty &&

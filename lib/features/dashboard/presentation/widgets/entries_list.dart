@@ -7,6 +7,7 @@ import 'package:nutrinutri/core/providers.dart';
 import 'package:nutrinutri/core/utils/icon_utils.dart';
 import 'package:nutrinutri/core/widgets/confirm_dialog.dart';
 import 'package:nutrinutri/features/dashboard/presentation/dashboard_providers.dart';
+import 'package:nutrinutri/features/diary/application/diary_controller.dart';
 import 'package:nutrinutri/features/diary/data/diary_service.dart';
 
 class EntriesList extends ConsumerWidget {
@@ -42,6 +43,7 @@ class EntriesList extends ConsumerWidget {
                 // Determine if we should show loading or error
                 final isProcessing = entry.status == FoodEntryStatus.processing;
                 final isFailed = entry.status == FoodEntryStatus.failed;
+                final isCancelled = entry.status == FoodEntryStatus.cancelled;
 
                 return ListTile(
                   onTap: () async {
@@ -54,33 +56,63 @@ class EntriesList extends ConsumerWidget {
                     onRefresh();
                   },
                   leading: CircleAvatar(
+                    backgroundColor: isFailed || isCancelled
+                        ? Theme.of(context).colorScheme.errorContainer
+                        : null,
                     child: isProcessing
                         ? const Padding(
                             padding: EdgeInsets.all(8.0),
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : isFailed
-                        ? const Icon(Icons.error, color: Colors.orange)
+                        : (isFailed || isCancelled)
+                        ? Icon(
+                            Icons.priority_high,
+                            color: Theme.of(context).colorScheme.error,
+                          )
                         : Icon(iconData),
                   ),
                   title: Text(
                     entry.name,
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: isFailed ? Colors.red : null,
+                      color: isFailed || isCancelled
+                          ? Theme.of(context).colorScheme.error
+                          : null,
                     ),
                   ),
                   subtitle: Text(
                     isProcessing
                         ? 'Analyzing with AI...'
                         : isFailed
-                        ? 'AI Analysis Failed. Tap to retry/edit.'
+                        ? 'AI Analysis Failed. Tap to edit/retry.'
+                        : isCancelled
+                        ? 'Analysis Cancelled. Tap to edit/retry.'
                         : '${DateFormat('HH:mm').format(entry.timestamp)} • ${entry.calories} kcal',
                     style: TextStyle(color: Colors.grey[600]),
                   ),
-                  trailing: isProcessing
-                      ? null // No delete button while processing
-                      : IconButton(
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isProcessing)
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () {
+                            ref
+                                .read(diaryControllerProvider.notifier)
+                                .cancelAnalysis(entry);
+                          },
+                        ),
+                      if (isFailed || isCancelled)
+                        IconButton(
+                          icon: const Icon(Icons.refresh),
+                          onPressed: () {
+                            ref
+                                .read(diaryControllerProvider.notifier)
+                                .retryAnalysis(entry);
+                          },
+                        ),
+                      if (!isProcessing)
+                        IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
                           onPressed: () async {
                             final confirmed = await showDialog<bool>(
@@ -102,6 +134,8 @@ class EntriesList extends ConsumerWidget {
                             }
                           },
                         ),
+                    ],
+                  ),
                 );
               },
             ),

@@ -1,7 +1,7 @@
 import 'package:intl/intl.dart';
 import 'package:nutrinutri/core/services/kv_store.dart';
 
-enum FoodEntryStatus { synced, processing, failed }
+enum FoodEntryStatus { synced, processing, failed, cancelled }
 
 class FoodEntry {
   final String id;

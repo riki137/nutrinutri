@@ -8,22 +8,35 @@ class AIService {
   final String apiKey;
   final String model;
 
+  // Track active clients for cancellation
+  final Map<String, http.Client> _activeRequests = {};
+
   AIService({required this.apiKey, required this.model});
 
   /// Analyzes food from text description or base64 image
+  /// [requestId] is optional. If provided, allows cancellation of the request.
+  /// [modelOverride] is optional. If provided, uses this model instead of the default.
   Future<Map<String, dynamic>> analyzeFood({
     String? textDescription,
     String? base64Image,
+    String? requestId,
+    String? modelOverride,
   }) async {
     if (apiKey.isEmpty) {
       throw Exception('API Key is missing');
+    }
+
+    final client = http.Client();
+    if (requestId != null) {
+      _activeRequests[requestId]?.close(); // Cancel previous if exists
+      _activeRequests[requestId] = client;
     }
 
     final headers = {
       'Authorization': 'Bearer $apiKey',
       'Content-Type': 'application/json',
       'HTTP-Referer':
-          'https://nutrinutri.app', // Required by OpenRouter usually
+          'https://nutrinutri.popelis.sk', // Required by OpenRouter usually
       'X-Title': 'NutriNutri',
     };
 
@@ -70,13 +83,13 @@ If unclear, provide best guess with lower confidence.
     }
 
     final body = jsonEncode({
-      'model': model, // Use configured model
+      'model': modelOverride ?? model, // Use override or configured model
       'messages': messages,
       'response_format': {'type': 'json_object'},
     });
 
     try {
-      final response = await http.post(
+      final response = await client.post(
         Uri.parse(_baseUrl),
         headers: headers,
         body: body,
@@ -90,8 +103,25 @@ If unclear, provide best guess with lower confidence.
         throw Exception('AI Error: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
+      if (e.toString().contains('ClientException') &&
+          requestId != null &&
+          !_activeRequests.containsKey(requestId)) {
+        throw Exception('Request cancelled');
+      }
       debugPrint('AI Service Error: $e');
       rethrow;
+    } finally {
+      if (requestId != null) {
+        _activeRequests.remove(requestId);
+      }
+      client.close();
+    }
+  }
+
+  void cancelRequest(String requestId) {
+    if (_activeRequests.containsKey(requestId)) {
+      _activeRequests[requestId]?.close();
+      _activeRequests.remove(requestId);
     }
   }
 

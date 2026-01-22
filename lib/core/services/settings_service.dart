@@ -59,4 +59,13 @@ class SettingsService {
     final data = await _kv.get('ai_model');
     return data?['model'] as String? ?? 'google/gemini-3-flash-preview';
   }
+
+  Future<void> saveFallbackModel(String? model) async {
+    await _kv.put('fallback_model', {'model': model});
+  }
+
+  Future<String?> getFallbackModel() async {
+    final data = await _kv.get('fallback_model');
+    return data?['model'] as String?;
+  }
 }

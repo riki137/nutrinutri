@@ -35,21 +35,6 @@ class KVStore {
           )
         ''');
       },
-      onUpgrade: (db, oldVersion, newVersion) async {
-        if (oldVersion < 2) {
-          // Add columns
-          await db.execute(
-            'ALTER TABLE $_tableName ADD COLUMN updated_at INTEGER',
-          );
-          await db.execute(
-            'ALTER TABLE $_tableName ADD COLUMN deleted_at INTEGER',
-          );
-
-          // Initial migration: Treat existing records as updated NOW
-          final now = DateTime.now().millisecondsSinceEpoch;
-          await db.execute('UPDATE $_tableName SET updated_at = ?', [now]);
-        }
-      },
     );
   }
 
