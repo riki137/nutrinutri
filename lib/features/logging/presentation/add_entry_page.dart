@@ -1,13 +1,14 @@
 import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:nutrinutri/core/widgets/responsive_center.dart';
 import 'package:nutrinutri/features/diary/data/diary_service.dart';
 import 'package:nutrinutri/features/logging/presentation/add_entry_controller.dart';
+import 'package:nutrinutri/features/logging/presentation/managers/add_entry_form_manager.dart';
 import 'package:nutrinutri/features/logging/presentation/widgets/entry_action_buttons.dart';
 import 'package:nutrinutri/features/logging/presentation/widgets/entry_form.dart';
 import 'package:nutrinutri/features/logging/presentation/widgets/food_image_picker.dart';
@@ -21,42 +22,28 @@ class AddEntryPage extends ConsumerStatefulWidget {
 }
 
 class _AddEntryPageState extends ConsumerState<AddEntryPage> {
-  final _descriptionController = TextEditingController();
-  final _nameController = TextEditingController();
-  final _caloriesController = TextEditingController();
-  final _proteinController = TextEditingController();
-  final _carbsController = TextEditingController();
-  final _fatsController = TextEditingController();
+  late final AddEntryFormManager _formManager;
 
   @override
   void initState() {
     super.initState();
+    _formManager = AddEntryFormManager(
+      ref: ref,
+      onStateChanged: () {
+        if (mounted) setState(() {});
+      },
+    );
+
     if (widget.existingEntry != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref
-            .read(addEntryControllerProvider.notifier)
-            .initializeWithEntry(widget.existingEntry!);
-        _initializeControllers(widget.existingEntry!);
+        _formManager.initializeWithEntry(widget.existingEntry!);
       });
     }
   }
 
-  void _initializeControllers(FoodEntry entry) {
-    _nameController.text = entry.name;
-    _caloriesController.text = entry.calories.toString();
-    _proteinController.text = entry.protein.toString();
-    _carbsController.text = entry.carbs.toString();
-    _fatsController.text = entry.fats.toString();
-  }
-
   @override
   void dispose() {
-    _descriptionController.dispose();
-    _nameController.dispose();
-    _caloriesController.dispose();
-    _proteinController.dispose();
-    _carbsController.dispose();
-    _fatsController.dispose();
+    _formManager.dispose();
     super.dispose();
   }
 
@@ -66,21 +53,20 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
   }
 
   Future<void> _addOptimistic() async {
-    final state = ref.read(addEntryControllerProvider);
-    if (_descriptionController.text.isEmpty && state.image == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please provide text or an image.')),
-      );
-      return;
-    }
-
     try {
-      await ref
-          .read(addEntryControllerProvider.notifier)
-          .addOptimistic(description: _descriptionController.text);
+      await _formManager.addOptimistic();
       if (mounted) context.pop();
     } catch (e) {
       if (mounted) {
+        // If it's a validation error (empty input), just show message
+        if (e.toString().contains('Please provide text')) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(e.toString())));
+          return;
+        }
+
+        // API Key or other errors
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -102,16 +88,7 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
 
   Future<void> _saveEntry() async {
     try {
-      await ref
-          .read(addEntryControllerProvider.notifier)
-          .saveEntry(
-            existingEntry: widget.existingEntry,
-            name: _nameController.text,
-            calories: _caloriesController.text,
-            protein: _proteinController.text,
-            carbs: _carbsController.text,
-            fats: _fatsController.text,
-          );
+      await _formManager.saveEntry(widget.existingEntry);
       if (mounted) context.pop();
     } catch (e) {
       if (mounted) {
@@ -169,7 +146,7 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
                 ),
                 const Gap(16),
                 TextField(
-                  controller: _descriptionController,
+                  controller: _formManager.descriptionController,
                   decoration: const InputDecoration(
                     labelText: 'Describe the food (optional if image provided)',
                     border: OutlineInputBorder(),
@@ -190,11 +167,11 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
               if (state.showForm) ...[
                 const Gap(32),
                 EntryForm(
-                  nameController: _nameController,
-                  caloriesController: _caloriesController,
-                  proteinController: _proteinController,
-                  carbsController: _carbsController,
-                  fatsController: _fatsController,
+                  nameController: _formManager.nameController,
+                  caloriesController: _formManager.caloriesController,
+                  proteinController: _formManager.proteinController,
+                  carbsController: _formManager.carbsController,
+                  fatsController: _formManager.fatsController,
                   selectedIcon: state.selectedIcon,
                   selectedDate: state.selectedDate,
                   selectedTime: state.selectedTime,
@@ -212,9 +189,7 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
                   onSave: _saveEntry,
                   onDeleteConfirmed: () async {
                     try {
-                      await ref
-                          .read(addEntryControllerProvider.notifier)
-                          .deleteEntry(widget.existingEntry!);
+                      await _formManager.deleteEntry(widget.existingEntry!);
                       if (mounted) context.pop();
                     } catch (e) {
                       if (mounted) {

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:nutrinutri/core/providers.dart';
 import 'package:nutrinutri/core/widgets/responsive_center.dart';
+import 'package:nutrinutri/features/settings/presentation/managers/settings_form_manager.dart';
 import 'package:nutrinutri/features/settings/presentation/settings_controller.dart';
 import 'package:nutrinutri/features/settings/presentation/widgets/ai_configuration_section.dart';
 import 'package:nutrinutri/features/settings/presentation/widgets/profile_section.dart';
@@ -16,112 +17,40 @@ class SettingsPage extends ConsumerStatefulWidget {
 }
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
-  final _apiKeyController = TextEditingController();
-  final _customModelController = TextEditingController();
-  final _ageController = TextEditingController();
-  final _weightController = TextEditingController();
-  final _heightController = TextEditingController();
-  final _goalController = TextEditingController();
-  final _proteinController = TextEditingController();
-  final _carbsController = TextEditingController();
-  final _fatsController = TextEditingController();
-
-  late String _initialHash = '';
+  late final SettingsFormManager _formManager;
 
   @override
   void initState() {
     super.initState();
+    _formManager = SettingsFormManager(
+      ref: ref,
+      onStateChanged: () {
+        if (mounted) setState(() {});
+      },
+    );
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadSettings();
     });
-    _apiKeyController.addListener(() {
-      if (mounted) setState(() {});
-    });
-    _ageController.addListener(_calculateRecommendedCalories);
-    _weightController.addListener(_calculateRecommendedCalories);
-    _heightController.addListener(_calculateRecommendedCalories);
   }
 
   @override
   void dispose() {
-    _apiKeyController.dispose();
-    _customModelController.dispose();
-    _ageController.dispose();
-    _weightController.dispose();
-    _heightController.dispose();
-    _goalController.dispose();
-    _proteinController.dispose();
-    _carbsController.dispose();
-    _fatsController.dispose();
+    _formManager.dispose();
     super.dispose();
   }
 
   Future<void> _loadSettings() async {
-    await ref
-        .read(settingsControllerProvider.notifier)
-        .loadSettings(
-          onKeyLoaded: (key) => _apiKeyController.text = key,
-          onCustomModelLoaded: (model) => _customModelController.text = model,
-          onProfileLoaded: (profile) {
-            _ageController.text = profile['age']?.toString() ?? '';
-            _weightController.text = profile['weight']?.toString() ?? '';
-            _heightController.text = profile['height']?.toString() ?? '';
-            _goalController.text = profile['goalCalories']?.toString() ?? '';
-            _proteinController.text = profile['goalProtein']?.toString() ?? '';
-            _carbsController.text = profile['goalCarbs']?.toString() ?? '';
-            _fatsController.text = profile['goalFat']?.toString() ?? '';
-          },
-        );
-    if (mounted) {
-      setState(() {
-        _initialHash = _computeHash();
-      });
-    }
-  }
-
-  void _calculateRecommendedCalories() {
-    final age = int.tryParse(_ageController.text);
-    final weight = double.tryParse(_weightController.text);
-    final height = double.tryParse(_heightController.text);
-    final state = ref.read(settingsControllerProvider);
-
-    if (age != null && weight != null && height != null) {
-      final calories = ref
-          .read(settingsControllerProvider.notifier)
-          .calculateDailyCalories(
-            age: age,
-            weight: weight,
-            height: height,
-            gender: state.gender,
-            activityLevel: state.activityLevel,
-          );
-      _goalController.text = calories.toString();
-    }
+    await _formManager.loadSettings();
   }
 
   Future<void> _save() async {
     try {
-      await ref
-          .read(settingsControllerProvider.notifier)
-          .save(
-            apiKey: _apiKeyController.text,
-            customModel: _customModelController.text,
-            age: _ageController.text,
-            weight: _weightController.text,
-            height: _heightController.text,
-            goalCalories: _goalController.text,
-            protein: _proteinController.text,
-            carbs: _carbsController.text,
-            fats: _fatsController.text,
-          );
-
+      await _formManager.save();
       if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Settings saved')));
-        setState(() {
-          _initialHash = _computeHash();
-        });
       }
     } catch (e) {
       if (mounted) {
@@ -149,30 +78,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
   }
 
-  bool _hasChanges() {
-    return _initialHash != _computeHash();
-  }
-
-  String _computeHash() {
-    final state = ref.read(settingsControllerProvider);
-    return Object.hash(
-      _apiKeyController.text,
-      state.selectedModel,
-      _customModelController.text,
-      _ageController.text,
-      _weightController.text,
-      _heightController.text,
-      state.gender,
-      state.activityLevel,
-      _goalController.text,
-      _proteinController.text,
-      _carbsController.text,
-      _fatsController.text,
-    ).toString();
-  }
-
   Future<bool> _onWillPop() async {
-    if (!_hasChanges()) return true;
+    if (!_formManager.hasChanges()) return true;
 
     final shouldPop = await showDialog<bool>(
       context: context,
@@ -226,8 +133,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             padding: const EdgeInsets.all(16),
             children: [
               AIConfigurationSection(
-                apiKeyController: _apiKeyController,
-                customModelController: _customModelController,
+                apiKeyController: _formManager.apiKeyController,
+                customModelController: _formManager.customModelController,
                 selectedModel: state.selectedModel,
                 fallbackModel: state.fallbackModel,
                 availableModels: controller.availableModels,
@@ -249,25 +156,25 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               const Divider(),
               const Gap(16),
               ProfileSection(
-                ageController: _ageController,
-                weightController: _weightController,
-                heightController: _heightController,
-                goalController: _goalController,
-                proteinController: _proteinController,
-                carbsController: _carbsController,
-                fatsController: _fatsController,
+                ageController: _formManager.ageController,
+                weightController: _formManager.weightController,
+                heightController: _formManager.heightController,
+                goalController: _formManager.goalController,
+                proteinController: _formManager.proteinController,
+                carbsController: _formManager.carbsController,
+                fatsController: _formManager.fatsController,
                 gender: state.gender,
                 activityLevel: state.activityLevel,
                 onGenderChanged: (v) {
                   if (v != null) {
                     controller.updateGender(v);
-                    _calculateRecommendedCalories();
+                    _formManager.recalculateCalories();
                   }
                 },
                 onActivityLevelChanged: (v) {
                   if (v != null) {
                     controller.updateActivityLevel(v);
-                    _calculateRecommendedCalories();
+                    _formManager.recalculateCalories();
                   }
                 },
               ),
