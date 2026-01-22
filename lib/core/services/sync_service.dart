@@ -6,6 +6,7 @@ import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:nutrinutri/core/services/kv_store.dart';
 
 class SyncService {
+  static const String _isGoogleLoggedInKey = 'is_google_logged_in';
   final KVStore _kv;
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: [drive.DriveApi.driveAppdataScope],
@@ -20,6 +21,7 @@ class SyncService {
   Future<void> signIn() async {
     try {
       await _googleSignIn.signIn();
+      await _kv.put(_isGoogleLoggedInKey, {'value': true});
     } catch (e) {
       debugPrint('Sign in failed: $e');
       rethrow;
@@ -27,6 +29,11 @@ class SyncService {
   }
 
   Future<void> restoreSession() async {
+    final loggedInState = await _kv.get(_isGoogleLoggedInKey);
+    final shouldRestore = loggedInState?['value'] == true;
+
+    if (!shouldRestore) return;
+
     try {
       await _googleSignIn.signInSilently();
     } catch (e) {
@@ -36,6 +43,12 @@ class SyncService {
 
   Future<void> signOut() async {
     await _googleSignIn.signOut();
+    await _kv.delete(_isGoogleLoggedInKey);
+  }
+
+  Future<void> syncIfNeeded() async {
+    if (currentUser == null) return;
+    await sync();
   }
 
   /// Main sync function
