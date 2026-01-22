@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sign_in_as_googleapis_auth.dart';
@@ -17,6 +18,9 @@ class SyncService {
   GoogleSignInAccount? get currentUser => _googleSignIn.currentUser;
   Stream<GoogleSignInAccount?> get onCurrentUserChanged =>
       _googleSignIn.onCurrentUserChanged;
+
+  final _syncCompleteController = StreamController<void>.broadcast();
+  Stream<void> get onSyncCompleted => _syncCompleteController.stream;
 
   Future<void> signIn() async {
     try {
@@ -51,8 +55,6 @@ class SyncService {
     await sync();
   }
 
-  /// Main sync function
-  /// Returns count of items modified locally during sync
   Future<int> sync() async {
     final account = _googleSignIn.currentUser;
     if (account == null) {
@@ -60,6 +62,7 @@ class SyncService {
       return 0;
     }
 
+    int localUpdatesCount = 0;
     try {
       final client = await _googleSignIn.authenticatedClient();
       if (client == null) throw Exception('Authenticated client is null');
@@ -87,7 +90,6 @@ class SyncService {
       // 3. Merge Logic
       final allKeys = {...localSnapshot.keys, ...remoteSnapshot.keys};
       bool remoteNeedsUpdate = false;
-      int localUpdatesCount = 0;
 
       final nextRemoteSnapshot = Map<String, dynamic>.from(remoteSnapshot);
 
@@ -139,6 +141,10 @@ class SyncService {
       // 4. Upload if needed
       if (remoteNeedsUpdate) {
         await _uploadSnapshot(driveApi, fileId, nextRemoteSnapshot);
+      }
+
+      if (localUpdatesCount > 0) {
+        _syncCompleteController.add(null);
       }
 
       return localUpdatesCount;

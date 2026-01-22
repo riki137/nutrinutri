@@ -6,7 +6,24 @@ part of 'dashboard_providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$dailySummaryHash() => r'701f7ec1b3ee7a493f28e200598d3989e1a4b80c';
+String _$syncUpdateHash() => r'10a4d54f9d17cc704a6e664d05cc1510e593301c';
+
+/// See also [syncUpdate].
+@ProviderFor(syncUpdate)
+final syncUpdateProvider = AutoDisposeStreamProvider<void>.internal(
+  syncUpdate,
+  name: r'syncUpdateProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$syncUpdateHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef SyncUpdateRef = AutoDisposeStreamProviderRef<void>;
+String _$dailySummaryHash() => r'98c688de6fa15fdb44eba545d188412c167f96a2';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -148,7 +165,7 @@ class _DailySummaryProviderElement
   DateTime get date => (origin as DailySummaryProvider).date;
 }
 
-String _$dayEntriesHash() => r'8586d8892988e7b35f49d21f0019eecb3ae64bec';
+String _$dayEntriesHash() => r'760fd073ee8919e9ce8db1b80b36baca69e6b0ec';
 
 /// See also [dayEntries].
 @ProviderFor(dayEntries)
