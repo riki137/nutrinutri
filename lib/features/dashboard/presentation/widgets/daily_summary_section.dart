@@ -44,7 +44,15 @@ class DailySummarySection extends ConsumerWidget {
     final burned = summary['caloriesBurned'] ?? 0.0;
     final effectiveGoal = goal + burned;
     final remaining = effectiveGoal - consumed;
+    final isOver = remaining < 0;
+
+    // Visual progress clamps at 1.0 (full circle)
     final progress = (consumed / effectiveGoal).clamp(0.0, 1.0);
+
+    final statusColor = isOver ? Colors.redAccent : Colors.green;
+    final secondaryColor = isOver
+        ? Colors.red.withValues(alpha: 0.1)
+        : Colors.grey[200]!;
 
     // Macro Goals Calculation (Default split: 30% P, 40% C, 30% F)
     final double proteinGoal;
@@ -113,13 +121,13 @@ class DailySummarySection extends ConsumerWidget {
                       sections: [
                         PieChartSectionData(
                           value: progress,
-                          color: Colors.green,
+                          color: statusColor,
                           radius: 20,
                           showTitle: false,
                         ),
                         PieChartSectionData(
                           value: 1 - progress,
-                          color: Colors.grey[200],
+                          color: secondaryColor,
                           radius: 20,
                           showTitle: false,
                         ),
@@ -132,15 +140,21 @@ class DailySummarySection extends ConsumerWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          remaining.round().toString(),
-                          style: const TextStyle(
+                          isOver
+                              ? remaining.abs().round().toString()
+                              : remaining.round().toString(),
+                          style: TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.bold,
+                            color: isOver ? Colors.redAccent : Colors.black,
                           ),
                         ),
-                        const Text(
-                          'Left',
-                          style: TextStyle(color: Colors.grey),
+                        Text(
+                          isOver ? 'Over' : 'Left',
+                          style: TextStyle(
+                            color: isOver ? Colors.redAccent : Colors.grey,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ],
                     ),
@@ -194,8 +208,19 @@ class _MacroRing extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progress = (value / goal).clamp(0.0, 1.0);
-    final percentage = (progress * 100).round();
+    // Determine if we are over the goal
+    final isOver = value > goal;
+
+    // Visual progress for the chart (clamped to 100%)
+    final chartProgress = (value / goal).clamp(0.0, 1.0);
+
+    // Actual percentage for display (can exceed 100%)
+    final percentage = ((value / goal) * 100).round();
+
+    // Status color (dim/mix with grey if not full, full color if full)
+    // Actually, we want to keep the distinct macro colors.
+    // If over, we might want to alert, but the user asked primarily for the number fix.
+    // Let's keep the base color but maybe bold the text if over.
 
     return Column(
       children: [
@@ -208,13 +233,13 @@ class _MacroRing extends StatelessWidget {
                 PieChartData(
                   sections: [
                     PieChartSectionData(
-                      value: progress,
+                      value: chartProgress,
                       color: color,
                       radius: 8,
                       showTitle: false,
                     ),
                     PieChartSectionData(
-                      value: 1 - progress,
+                      value: 1 - chartProgress,
                       color: color.withValues(alpha: 0.2),
                       radius: 8,
                       showTitle: false,
@@ -228,9 +253,10 @@ class _MacroRing extends StatelessWidget {
               Center(
                 child: Text(
                   '$percentage%',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
+                    color: isOver ? color : Colors.black,
                   ),
                 ),
               ),
@@ -244,7 +270,11 @@ class _MacroRing extends StatelessWidget {
         ),
         Text(
           '${value.round()}/${goal.round()}g',
-          style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+          style: TextStyle(
+            fontSize: 10,
+            color: isOver ? color : Colors.grey[600],
+            fontWeight: isOver ? FontWeight.bold : FontWeight.normal,
+          ),
         ),
       ],
     );
