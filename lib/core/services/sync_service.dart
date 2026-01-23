@@ -8,13 +8,31 @@ import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:nutrinutri/core/services/kv_store.dart';
 
 class SyncService {
-
   SyncService(this._kv);
   static const String _isGoogleLoggedInKey = 'is_google_logged_in';
   final KVStore _kv;
   final GoogleSignIn _googleSignIn = GoogleSignIn(
+    clientId: _getClientId(),
     scopes: [drive.DriveApi.driveAppdataScope],
   );
+
+  static String? _getClientId() {
+    if (kIsWeb) {
+      return '650205047998-i0plaeno2mrp8e1kf6l52cth4076548p.apps.googleusercontent.com';
+    }
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return '650205047998-rh3ipe08mjo6fdcaio48ei6bta4qkg2k.apps.googleusercontent.com';
+      case TargetPlatform.iOS:
+      case TargetPlatform.macOS:
+        return '650205047998-3k536pv09s3v2lbbkbk0v1t7gvdv6njq.apps.googleusercontent.com';
+      case TargetPlatform.windows:
+      case TargetPlatform.linux:
+        return '650205047998-hmrqpdenuqil56l2p6vladdja8imr02o.apps.googleusercontent.com';
+      default:
+        return null;
+    }
+  }
 
   GoogleSignInAccount? get currentUser => _googleSignIn.currentUser;
   Stream<GoogleSignInAccount?> get onCurrentUserChanged =>

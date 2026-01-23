@@ -33,7 +33,7 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app needs photo library access to select photos of food for analysis</string>
 	<key>GIDClientID</key>
-	<string>887373478837-5rdnlv5lnv09rjroajo0ip4d1j80i01b.apps.googleusercontent.com</string>
+	<string>650205047998-hmrqpdenuqil56l2p6vladdja8imr02o.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -41,7 +41,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.887373478837-5rdnlv5lnv09rjroajo0ip4d1j80i01b</string>
+				<string>com.googleusercontent.apps.650205047998-hmrqpdenuqil56l2p6vladdja8imr02o</string>
 			</array>
 		</dict>
 	</array>
