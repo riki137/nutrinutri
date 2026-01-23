@@ -1,9 +1,4 @@
 class AIModelInfo {
-  final String id;
-  final String name;
-  final String price;
-  final String description;
-  final List<String> tags;
 
   const AIModelInfo({
     required this.id,
@@ -12,4 +7,9 @@ class AIModelInfo {
     this.description = '',
     this.tags = const [],
   });
+  final String id;
+  final String name;
+  final String price;
+  final String description;
+  final List<String> tags;
 }

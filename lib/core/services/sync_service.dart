@@ -1,19 +1,20 @@
-import 'dart:convert';
 import 'dart:async';
+import 'dart:convert';
+
+import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sign_in_as_googleapis_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sign_in_as_googleapis_auth.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:nutrinutri/core/services/kv_store.dart';
 
 class SyncService {
+
+  SyncService(this._kv);
   static const String _isGoogleLoggedInKey = 'is_google_logged_in';
   final KVStore _kv;
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: [drive.DriveApi.driveAppdataScope],
   );
-
-  SyncService(this._kv);
 
   GoogleSignInAccount? get currentUser => _googleSignIn.currentUser;
   Stream<GoogleSignInAccount?> get onCurrentUserChanged =>

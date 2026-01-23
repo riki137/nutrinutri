@@ -2,10 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nutrinutri/core/providers.dart';
 import 'package:nutrinutri/features/dashboard/presentation/dashboard_page.dart';
+import 'package:nutrinutri/features/diary/data/diary_service.dart';
+import 'package:nutrinutri/features/logging/presentation/add_entry_page.dart';
 import 'package:nutrinutri/features/onboarding/presentation/onboarding_page.dart';
 import 'package:nutrinutri/features/settings/presentation/settings_page.dart';
-import 'package:nutrinutri/features/logging/presentation/add_entry_page.dart';
-import 'package:nutrinutri/features/diary/data/diary_service.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final settingsService = ref.watch(settingsServiceProvider);

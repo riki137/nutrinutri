@@ -1,8 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nutrinutri/core/router.dart';
-import 'package:nutrinutri/core/providers.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:nutrinutri/core/providers.dart';
+import 'package:nutrinutri/core/router.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,7 +17,7 @@ Future<void> main() async {
   final syncService = container.read(syncServiceProvider);
   // We don't await this to keep startup fast.
   // The UI listeners will update when the user is restored.
-  syncService.restoreSession();
+  unawaited(syncService.restoreSession());
 
   runApp(
     UncontrolledProviderScope(

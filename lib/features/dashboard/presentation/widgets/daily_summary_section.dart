@@ -7,9 +7,9 @@ import 'package:nutrinutri/core/utils/calorie_calculator.dart';
 import 'package:nutrinutri/features/dashboard/presentation/dashboard_providers.dart';
 
 class DailySummarySection extends ConsumerWidget {
-  final DateTime today;
 
   const DailySummarySection({super.key, required this.today});
+  final DateTime today;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -192,10 +192,6 @@ class DailySummarySection extends ConsumerWidget {
 }
 
 class _MacroRing extends StatelessWidget {
-  final String label;
-  final double value;
-  final double goal;
-  final Color color;
 
   const _MacroRing({
     required this.label,
@@ -203,6 +199,10 @@ class _MacroRing extends StatelessWidget {
     required this.goal,
     required this.color,
   });
+  final String label;
+  final double value;
+  final double goal;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {

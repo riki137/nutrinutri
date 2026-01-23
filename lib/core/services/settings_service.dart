@@ -1,12 +1,12 @@
 import 'package:nutrinutri/core/services/kv_store.dart';
 
 class SettingsService {
+
+  SettingsService(this._kv);
   final KVStore _kv;
 
   static const String _profileKey = 'user_profile';
   static const String _apiKeyKey = 'api_key';
-
-  SettingsService(this._kv);
 
   Future<void> saveApiKey(String key) async {
     await _kv.put(_apiKeyKey, {'key': key});

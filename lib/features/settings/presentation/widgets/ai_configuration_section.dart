@@ -1,16 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:nutrinutri/features/settings/domain/ai_model_info.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AIConfigurationSection extends StatelessWidget {
-  final TextEditingController apiKeyController;
-  final TextEditingController customModelController;
-  final String selectedModel;
-  final String? fallbackModel;
-  final List<AIModelInfo> availableModels;
-  final ValueChanged<String?> onModelChanged;
-  final ValueChanged<String?> onFallbackModelChanged;
 
   const AIConfigurationSection({
     super.key,
@@ -22,6 +15,13 @@ class AIConfigurationSection extends StatelessWidget {
     required this.onModelChanged,
     required this.onFallbackModelChanged,
   });
+  final TextEditingController apiKeyController;
+  final TextEditingController customModelController;
+  final String selectedModel;
+  final String? fallbackModel;
+  final List<AIModelInfo> availableModels;
+  final ValueChanged<String?> onModelChanged;
+  final ValueChanged<String?> onFallbackModelChanged;
 
   @override
   Widget build(BuildContext context) {

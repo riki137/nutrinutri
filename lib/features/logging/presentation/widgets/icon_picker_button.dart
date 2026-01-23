@@ -3,9 +3,6 @@ import 'package:gap/gap.dart';
 import 'package:nutrinutri/core/utils/icon_utils.dart';
 
 class IconPickerButton extends StatelessWidget {
-  final String selectedIcon;
-  final ValueChanged<String> onIconChanged;
-  final List<String> availableIcons;
 
   const IconPickerButton({
     super.key,
@@ -13,6 +10,9 @@ class IconPickerButton extends StatelessWidget {
     required this.onIconChanged,
     required this.availableIcons,
   });
+  final String selectedIcon;
+  final ValueChanged<String> onIconChanged;
+  final List<String> availableIcons;
 
   @override
   Widget build(BuildContext context) {

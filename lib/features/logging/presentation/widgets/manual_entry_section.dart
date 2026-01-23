@@ -4,23 +4,6 @@ import 'package:nutrinutri/features/logging/presentation/widgets/entry_action_bu
 import 'package:nutrinutri/features/logging/presentation/widgets/entry_form.dart';
 
 class ManualEntrySection extends StatelessWidget {
-  final bool isEditing;
-  final bool isExercise;
-  final TextEditingController nameController;
-  final TextEditingController caloriesController;
-  final TextEditingController proteinController;
-  final TextEditingController carbsController;
-  final TextEditingController fatsController;
-  final TextEditingController? durationController;
-  final String selectedIcon;
-  final DateTime selectedDate;
-  final TimeOfDay selectedTime;
-  final VoidCallback onBackToWizard;
-  final ValueChanged<String?> onIconChanged;
-  final VoidCallback onPickDate;
-  final VoidCallback onPickTime;
-  final Future<void> Function() onSave;
-  final Future<void> Function() onDeleteConfirmed;
 
   const ManualEntrySection({
     super.key,
@@ -42,6 +25,23 @@ class ManualEntrySection extends StatelessWidget {
     required this.onSave,
     required this.onDeleteConfirmed,
   });
+  final bool isEditing;
+  final bool isExercise;
+  final TextEditingController nameController;
+  final TextEditingController caloriesController;
+  final TextEditingController proteinController;
+  final TextEditingController carbsController;
+  final TextEditingController fatsController;
+  final TextEditingController? durationController;
+  final String selectedIcon;
+  final DateTime selectedDate;
+  final TimeOfDay selectedTime;
+  final VoidCallback onBackToWizard;
+  final ValueChanged<String?> onIconChanged;
+  final VoidCallback onPickDate;
+  final VoidCallback onPickTime;
+  final Future<void> Function() onSave;
+  final Future<void> Function() onDeleteConfirmed;
 
   @override
   Widget build(BuildContext context) {

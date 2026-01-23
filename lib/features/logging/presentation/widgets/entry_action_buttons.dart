@@ -3,10 +3,6 @@ import 'package:gap/gap.dart';
 import 'package:nutrinutri/core/widgets/confirm_dialog.dart';
 
 class EntryActionButtons extends StatelessWidget {
-  final bool isEditing;
-  final VoidCallback onSave;
-  final Future<void> Function()? onDeleteConfirmed;
-  final bool isLoading;
 
   const EntryActionButtons({
     super.key,
@@ -15,6 +11,10 @@ class EntryActionButtons extends StatelessWidget {
     this.onDeleteConfirmed,
     this.isLoading = false,
   });
+  final bool isEditing;
+  final VoidCallback onSave;
+  final Future<void> Function()? onDeleteConfirmed;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {

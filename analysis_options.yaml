@@ -1,1 +1,14 @@
 include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    - avoid_print
+    - use_build_context_synchronously
+    - always_declare_return_types
+    - prefer_final_locals
+    - require_trailing_commas
+    - directives_ordering
+    - unawaited_futures
+    - curly_braces_in_flow_control_structures
+    - sort_constructors_first
+    - sort_pub_dependencies

@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class DateSwitcher extends StatelessWidget {
-  final DateTime selectedDate;
-  final ValueChanged<int> onDateChange;
 
   const DateSwitcher({
     super.key,
     required this.selectedDate,
     required this.onDateChange,
   });
+  final DateTime selectedDate;
+  final ValueChanged<int> onDateChange;
 
   bool get _isToday {
     final now = DateTime.now();

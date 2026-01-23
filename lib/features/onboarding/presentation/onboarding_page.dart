@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nutrinutri/core/providers.dart';
 import 'package:nutrinutri/core/utils/calorie_calculator.dart';
-import 'package:gap/gap.dart';
 
 class OnboardingPage extends ConsumerStatefulWidget {
   const OnboardingPage({super.key});
@@ -79,144 +79,152 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       appBar: AppBar(title: const Text('Setup Profile')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                'Tell us about yourself so we can calculate your personalized plan.',
-                style: TextStyle(fontSize: 16),
-              ),
-              const Gap(24),
-              Row(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _ageController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Age',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (v) => v!.isEmpty ? 'Required' : null,
-                      onChanged: (_) => _calculateRecommendedCalories(),
-                    ),
+                  const Text(
+                    'Tell us about yourself so we can calculate your personalized plan.',
+                    style: TextStyle(fontSize: 16),
                   ),
-                  const Gap(16),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _gender,
-                      decoration: const InputDecoration(
-                        labelText: 'Gender',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: 'male', child: Text('Male')),
-                        DropdownMenuItem(
-                          value: 'female',
-                          child: Text('Female'),
+                  const Gap(24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _ageController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Age',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (v) => v!.isEmpty ? 'Required' : null,
+                          onChanged: (_) => _calculateRecommendedCalories(),
                         ),
-                      ],
-                      onChanged: (v) {
-                        setState(() => _gender = v!);
-                        _calculateRecommendedCalories();
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const Gap(16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _weightController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Weight (kg)',
-                        border: OutlineInputBorder(),
-                        suffixText: 'kg',
                       ),
-                      validator: (v) => v!.isEmpty ? 'Required' : null,
-                      onChanged: (_) => _calculateRecommendedCalories(),
-                    ),
+                      const Gap(16),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          initialValue: _gender,
+                          decoration: const InputDecoration(
+                            labelText: 'Gender',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'male',
+                              child: Text('Male'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'female',
+                              child: Text('Female'),
+                            ),
+                          ],
+                          onChanged: (v) {
+                            setState(() => _gender = v!);
+                            _calculateRecommendedCalories();
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                   const Gap(16),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _heightController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Height (cm)',
-                        border: OutlineInputBorder(),
-                        suffixText: 'cm',
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _weightController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Weight (kg)',
+                            border: OutlineInputBorder(),
+                            suffixText: 'kg',
+                          ),
+                          validator: (v) => v!.isEmpty ? 'Required' : null,
+                          onChanged: (_) => _calculateRecommendedCalories(),
+                        ),
                       ),
-                      validator: (v) => v!.isEmpty ? 'Required' : null,
-                      onChanged: (_) => _calculateRecommendedCalories(),
+                      const Gap(16),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _heightController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Height (cm)',
+                            border: OutlineInputBorder(),
+                            suffixText: 'cm',
+                          ),
+                          validator: (v) => v!.isEmpty ? 'Required' : null,
+                          onChanged: (_) => _calculateRecommendedCalories(),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Gap(16),
+                  DropdownButtonFormField<String>(
+                    initialValue: _activityLevel,
+                    decoration: const InputDecoration(
+                      labelText: 'Activity Level',
+                      border: OutlineInputBorder(),
                     ),
-                  ),
-                ],
-              ),
-              const Gap(16),
-              DropdownButtonFormField<String>(
-                initialValue: _activityLevel,
-                decoration: const InputDecoration(
-                  labelText: 'Activity Level',
-                  border: OutlineInputBorder(),
-                ),
-                items: const [
-                  DropdownMenuItem(
-                    value: 'sedentary',
-                    child: Text('Sedentary (Office job)'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'light',
-                    child: Text('Light (Exercise 1-3x/week)'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'moderate',
-                    child: Text('Moderate (Exercise 3-5x/week)'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'very_active',
-                    child: Text('Active (Exercise 6-7x/week)'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'super_active',
-                    child: Text('Super Active (Physical job)'),
-                  ),
-                ],
-                onChanged: (v) {
-                  setState(() => _activityLevel = v!);
-                  _calculateRecommendedCalories();
-                },
-              ),
-              const Gap(24),
-              const Divider(),
-              const Gap(24),
-              TextFormField(
-                controller: _goalController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Daily Calorie Goal',
-                  border: OutlineInputBorder(),
-                  helperText:
-                      'Calculated based on your stats (Maintenance - 250)',
-                ),
-                validator: (v) => v!.isEmpty ? 'Required' : null,
-              ),
-              const Gap(32),
-              FilledButton(
-                onPressed: _isLoading ? null : _submit,
-                child: _isLoading
-                    ? const CircularProgressIndicator()
-                    : const Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: Text('Start Tracking'),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'sedentary',
+                        child: Text('Sedentary (Office job)'),
                       ),
+                      DropdownMenuItem(
+                        value: 'light',
+                        child: Text('Light (Exercise 1-3x/week)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'moderate',
+                        child: Text('Moderate (Exercise 3-5x/week)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'very_active',
+                        child: Text('Active (Exercise 6-7x/week)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'super_active',
+                        child: Text('Super Active (Physical job)'),
+                      ),
+                    ],
+                    onChanged: (v) {
+                      setState(() => _activityLevel = v!);
+                      _calculateRecommendedCalories();
+                    },
+                  ),
+                  const Gap(24),
+                  const Divider(),
+                  const Gap(24),
+                  TextFormField(
+                    controller: _goalController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Daily Calorie Goal',
+                      border: OutlineInputBorder(),
+                      helperText:
+                          'Calculated based on your stats (Maintenance - 250)',
+                    ),
+                    validator: (v) => v!.isEmpty ? 'Required' : null,
+                  ),
+                  const Gap(32),
+                  FilledButton(
+                    onPressed: _isLoading ? null : _submit,
+                    child: _isLoading
+                        ? const CircularProgressIndicator()
+                        : const Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: Text('Start Tracking'),
+                          ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

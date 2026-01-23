@@ -12,13 +12,13 @@ import 'package:nutrinutri/features/logging/presentation/widgets/ai_entry_wizard
 import 'package:nutrinutri/features/logging/presentation/widgets/manual_entry_section.dart';
 
 class AddEntryPage extends ConsumerStatefulWidget {
-  final DiaryEntry? existingEntry;
-  final EntryType initialType;
   const AddEntryPage({
     super.key,
     this.existingEntry,
     this.initialType = EntryType.food,
   });
+  final DiaryEntry? existingEntry;
+  final EntryType initialType;
 
   @override
   ConsumerState<AddEntryPage> createState() => _AddEntryPageState();

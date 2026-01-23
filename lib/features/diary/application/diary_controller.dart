@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:nutrinutri/core/providers.dart';
 import 'package:nutrinutri/core/utils/icon_utils.dart';
 import 'package:nutrinutri/features/dashboard/presentation/dashboard_providers.dart';
@@ -58,7 +59,7 @@ class DiaryController extends _$DiaryController {
     ref.invalidate(dailySummaryProvider(normalizedDate));
 
     // 3. Start background processing (fire and forget from UI perspective)
-    _analyzeAndFill(entry);
+    unawaited(_analyzeAndFill(entry));
   }
 
   Future<void> cancelAnalysis(DiaryEntry entry) async {
@@ -120,7 +121,7 @@ class DiaryController extends _$DiaryController {
     ref.invalidate(dailySummaryProvider(normalizedDate));
 
     // Start analysis
-    _analyzeAndFill(processingEntry);
+    unawaited(_analyzeAndFill(processingEntry));
   }
 
   Future<void> _analyzeAndFill(DiaryEntry entry) async {

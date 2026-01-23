@@ -3,18 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:gap/gap.dart';
 
 class ProfileSection extends StatelessWidget {
-  final TextEditingController ageController;
-  final TextEditingController weightController;
-  final TextEditingController heightController;
-  final TextEditingController goalController;
-  final TextEditingController proteinController;
-  final TextEditingController carbsController;
-  final TextEditingController fatsController;
-  final String gender;
-  final String activityLevel;
-  final ValueChanged<String?> onGenderChanged;
-  final ValueChanged<String?> onActivityLevelChanged;
-
   const ProfileSection({
     super.key,
     required this.ageController,
@@ -29,6 +17,17 @@ class ProfileSection extends StatelessWidget {
     required this.onGenderChanged,
     required this.onActivityLevelChanged,
   });
+  final TextEditingController ageController;
+  final TextEditingController weightController;
+  final TextEditingController heightController;
+  final TextEditingController goalController;
+  final TextEditingController proteinController;
+  final TextEditingController carbsController;
+  final TextEditingController fatsController;
+  final String gender;
+  final String activityLevel;
+  final ValueChanged<String?> onGenderChanged;
+  final ValueChanged<String?> onActivityLevelChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +55,7 @@ class ProfileSection extends StatelessWidget {
             Expanded(
               child: InputDecorator(
                 decoration: const InputDecoration(
-                  labelText: 'Gender',
+                  labelText: 'Biological Sex',
                   border: OutlineInputBorder(),
                   contentPadding: EdgeInsets.symmetric(
                     horizontal: 12,

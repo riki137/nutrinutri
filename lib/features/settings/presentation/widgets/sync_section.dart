@@ -3,11 +3,6 @@ import 'package:gap/gap.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class SyncSection extends StatelessWidget {
-  final GoogleSignInAccount? currentUser;
-  final bool isSyncing;
-  final VoidCallback onSignIn;
-  final VoidCallback onSignOut;
-  final VoidCallback onSync;
 
   const SyncSection({
     super.key,
@@ -17,6 +12,11 @@ class SyncSection extends StatelessWidget {
     required this.onSignOut,
     required this.onSync,
   });
+  final GoogleSignInAccount? currentUser;
+  final bool isSyncing;
+  final VoidCallback onSignIn;
+  final VoidCallback onSignOut;
+  final VoidCallback onSync;
 
   @override
   Widget build(BuildContext context) {

@@ -4,6 +4,11 @@ import 'package:nutrinutri/features/diary/data/diary_service.dart';
 import 'package:nutrinutri/features/logging/presentation/add_entry_controller.dart';
 
 class AddEntryFormManager {
+
+  AddEntryFormManager({required this.ref, required this.onStateChanged}) {
+    nameController.addListener(_updateCalories);
+    durationController.addListener(_updateCalories);
+  }
   final WidgetRef ref;
   final VoidCallback onStateChanged;
 
@@ -14,11 +19,6 @@ class AddEntryFormManager {
   final carbsController = TextEditingController();
   final fatsController = TextEditingController();
   final durationController = TextEditingController();
-
-  AddEntryFormManager({required this.ref, required this.onStateChanged}) {
-    nameController.addListener(_updateCalories);
-    durationController.addListener(_updateCalories);
-  }
 
   void _updateCalories() async {
     final state = ref.read(addEntryControllerProvider);

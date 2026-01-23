@@ -1,24 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:gap/gap.dart';
+import 'package:intl/intl.dart';
 import 'package:nutrinutri/core/utils/icon_utils.dart';
 import 'package:nutrinutri/core/utils/met_values.dart';
 import 'package:nutrinutri/features/logging/presentation/widgets/icon_picker_button.dart';
 
 class EntryForm extends StatelessWidget {
-  final TextEditingController nameController;
-  final TextEditingController caloriesController;
-  final TextEditingController proteinController;
-  final TextEditingController carbsController;
-  final TextEditingController fatsController;
-  final TextEditingController? durationController;
-  final String selectedIcon;
-  final DateTime selectedDate;
-  final TimeOfDay selectedTime;
-  final void Function(String?) onIconChanged;
-  final VoidCallback onPickDate;
-  final VoidCallback onPickTime;
-  final bool isExercise;
 
   const EntryForm({
     super.key,
@@ -36,6 +23,19 @@ class EntryForm extends StatelessWidget {
     required this.onPickTime,
     this.isExercise = false,
   });
+  final TextEditingController nameController;
+  final TextEditingController caloriesController;
+  final TextEditingController proteinController;
+  final TextEditingController carbsController;
+  final TextEditingController fatsController;
+  final TextEditingController? durationController;
+  final String selectedIcon;
+  final DateTime selectedDate;
+  final TimeOfDay selectedTime;
+  final void Function(String?) onIconChanged;
+  final VoidCallback onPickDate;
+  final VoidCallback onPickTime;
+  final bool isExercise;
 
   @override
   Widget build(BuildContext context) {

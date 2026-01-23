@@ -73,13 +73,13 @@ class CalorieCalculator {
 }
 
 class MacroGoals {
-  final double protein;
-  final double carbs;
-  final double fats;
 
   const MacroGoals({
     required this.protein,
     required this.carbs,
     required this.fats,
   });
+  final double protein;
+  final double carbs;
+  final double fats;
 }

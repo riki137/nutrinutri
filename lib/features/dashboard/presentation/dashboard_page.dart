@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:gap/gap.dart';
+import 'package:go_router/go_router.dart';
+import 'package:nutrinutri/features/dashboard/presentation/dashboard_providers.dart';
 import 'package:nutrinutri/features/dashboard/presentation/widgets/daily_summary_section.dart';
 import 'package:nutrinutri/features/dashboard/presentation/widgets/date_switcher.dart';
 import 'package:nutrinutri/features/dashboard/presentation/widgets/entries_list.dart';
-import 'package:nutrinutri/features/dashboard/presentation/dashboard_providers.dart';
 
 class DashboardPage extends ConsumerStatefulWidget {
   const DashboardPage({super.key});

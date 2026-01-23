@@ -6,20 +6,6 @@ enum EntryType { food, exercise }
 enum FoodEntryStatus { synced, processing, failed, cancelled }
 
 class DiaryEntry {
-  final String id;
-  final String name;
-  final EntryType type;
-  final int
-  calories; // Consumed (positive) or Burned (positive value, treated as credit)
-  final double protein;
-  final double carbs;
-  final double fats;
-  final DateTime timestamp;
-  final String? imagePath; // Base64 or local path
-  final String? icon;
-  final FoodEntryStatus status;
-  final String? description;
-  final int? durationMinutes;
 
   DiaryEntry({
     required this.id,
@@ -36,22 +22,6 @@ class DiaryEntry {
     this.description,
     this.durationMinutes,
   });
-
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'type': type.index,
-    'calories': calories,
-    'protein': protein,
-    'carbs': carbs,
-    'fats': fats,
-    'timestamp': timestamp.toIso8601String(),
-    'imagePath': imagePath,
-    'icon': icon,
-    'status': status.index,
-    'description': description,
-    'durationMinutes': durationMinutes,
-  };
 
   factory DiaryEntry.fromJson(Map<String, dynamic> json) => DiaryEntry(
     id: json['id'],
@@ -72,13 +42,43 @@ class DiaryEntry {
     description: json['description'],
     durationMinutes: json['durationMinutes'],
   );
+  final String id;
+  final String name;
+  final EntryType type;
+  final int
+  calories; // Consumed (positive) or Burned (positive value, treated as credit)
+  final double protein;
+  final double carbs;
+  final double fats;
+  final DateTime timestamp;
+  final String? imagePath; // Base64 or local path
+  final String? icon;
+  final FoodEntryStatus status;
+  final String? description;
+  final int? durationMinutes;
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'type': type.index,
+    'calories': calories,
+    'protein': protein,
+    'carbs': carbs,
+    'fats': fats,
+    'timestamp': timestamp.toIso8601String(),
+    'imagePath': imagePath,
+    'icon': icon,
+    'status': status.index,
+    'description': description,
+    'durationMinutes': durationMinutes,
+  };
 }
 
 class DiaryService {
-  final KVStore _kv;
-  static const String _collectionPrefix = 'diary_';
 
   DiaryService(this._kv);
+  final KVStore _kv;
+  static const String _collectionPrefix = 'diary_';
 
   String _getDateKey(DateTime date) {
     return '$_collectionPrefix${DateFormat("yyyy-MM-dd").format(date)}';

@@ -4,9 +4,6 @@ import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
 
 class FoodImagePicker extends StatelessWidget {
-  final File? image;
-  final bool canUseCamera;
-  final void Function(ImageSource source) onPickImage;
 
   const FoodImagePicker({
     super.key,
@@ -14,6 +11,9 @@ class FoodImagePicker extends StatelessWidget {
     required this.canUseCamera,
     required this.onPickImage,
   });
+  final File? image;
+  final bool canUseCamera;
+  final void Function(ImageSource source) onPickImage;
 
   @override
   Widget build(BuildContext context) {

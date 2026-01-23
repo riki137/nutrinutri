@@ -1,10 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:nutrinutri/core/services/kv_store.dart';
 import 'package:nutrinutri/core/services/ai_service.dart';
+import 'package:nutrinutri/core/services/kv_store.dart';
 import 'package:nutrinutri/core/services/settings_service.dart';
 import 'package:nutrinutri/core/services/sync_service.dart';
 import 'package:nutrinutri/features/diary/data/diary_service.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'providers.g.dart';
 

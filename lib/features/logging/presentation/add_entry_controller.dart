@@ -12,12 +12,6 @@ import 'package:uuid/uuid.dart';
 part 'add_entry_controller.g.dart';
 
 class AddEntryState {
-  final File? image;
-  final bool showForm;
-  final DateTime selectedDate;
-  final TimeOfDay selectedTime;
-  final String selectedIcon;
-  final EntryType type;
 
   AddEntryState({
     this.image,
@@ -27,6 +21,12 @@ class AddEntryState {
     this.selectedIcon = 'restaurant',
     this.type = EntryType.food,
   });
+  final File? image;
+  final bool showForm;
+  final DateTime selectedDate;
+  final TimeOfDay selectedTime;
+  final String selectedIcon;
+  final EntryType type;
 
   AddEntryState copyWith({
     File? image,

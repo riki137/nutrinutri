@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 
 class ResponsiveCenter extends StatelessWidget {
-  final Widget child;
-  final double maxWidth;
-  final EdgeInsetsGeometry padding;
 
   const ResponsiveCenter({
     super.key,
@@ -11,6 +8,9 @@ class ResponsiveCenter extends StatelessWidget {
     this.maxWidth = 800,
     this.padding = EdgeInsets.zero,
   });
+  final Widget child;
+  final double maxWidth;
+  final EdgeInsetsGeometry padding;
 
   @override
   Widget build(BuildContext context) {

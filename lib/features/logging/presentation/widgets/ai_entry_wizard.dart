@@ -6,13 +6,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:nutrinutri/features/logging/presentation/widgets/food_image_picker.dart';
 
 class AIEntryWizard extends StatelessWidget {
-  final bool isExercise;
-  final TextEditingController descriptionController;
-  final File? image;
-  final bool canUseCamera;
-  final Function(ImageSource) onPickImage;
-  final VoidCallback onAddOptimistic;
-  final VoidCallback onEnterManually;
 
   const AIEntryWizard({
     super.key,
@@ -24,6 +17,13 @@ class AIEntryWizard extends StatelessWidget {
     required this.onAddOptimistic,
     required this.onEnterManually,
   });
+  final bool isExercise;
+  final TextEditingController descriptionController;
+  final File? image;
+  final bool canUseCamera;
+  final Function(ImageSource) onPickImage;
+  final VoidCallback onAddOptimistic;
+  final VoidCallback onEnterManually;
 
   @override
   Widget build(BuildContext context) {

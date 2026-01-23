@@ -11,10 +11,10 @@ import 'package:nutrinutri/features/diary/application/diary_controller.dart';
 import 'package:nutrinutri/features/diary/data/diary_service.dart';
 
 class EntriesList extends ConsumerWidget {
-  final DateTime today;
-  final VoidCallback onRefresh;
 
   const EntriesList({super.key, required this.today, required this.onRefresh});
+  final DateTime today;
+  final VoidCallback onRefresh;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

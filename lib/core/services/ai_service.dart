@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class AIService {
+
+  AIService({required this.apiKey, required this.model});
   static const String _baseUrl =
       'https://openrouter.ai/api/v1/chat/completions';
   final String apiKey;
@@ -10,8 +12,6 @@ class AIService {
 
   // Track active clients for cancellation
   final Map<String, http.Client> _activeRequests = {};
-
-  AIService({required this.apiKey, required this.model});
 
   /// Analyzes food from text description or base64 image
   /// [requestId] is optional. If provided, allows cancellation of the request.

@@ -1,17 +1,11 @@
 import 'package:nutrinutri/core/providers.dart';
-import 'package:nutrinutri/features/settings/domain/ai_model_info.dart';
 import 'package:nutrinutri/core/utils/calorie_calculator.dart';
+import 'package:nutrinutri/features/settings/domain/ai_model_info.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'settings_controller.g.dart';
 
 class SettingsState {
-  final bool isLoading;
-  final bool isSyncing;
-  final String? initialHash;
-  final String selectedModel;
-  final String gender;
-  final String activityLevel;
 
   SettingsState({
     this.isLoading = false,
@@ -22,6 +16,12 @@ class SettingsState {
     this.gender = 'male',
     this.activityLevel = 'sedentary',
   });
+  final bool isLoading;
+  final bool isSyncing;
+  final String? initialHash;
+  final String selectedModel;
+  final String gender;
+  final String activityLevel;
 
   final String? fallbackModel;
 

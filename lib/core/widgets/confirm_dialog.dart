@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
 
 class ConfirmDialog extends StatelessWidget {
-  final String title;
-  final String content;
-  final String confirmText;
-  final String cancelText;
-  final bool isDestructive;
 
   const ConfirmDialog({
     super.key,
@@ -15,6 +10,11 @@ class ConfirmDialog extends StatelessWidget {
     this.cancelText = 'Cancel',
     this.isDestructive = true,
   });
+  final String title;
+  final String content;
+  final String confirmText;
+  final String cancelText;
+  final bool isDestructive;
 
   @override
   Widget build(BuildContext context) {

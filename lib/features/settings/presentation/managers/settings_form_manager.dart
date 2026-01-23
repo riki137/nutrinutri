@@ -3,6 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nutrinutri/features/settings/presentation/settings_controller.dart';
 
 class SettingsFormManager {
+
+  SettingsFormManager({required this.ref, required this.onStateChanged}) {
+    _apiKeyControllerListener();
+    _setupCalorieListeners();
+  }
   final WidgetRef ref;
   final VoidCallback onStateChanged;
 
@@ -17,11 +22,6 @@ class SettingsFormManager {
   final fatsController = TextEditingController();
 
   String _initialHash = '';
-
-  SettingsFormManager({required this.ref, required this.onStateChanged}) {
-    _apiKeyControllerListener();
-    _setupCalorieListeners();
-  }
 
   void _apiKeyControllerListener() {
     apiKeyController.addListener(onStateChanged);
