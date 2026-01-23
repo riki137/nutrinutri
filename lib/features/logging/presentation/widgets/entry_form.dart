@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:gap/gap.dart';
 import 'package:nutrinutri/core/utils/icon_utils.dart';
 import 'package:nutrinutri/core/utils/met_values.dart';
+import 'package:nutrinutri/features/logging/presentation/widgets/icon_picker_button.dart';
 
 class EntryForm extends StatelessWidget {
   final TextEditingController nameController;
@@ -46,11 +47,28 @@ class EntryForm extends StatelessWidget {
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const Gap(16),
-        TextField(
-          controller: nameController,
-          decoration: InputDecoration(
-            labelText: isExercise ? 'Exercise Name' : 'Food Name',
-            border: const OutlineInputBorder(),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              IconPickerButton(
+                selectedIcon: selectedIcon,
+                onIconChanged: (val) => onIconChanged(val),
+                availableIcons: isExercise
+                    ? IconUtils.availableExerciseIcons
+                    : IconUtils.availableFoodIcons,
+              ),
+              const Gap(16),
+              Expanded(
+                child: TextField(
+                  controller: nameController,
+                  decoration: InputDecoration(
+                    labelText: isExercise ? 'Exercise Name' : 'Food Name',
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         if (isExercise) ...[
@@ -77,44 +95,7 @@ class EntryForm extends StatelessWidget {
           ),
         ],
         const Gap(16),
-        DropdownButtonFormField<String>(
-          value: selectedIcon,
-          decoration: const InputDecoration(
-            labelText: 'Icon',
-            border: OutlineInputBorder(),
-          ),
-          items:
-              {
-                ...(isExercise
-                    ? IconUtils.availableExerciseIcons
-                    : IconUtils.availableFoodIcons),
-                if (IconUtils.iconMap.containsKey(selectedIcon)) selectedIcon,
-              }.map((iconKey) {
-                return DropdownMenuItem(
-                  value: iconKey,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(IconUtils.getIcon(iconKey)),
-                      const Gap(8),
-                      Text(
-                        iconKey
-                            .replaceAll('_', ' ')
-                            .split(' ')
-                            .map(
-                              (word) => word.isNotEmpty
-                                  ? '${word[0].toUpperCase()}${word.substring(1)}'
-                                  : '',
-                            )
-                            .join(' '),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-          onChanged: onIconChanged,
-        ),
-        const Gap(16),
+
         Row(
           children: [
             Expanded(
