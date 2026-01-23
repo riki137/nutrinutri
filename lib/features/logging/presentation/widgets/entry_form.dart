@@ -63,6 +63,27 @@ class EntryForm extends StatelessWidget {
                 label: Text(name),
                 onPressed: () {
                   nameController.text = name;
+                  // Map exercise names to icons
+                  const iconMap = {
+                    'Walking (Moderate)': 'directions_walk',
+                    'Running': 'directions_run',
+                    'Cycling': 'directions_bike',
+                    'Swimming': 'pool',
+                    'Gym / Weights': 'fitness_center',
+                    'Yoga': 'self_improvement',
+                    'Hiking': 'hiking',
+                    'Basketball': 'sports_basketball',
+                    'Soccer': 'sports_soccer',
+                    'Tennis': 'sports_tennis',
+                  };
+
+                  final icon = iconMap[name];
+                  if (icon != null) {
+                    onIconChanged(icon);
+                  } else {
+                    // Default fallback
+                    onIconChanged('sports');
+                  }
                 },
               );
             }).toList(),
