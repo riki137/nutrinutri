@@ -37,6 +37,19 @@ class IconUtils {
     'sports': Icons.sports,
   };
 
+  static const Map<String, String> exerciseNameMap = {
+    'Walking (Moderate)': 'directions_walk',
+    'Running': 'directions_run',
+    'Cycling': 'directions_bike',
+    'Swimming': 'pool',
+    'Gym / Weights': 'fitness_center',
+    'Yoga': 'self_improvement',
+    'Hiking': 'hiking',
+    'Basketball': 'sports_basketball',
+    'Soccer': 'sports_soccer',
+    'Tennis': 'sports_tennis',
+  };
+
   static const Map<String, IconData> otherIcons = {
     'warning': Icons.warning_amber_rounded,
   };

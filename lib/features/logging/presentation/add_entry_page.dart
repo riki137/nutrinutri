@@ -3,15 +3,13 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nutrinutri/core/widgets/responsive_center.dart';
 import 'package:nutrinutri/features/diary/data/diary_service.dart';
 import 'package:nutrinutri/features/logging/presentation/add_entry_controller.dart';
 import 'package:nutrinutri/features/logging/presentation/managers/add_entry_form_manager.dart';
-import 'package:nutrinutri/features/logging/presentation/widgets/entry_action_buttons.dart';
-import 'package:nutrinutri/features/logging/presentation/widgets/entry_form.dart';
-import 'package:nutrinutri/features/logging/presentation/widgets/food_image_picker.dart';
+import 'package:nutrinutri/features/logging/presentation/widgets/ai_entry_wizard.dart';
+import 'package:nutrinutri/features/logging/presentation/widgets/manual_entry_section.dart';
 
 class AddEntryPage extends ConsumerStatefulWidget {
   final DiaryEntry? existingEntry;
@@ -155,72 +153,24 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (!isEditing && !state.showForm) ...[
-                if (!isExercise)
-                  FoodImagePicker(
-                    image: state.image,
-                    canUseCamera: _canUseCamera,
-                    onPickImage: (source) => ref
-                        .read(addEntryControllerProvider.notifier)
-                        .pickImage(source),
-                  ),
-                if (!isExercise) const Gap(16),
-                TextField(
-                  controller: _formManager.descriptionController,
-                  decoration: InputDecoration(
-                    labelText: isExercise
-                        ? 'Describe the exercise'
-                        : 'Describe the food (optional if image provided)',
-                    border: const OutlineInputBorder(),
-                    hintText: isExercise
-                        ? 'e.g. 30 mins running'
-                        : 'e.g. 2 eggs and toast',
-                  ),
-                  maxLines: 3,
-                ),
-                const Gap(24),
-                FilledButton.icon(
-                  onPressed: _addOptimistic,
-                  icon: const Icon(Icons.auto_awesome),
-                  label: const Text('Add Entry with AI'),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.all(16),
-                  ),
-                ),
-                const Gap(16),
-                Row(
-                  children: [
-                    const Expanded(child: Divider()),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16),
-                      child: Text('OR'),
-                    ),
-                    const Expanded(child: Divider()),
-                  ],
-                ),
-                const Gap(16),
-                OutlinedButton(
-                  onPressed: () => ref
+              if (!isEditing && !state.showForm)
+                AIEntryWizard(
+                  isExercise: isExercise,
+                  descriptionController: _formManager.descriptionController,
+                  image: state.image,
+                  canUseCamera: _canUseCamera,
+                  onPickImage: (source) => ref
+                      .read(addEntryControllerProvider.notifier)
+                      .pickImage(source),
+                  onAddOptimistic: _addOptimistic,
+                  onEnterManually: () => ref
                       .read(addEntryControllerProvider.notifier)
                       .toggleForm(true),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.all(16),
-                  ),
-                  child: const Text('Enter Manually'),
                 ),
-              ],
-              if (state.showForm) ...[
-                if (!isEditing) ...[
-                  TextButton.icon(
-                    onPressed: () => ref
-                        .read(addEntryControllerProvider.notifier)
-                        .toggleForm(false),
-                    icon: const Icon(Icons.arrow_back),
-                    label: const Text('Back to AI Wizard'),
-                  ),
-                  const Gap(16),
-                ],
-                EntryForm(
+              if (state.showForm)
+                ManualEntrySection(
+                  isEditing: isEditing,
+                  isExercise: isExercise,
                   nameController: _formManager.nameController,
                   caloriesController: _formManager.caloriesController,
                   proteinController: _formManager.proteinController,
@@ -230,6 +180,9 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
                   selectedIcon: state.selectedIcon,
                   selectedDate: state.selectedDate,
                   selectedTime: state.selectedTime,
+                  onBackToWizard: () => ref
+                      .read(addEntryControllerProvider.notifier)
+                      .toggleForm(false),
                   onIconChanged: (v) => v != null
                       ? ref
                             .read(addEntryControllerProvider.notifier)
@@ -237,11 +190,6 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
                       : null,
                   onPickDate: _pickDate,
                   onPickTime: _pickTime,
-                  isExercise: isExercise,
-                ),
-                const Gap(24),
-                EntryActionButtons(
-                  isEditing: isEditing,
                   onSave: _saveEntry,
                   onDeleteConfirmed: () async {
                     try {
@@ -256,8 +204,6 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
                     }
                   },
                 ),
-                const Gap(32),
-              ],
             ],
           ),
         ),
