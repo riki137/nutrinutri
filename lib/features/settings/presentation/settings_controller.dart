@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nutrinutri/core/providers.dart';
 import 'package:nutrinutri/features/settings/domain/ai_model_info.dart';
+import 'package:nutrinutri/core/utils/calorie_calculator.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'settings_controller.g.dart';
@@ -230,34 +231,12 @@ class SettingsController extends _$SettingsController {
     required String gender,
     required String activityLevel,
   }) {
-    double bmr;
-    if (gender == 'male') {
-      bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
-    } else {
-      bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161;
-    }
-
-    double multiplier;
-    switch (activityLevel) {
-      case 'sedentary':
-        multiplier = 1.2;
-        break;
-      case 'light':
-        multiplier = 1.375;
-        break;
-      case 'moderate':
-        multiplier = 1.55;
-        break;
-      case 'very_active':
-        multiplier = 1.725;
-        break;
-      case 'super_active':
-        multiplier = 1.9;
-        break;
-      default:
-        multiplier = 1.2;
-    }
-
-    return (bmr * multiplier).round() - 250;
+    return CalorieCalculator.calculateDailyCalories(
+      weightKg: weight,
+      heightCm: height,
+      age: age,
+      gender: gender,
+      activityLevel: activityLevel,
+    );
   }
 }

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gap/gap.dart';
 import 'package:nutrinutri/features/dashboard/presentation/widgets/daily_summary_section.dart';
+import 'package:nutrinutri/features/dashboard/presentation/widgets/date_switcher.dart';
 import 'package:nutrinutri/features/dashboard/presentation/widgets/entries_list.dart';
 import 'package:nutrinutri/features/dashboard/presentation/dashboard_providers.dart';
 
@@ -34,13 +35,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     // Invalidate providers to force refresh
     ref.invalidate(dailySummaryProvider(_selectedDate));
     ref.invalidate(dayEntriesProvider(_selectedDate));
-  }
-
-  bool get _isToday {
-    final now = DateTime.now();
-    return _selectedDate.year == now.year &&
-        _selectedDate.month == now.month &&
-        _selectedDate.day == now.day;
   }
 
   @override
@@ -75,51 +69,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                         child: SingleChildScrollView(
                           child: Column(
                             children: [
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16.0,
-                                ),
-                                child: Row(
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.chevron_left),
-                                      onPressed: () => _updateDate(-1),
-                                    ),
-                                    Expanded(
-                                      child: Column(
-                                        children: [
-                                          Text(
-                                            _isToday
-                                                ? "Today"
-                                                : DateFormat(
-                                                    'EEEE',
-                                                  ).format(_selectedDate),
-                                            style: const TextStyle(
-                                              fontSize: 24,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          Text(
-                                            DateFormat(
-                                              'd MMM y',
-                                            ).format(_selectedDate),
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.grey[600],
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.chevron_right),
-                                      onPressed: _isToday
-                                          ? null
-                                          : () => _updateDate(1),
-                                    ),
-                                  ],
-                                ),
+                              DateSwitcher(
+                                selectedDate: _selectedDate,
+                                onDateChange: _updateDate,
                               ),
                               const Gap(8),
                               DailySummarySection(today: _selectedDate),
@@ -156,43 +108,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             child: Column(
               children: [
                 // Date Switcher
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16.0),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.chevron_left),
-                        onPressed: () => _updateDate(-1),
-                      ),
-                      Expanded(
-                        child: Column(
-                          children: [
-                            Text(
-                              _isToday
-                                  ? "Today"
-                                  : DateFormat('EEEE').format(_selectedDate),
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              DateFormat('d MMM y').format(_selectedDate),
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.chevron_right),
-                        onPressed: _isToday ? null : () => _updateDate(1),
-                      ),
-                    ],
-                  ),
+                // Date Switcher
+                DateSwitcher(
+                  selectedDate: _selectedDate,
+                  onDateChange: _updateDate,
                 ),
                 const Gap(8),
                 // Summary Card

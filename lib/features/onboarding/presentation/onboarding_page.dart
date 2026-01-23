@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nutrinutri/core/providers.dart';
+import 'package:nutrinutri/core/utils/calorie_calculator.dart';
 import 'package:gap/gap.dart';
 
 class OnboardingPage extends ConsumerStatefulWidget {
@@ -60,38 +61,15 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     final height = double.tryParse(_heightController.text);
 
     if (age != null && weight != null && height != null) {
-      // Mifflin-St Jeor Equation
-      double bmr;
-      if (_gender == 'male') {
-        bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
-      } else {
-        bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161;
-      }
+      final calories = CalorieCalculator.calculateDailyCalories(
+        weightKg: weight,
+        heightCm: height,
+        age: age,
+        gender: _gender,
+        activityLevel: _activityLevel,
+      );
 
-      double multiplier;
-      switch (_activityLevel) {
-        case 'sedentary':
-          multiplier = 1.2;
-          break;
-        case 'light':
-          multiplier = 1.375;
-          break;
-        case 'moderate':
-          multiplier = 1.55;
-          break;
-        case 'very_active':
-          multiplier = 1.725;
-          break;
-        case 'super_active':
-          multiplier = 1.9;
-          break;
-        default:
-          multiplier = 1.2;
-      }
-
-      final tdee = (bmr * multiplier).round();
-      // Default to slight deficit (maintenance - 500)
-      _goalController.text = (tdee - 250).toString();
+      _goalController.text = calories.toString();
     }
   }
 

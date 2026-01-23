@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:nutrinutri/core/providers.dart';
+import 'package:nutrinutri/core/utils/calorie_calculator.dart';
 import 'package:nutrinutri/features/dashboard/presentation/dashboard_providers.dart';
 
 class DailySummarySection extends ConsumerWidget {
@@ -55,26 +56,23 @@ class DailySummarySection extends ConsumerWidget {
         : Colors.grey[200]!;
 
     // Macro Goals Calculation (Default split: 30% P, 40% C, 30% F)
-    final double proteinGoal;
-    if (profile['goalProtein'] != null && profile['goalProtein'] > 0) {
-      proteinGoal = (profile['goalProtein'] as int).toDouble();
-    } else {
-      proteinGoal = (goal * 0.30) / 4;
-    }
+    // Macro Goals Calculation
+    final defaults = CalorieCalculator.calculateMacroGoals(goal);
 
-    final double carbsGoal;
-    if (profile['goalCarbs'] != null && profile['goalCarbs'] > 0) {
-      carbsGoal = (profile['goalCarbs'] as int).toDouble();
-    } else {
-      carbsGoal = (goal * 0.40) / 4;
-    }
+    final double proteinGoal =
+        (profile['goalProtein'] != null && profile['goalProtein'] > 0)
+        ? (profile['goalProtein'] as int).toDouble()
+        : defaults.protein;
 
-    final double fatsGoal;
-    if (profile['goalFat'] != null && profile['goalFat'] > 0) {
-      fatsGoal = (profile['goalFat'] as int).toDouble();
-    } else {
-      fatsGoal = (goal * 0.30) / 9;
-    }
+    final double carbsGoal =
+        (profile['goalCarbs'] != null && profile['goalCarbs'] > 0)
+        ? (profile['goalCarbs'] as int).toDouble()
+        : defaults.carbs;
+
+    final double fatsGoal =
+        (profile['goalFat'] != null && profile['goalFat'] > 0)
+        ? (profile['goalFat'] as int).toDouble()
+        : defaults.fats;
 
     return Card(
       elevation: 4,
