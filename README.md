@@ -15,6 +15,39 @@ I believe that health tools should be accessible to everyone and respect your pr
 - **💸 Forever Free & Open**: Use your own OpenRouter API key to power the app.
 - **Non-Profit**: I believe that health tools should be accessible to everyone and respect your privacy. That's why NutriNutri is completely **Non-Profit**, **Open Source (GPLv3)**, and designed with **Privacy First** principles.
 
+## 🏁 Getting Started
+
+### Prerequisites
+
+- [Flutter SDK](https://flutter.dev/docs/get-started/install)
+- [OpenRouter API Key](https://openrouter.ai/) (for AI features)
+
+### Installation
+
+1. **Clone the repository**
+
+   ```bash
+   git clone https://github.com/riki137/nutrinutri.git
+   cd nutrinutri
+   ```
+
+2. **Install dependencies**
+
+   ```bash
+   flutter pub get
+   ```
+
+3. **Run the app**
+   ```bash
+   flutter run
+   ```
+
+### Configuration
+
+1. Open the app.
+2. Go to **Settings**.
+3. Enter your **OpenRouter API Key**.
+
 ## 🚀 Roadmap
 
 - [ ] **Activities tracking**: Track your activities and get calories burned.

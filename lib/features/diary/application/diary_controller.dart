@@ -161,15 +161,11 @@ class DiaryController extends _$DiaryController {
       await _updateSuccess(entry, result);
     } catch (e) {
       if (e.toString().contains('Request cancelled')) {
-        print('Analysis cancelled for ${entry.id}');
         return; // UI already updated in cancelAnalysis
       }
 
-      print('Primary analysis failed: $e');
-
       // Try fallback if available
       if (fallbackModel != null && fallbackModel.isNotEmpty) {
-        print('Retrying with fallback model: $fallbackModel');
         try {
           final Map<String, dynamic> result;
           if (entry.type == EntryType.exercise) {
@@ -191,10 +187,8 @@ class DiaryController extends _$DiaryController {
           return;
         } catch (e2) {
           if (e2.toString().contains('Request cancelled')) {
-            print('Fallback analysis cancelled for ${entry.id}');
             return;
           }
-          print('Fallback analysis failed: $e2');
         }
       }
 

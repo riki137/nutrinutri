@@ -194,9 +194,9 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
                   onDeleteConfirmed: () async {
                     try {
                       await _formManager.deleteEntry(widget.existingEntry!);
-                      if (mounted) context.pop();
+                      if (context.mounted) context.pop();
                     } catch (e) {
-                      if (mounted) {
+                      if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Failed to delete: $e')),
                         );

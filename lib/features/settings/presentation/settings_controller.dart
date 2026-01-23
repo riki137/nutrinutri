@@ -1,4 +1,3 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nutrinutri/core/providers.dart';
 import 'package:nutrinutri/features/settings/domain/ai_model_info.dart';
 import 'package:nutrinutri/core/utils/calorie_calculator.dart';
