@@ -13,8 +13,29 @@ class AddEntryFormManager {
   final proteinController = TextEditingController();
   final carbsController = TextEditingController();
   final fatsController = TextEditingController();
+  final durationController = TextEditingController();
 
-  AddEntryFormManager({required this.ref, required this.onStateChanged});
+  AddEntryFormManager({required this.ref, required this.onStateChanged}) {
+    nameController.addListener(_updateCalories);
+    durationController.addListener(_updateCalories);
+  }
+
+  void _updateCalories() async {
+    final state = ref.read(addEntryControllerProvider);
+    if (state.type != EntryType.exercise) return;
+
+    final name = nameController.text;
+    final duration = int.tryParse(durationController.text);
+
+    if (name.isNotEmpty && duration != null && duration > 0) {
+      final calories = await ref
+          .read(addEntryControllerProvider.notifier)
+          .calculateExerciseCalories(name, duration);
+      if (calories != null) {
+        caloriesController.text = calories.toString();
+      }
+    }
+  }
 
   void dispose() {
     descriptionController.dispose();
@@ -23,15 +44,22 @@ class AddEntryFormManager {
     proteinController.dispose();
     carbsController.dispose();
     fatsController.dispose();
+    durationController.dispose();
   }
 
-  void initializeWithEntry(FoodEntry entry) {
+  void initializeWithEntry(DiaryEntry entry) {
     ref.read(addEntryControllerProvider.notifier).initializeWithEntry(entry);
     nameController.text = entry.name;
     caloriesController.text = entry.calories.toString();
     proteinController.text = entry.protein.toString();
     carbsController.text = entry.carbs.toString();
     fatsController.text = entry.fats.toString();
+    durationController.text = entry.durationMinutes?.toString() ?? '';
+    onStateChanged();
+  }
+
+  void initializeWithType(EntryType type) {
+    ref.read(addEntryControllerProvider.notifier).initializeWithType(type);
     onStateChanged();
   }
 
@@ -46,7 +74,7 @@ class AddEntryFormManager {
         .addOptimistic(description: descriptionController.text);
   }
 
-  Future<void> saveEntry(FoodEntry? existingEntry) async {
+  Future<void> saveEntry(DiaryEntry? existingEntry) async {
     await ref
         .read(addEntryControllerProvider.notifier)
         .saveEntry(
@@ -56,10 +84,11 @@ class AddEntryFormManager {
           protein: proteinController.text,
           carbs: carbsController.text,
           fats: fatsController.text,
+          durationMinutes: durationController.text,
         );
   }
 
-  Future<void> deleteEntry(FoodEntry entry) async {
+  Future<void> deleteEntry(DiaryEntry entry) async {
     await ref.read(addEntryControllerProvider.notifier).deleteEntry(entry);
   }
 }

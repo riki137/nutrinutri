@@ -206,13 +206,35 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          await context.push('/add-entry');
-          _refresh();
-        },
-        label: const Text('Add Food'),
-        icon: const Icon(Icons.add),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          FloatingActionButton.small(
+            heroTag: 'log_exercise',
+            onPressed: () async {
+              await context.push(
+                Uri(
+                  path: '/add-entry',
+                  queryParameters: {'type': 'exercise'},
+                ).toString(),
+              );
+              _refresh();
+            },
+            tooltip: 'Log Exercise',
+            child: const Icon(Icons.fitness_center),
+          ),
+          const Gap(16),
+          FloatingActionButton.extended(
+            heroTag: 'log_food',
+            onPressed: () async {
+              await context.push('/add-entry');
+              _refresh();
+            },
+            label: const Text('Log Food'),
+            icon: const Icon(Icons.restaurant),
+          ),
+        ],
       ),
     );
   }

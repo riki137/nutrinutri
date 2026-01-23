@@ -41,8 +41,10 @@ class DailySummarySection extends ConsumerWidget {
   ) {
     final goal = profile['goalCalories'] as int;
     final consumed = summary['calories']!;
-    final remaining = goal - consumed;
-    final progress = (consumed / goal).clamp(0.0, 1.0);
+    final burned = summary['caloriesBurned'] ?? 0.0;
+    final effectiveGoal = goal + burned;
+    final remaining = effectiveGoal - consumed;
+    final progress = (consumed / effectiveGoal).clamp(0.0, 1.0);
 
     // Macro Goals Calculation (Default split: 30% P, 40% C, 30% F)
     final double proteinGoal;
@@ -80,9 +82,23 @@ class DailySummarySection extends ConsumerWidget {
                   'Calories Today',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
-                Text(
-                  'Goal: $goal',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'Goal: ${effectiveGoal.round()}',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    ),
+                    if (burned > 0)
+                      Text(
+                        '(+${burned.round()} burned)',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.orange,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ),

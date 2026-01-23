@@ -165,14 +165,14 @@ class _DailySummaryProviderElement
   DateTime get date => (origin as DailySummaryProvider).date;
 }
 
-String _$dayEntriesHash() => r'760fd073ee8919e9ce8db1b80b36baca69e6b0ec';
+String _$dayEntriesHash() => r'f20e789788925e11cda2318a4938e252977ee4d8';
 
 /// See also [dayEntries].
 @ProviderFor(dayEntries)
 const dayEntriesProvider = DayEntriesFamily();
 
 /// See also [dayEntries].
-class DayEntriesFamily extends Family<AsyncValue<List<FoodEntry>>> {
+class DayEntriesFamily extends Family<AsyncValue<List<DiaryEntry>>> {
   /// See also [dayEntries].
   const DayEntriesFamily();
 
@@ -204,7 +204,7 @@ class DayEntriesFamily extends Family<AsyncValue<List<FoodEntry>>> {
 }
 
 /// See also [dayEntries].
-class DayEntriesProvider extends AutoDisposeFutureProvider<List<FoodEntry>> {
+class DayEntriesProvider extends AutoDisposeFutureProvider<List<DiaryEntry>> {
   /// See also [dayEntries].
   DayEntriesProvider(DateTime date)
     : this._internal(
@@ -233,7 +233,7 @@ class DayEntriesProvider extends AutoDisposeFutureProvider<List<FoodEntry>> {
 
   @override
   Override overrideWith(
-    FutureOr<List<FoodEntry>> Function(DayEntriesRef provider) create,
+    FutureOr<List<DiaryEntry>> Function(DayEntriesRef provider) create,
   ) {
     return ProviderOverride(
       origin: this,
@@ -250,7 +250,7 @@ class DayEntriesProvider extends AutoDisposeFutureProvider<List<FoodEntry>> {
   }
 
   @override
-  AutoDisposeFutureProviderElement<List<FoodEntry>> createElement() {
+  AutoDisposeFutureProviderElement<List<DiaryEntry>> createElement() {
     return _DayEntriesProviderElement(this);
   }
 
@@ -270,13 +270,13 @@ class DayEntriesProvider extends AutoDisposeFutureProvider<List<FoodEntry>> {
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-mixin DayEntriesRef on AutoDisposeFutureProviderRef<List<FoodEntry>> {
+mixin DayEntriesRef on AutoDisposeFutureProviderRef<List<DiaryEntry>> {
   /// The parameter `date` of this provider.
   DateTime get date;
 }
 
 class _DayEntriesProviderElement
-    extends AutoDisposeFutureProviderElement<List<FoodEntry>>
+    extends AutoDisposeFutureProviderElement<List<DiaryEntry>>
     with DayEntriesRef {
   _DayEntriesProviderElement(super.provider);
 

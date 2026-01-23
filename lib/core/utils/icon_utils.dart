@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class IconUtils {
-  static const Map<String, IconData> iconMap = {
+  static const Map<String, IconData> foodIcons = {
     'bakery_dining': Icons.bakery_dining,
     'brunch_dining': Icons.brunch_dining,
     'bento': Icons.bento,
@@ -20,12 +20,39 @@ class IconUtils {
     'rice_bowl': Icons.rice_bowl,
     'sports_bar': Icons.sports_bar,
     'tapas': Icons.tapas,
+  };
+
+  static const Map<String, IconData> exerciseIcons = {
+    'directions_run': Icons.directions_run,
+    'directions_walk': Icons.directions_walk,
+    'directions_bike': Icons.directions_bike,
+    'pool': Icons.pool,
+    'fitness_center': Icons.fitness_center,
+    'self_improvement': Icons.self_improvement,
+    'hiking': Icons.hiking,
+    'sports_basketball': Icons.sports_basketball,
+    'sports_soccer': Icons.sports_soccer,
+    'sports_tennis': Icons.sports_tennis,
+    'sports_gymnastics': Icons.sports_gymnastics,
+    'sports': Icons.sports,
+  };
+
+  static const Map<String, IconData> otherIcons = {
     'warning': Icons.warning_amber_rounded,
   };
 
+  static Map<String, IconData> get iconMap => {
+    ...foodIcons,
+    ...exerciseIcons,
+    ...otherIcons,
+  };
+
   static List<String> get availableIcons => iconMap.keys.toList();
+  static List<String> get availableFoodIcons => foodIcons.keys.toList();
+  static List<String> get availableExerciseIcons => exerciseIcons.keys.toList();
 
   static IconData getIcon(String? iconName) {
+    if (iconName == null) return Icons.fastfood;
     return iconMap[iconName] ?? Icons.fastfood;
   }
 }

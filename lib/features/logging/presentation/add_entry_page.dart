@@ -14,8 +14,13 @@ import 'package:nutrinutri/features/logging/presentation/widgets/entry_form.dart
 import 'package:nutrinutri/features/logging/presentation/widgets/food_image_picker.dart';
 
 class AddEntryPage extends ConsumerStatefulWidget {
-  final FoodEntry? existingEntry;
-  const AddEntryPage({super.key, this.existingEntry});
+  final DiaryEntry? existingEntry;
+  final EntryType initialType;
+  const AddEntryPage({
+    super.key,
+    this.existingEntry,
+    this.initialType = EntryType.food,
+  });
 
   @override
   ConsumerState<AddEntryPage> createState() => _AddEntryPageState();
@@ -37,6 +42,11 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
     if (widget.existingEntry != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _formManager.initializeWithEntry(widget.existingEntry!);
+      });
+    } else {
+      // Initialize with type
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _formManager.initializeWithType(widget.initialType);
       });
     }
   }
@@ -128,29 +138,43 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
     final state = ref.watch(addEntryControllerProvider);
     final isEditing = widget.existingEntry != null;
 
+    final isExercise =
+        widget.initialType == EntryType.exercise ||
+        (widget.existingEntry?.type == EntryType.exercise);
+    final title = isEditing
+        ? 'Edit Entry'
+        : isExercise
+        ? 'Log Exercise'
+        : 'Log Food';
+
     return Scaffold(
-      appBar: AppBar(title: Text(isEditing ? 'Edit Entry' : 'Log Food')),
+      appBar: AppBar(title: Text(title)),
       body: SingleChildScrollView(
         child: ResponsiveCenter(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (!isEditing) ...[
-                FoodImagePicker(
-                  image: state.image,
-                  canUseCamera: _canUseCamera,
-                  onPickImage: (source) => ref
-                      .read(addEntryControllerProvider.notifier)
-                      .pickImage(source),
-                ),
-                const Gap(16),
+              if (!isEditing && !state.showForm) ...[
+                if (!isExercise)
+                  FoodImagePicker(
+                    image: state.image,
+                    canUseCamera: _canUseCamera,
+                    onPickImage: (source) => ref
+                        .read(addEntryControllerProvider.notifier)
+                        .pickImage(source),
+                  ),
+                if (!isExercise) const Gap(16),
                 TextField(
                   controller: _formManager.descriptionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Describe the food (optional if image provided)',
-                    border: OutlineInputBorder(),
-                    hintText: 'e.g. 2 eggs and toast',
+                  decoration: InputDecoration(
+                    labelText: isExercise
+                        ? 'Describe the exercise'
+                        : 'Describe the food (optional if image provided)',
+                    border: const OutlineInputBorder(),
+                    hintText: isExercise
+                        ? 'e.g. 30 mins running'
+                        : 'e.g. 2 eggs and toast',
                   ),
                   maxLines: 3,
                 ),
@@ -158,20 +182,51 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
                 FilledButton.icon(
                   onPressed: _addOptimistic,
                   icon: const Icon(Icons.auto_awesome),
-                  label: const Text('Add Entry'),
+                  label: const Text('Add Entry with AI'),
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.all(16),
                   ),
                 ),
+                const Gap(16),
+                Row(
+                  children: [
+                    const Expanded(child: Divider()),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Text('OR'),
+                    ),
+                    const Expanded(child: Divider()),
+                  ],
+                ),
+                const Gap(16),
+                OutlinedButton(
+                  onPressed: () => ref
+                      .read(addEntryControllerProvider.notifier)
+                      .toggleForm(true),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.all(16),
+                  ),
+                  child: const Text('Enter Manually'),
+                ),
               ],
               if (state.showForm) ...[
-                const Gap(32),
+                if (!isEditing) ...[
+                  TextButton.icon(
+                    onPressed: () => ref
+                        .read(addEntryControllerProvider.notifier)
+                        .toggleForm(false),
+                    icon: const Icon(Icons.arrow_back),
+                    label: const Text('Back to AI Wizard'),
+                  ),
+                  const Gap(16),
+                ],
                 EntryForm(
                   nameController: _formManager.nameController,
                   caloriesController: _formManager.caloriesController,
                   proteinController: _formManager.proteinController,
                   carbsController: _formManager.carbsController,
                   fatsController: _formManager.fatsController,
+                  durationController: _formManager.durationController,
                   selectedIcon: state.selectedIcon,
                   selectedDate: state.selectedDate,
                   selectedTime: state.selectedTime,
@@ -182,6 +237,7 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
                       : null,
                   onPickDate: _pickDate,
                   onPickTime: _pickTime,
+                  isExercise: isExercise,
                 ),
                 const Gap(24),
                 EntryActionButtons(

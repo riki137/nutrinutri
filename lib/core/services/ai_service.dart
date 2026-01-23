@@ -118,6 +118,100 @@ If unclear, provide best guess with lower confidence.
     }
   }
 
+  Future<Map<String, dynamic>> analyzeExercise({
+    required String textDescription,
+    Map<String, dynamic>? userProfile,
+    String? requestId,
+    String? modelOverride,
+  }) async {
+    if (apiKey.isEmpty) {
+      throw Exception('API Key is missing');
+    }
+
+    final client = http.Client();
+    if (requestId != null) {
+      _activeRequests[requestId]?.close();
+      _activeRequests[requestId] = client;
+    }
+
+    final headers = {
+      'Authorization': 'Bearer $apiKey',
+      'Content-Type': 'application/json',
+      'HTTP-Referer': 'https://nutrinutri.popelis.sk',
+      'X-Title': 'NutriNutri',
+    };
+
+    String profileInfo = '';
+    if (userProfile != null) {
+      profileInfo =
+          'User Profile for Calorie Calculation:\n'
+          'Age: ${userProfile['age']}\n'
+          'Weight: ${userProfile['weight']} kg\n'
+          'Height: ${userProfile['height']} cm\n'
+          'Gender: ${userProfile['gender']}\n';
+    }
+
+    final messages = <Map<String, dynamic>>[
+      {
+        'role': 'system',
+        'content':
+            '''
+You are a fitness expert AI. Analyze the exercise described.
+$profileInfo
+Return STRICT JSON ONLY. No markdown.
+Select the most appropriate icon from this list:
+[directions_run, directions_bike, directions_walk, fitness_center, pool, sports_soccer, sports_tennis, sports_basketball, rowing, hiking, yoga, self_improvement]
+
+Structure:
+{
+  "food_name": "Short descriptive exercise name",
+  "calories": 150,
+  "durationMinutes": 30,
+  "icon": "directions_run",
+  "confidence": 0.9
+}
+Calculate calories based on the user profile provided and standard MET values.
+''',
+      },
+      {'role': 'user', 'content': textDescription},
+    ];
+
+    final body = jsonEncode({
+      'model': modelOverride ?? model,
+      'messages': messages,
+      'response_format': {'type': 'json_object'},
+    });
+
+    try {
+      final response = await client.post(
+        Uri.parse(_baseUrl),
+        headers: headers,
+        body: body,
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final content = data['choices'][0]['message']['content'];
+        return jsonDecode(_extractJson(content));
+      } else {
+        throw Exception('AI Error: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      if (e.toString().contains('ClientException') &&
+          requestId != null &&
+          !_activeRequests.containsKey(requestId)) {
+        throw Exception('Request cancelled');
+      }
+      debugPrint('AI Service Error: $e');
+      rethrow;
+    } finally {
+      if (requestId != null) {
+        _activeRequests.remove(requestId);
+      }
+      client.close();
+    }
+  }
+
   void cancelRequest(String requestId) {
     if (_activeRequests.containsKey(requestId)) {
       _activeRequests[requestId]?.close();

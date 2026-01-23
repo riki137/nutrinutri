@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:gap/gap.dart';
 import 'package:nutrinutri/core/utils/icon_utils.dart';
+import 'package:nutrinutri/core/utils/met_values.dart';
 
 class EntryForm extends StatelessWidget {
   final TextEditingController nameController;
@@ -9,12 +10,14 @@ class EntryForm extends StatelessWidget {
   final TextEditingController proteinController;
   final TextEditingController carbsController;
   final TextEditingController fatsController;
+  final TextEditingController? durationController;
   final String selectedIcon;
   final DateTime selectedDate;
   final TimeOfDay selectedTime;
   final void Function(String?) onIconChanged;
   final VoidCallback onPickDate;
   final VoidCallback onPickTime;
+  final bool isExercise;
 
   const EntryForm({
     super.key,
@@ -23,12 +26,14 @@ class EntryForm extends StatelessWidget {
     required this.proteinController,
     required this.carbsController,
     required this.fatsController,
+    this.durationController,
     required this.selectedIcon,
     required this.selectedDate,
     required this.selectedTime,
     required this.onIconChanged,
     required this.onPickDate,
     required this.onPickTime,
+    this.isExercise = false,
   });
 
   @override
@@ -43,11 +48,26 @@ class EntryForm extends StatelessWidget {
         const Gap(16),
         TextField(
           controller: nameController,
-          decoration: const InputDecoration(
-            labelText: 'Food Name',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: isExercise ? 'Exercise Name' : 'Food Name',
+            border: const OutlineInputBorder(),
           ),
         ),
+        if (isExercise) ...[
+          const Gap(8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: MetValues.commonExercises.keys.map((name) {
+              return ActionChip(
+                label: Text(name),
+                onPressed: () {
+                  nameController.text = name;
+                },
+              );
+            }).toList(),
+          ),
+        ],
         const Gap(16),
         DropdownButtonFormField<String>(
           value: selectedIcon,
@@ -55,29 +75,35 @@ class EntryForm extends StatelessWidget {
             labelText: 'Icon',
             border: OutlineInputBorder(),
           ),
-          items: IconUtils.availableIcons.map((iconKey) {
-            return DropdownMenuItem(
-              value: iconKey,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(IconUtils.getIcon(iconKey)),
-                  const Gap(8),
-                  Text(
-                    iconKey
-                        .replaceAll('_', ' ')
-                        .split(' ')
-                        .map(
-                          (word) => word.isNotEmpty
-                              ? '${word[0].toUpperCase()}${word.substring(1)}'
-                              : '',
-                        )
-                        .join(' '),
+          items:
+              {
+                ...(isExercise
+                    ? IconUtils.availableExerciseIcons
+                    : IconUtils.availableFoodIcons),
+                if (IconUtils.iconMap.containsKey(selectedIcon)) selectedIcon,
+              }.map((iconKey) {
+                return DropdownMenuItem(
+                  value: iconKey,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(IconUtils.getIcon(iconKey)),
+                      const Gap(8),
+                      Text(
+                        iconKey
+                            .replaceAll('_', ' ')
+                            .split(' ')
+                            .map(
+                              (word) => word.isNotEmpty
+                                  ? '${word[0].toUpperCase()}${word.substring(1)}'
+                                  : '',
+                            )
+                            .join(' '),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            );
-          }).toList(),
+                );
+              }).toList(),
           onChanged: onIconChanged,
         ),
         const Gap(16),
@@ -107,57 +133,72 @@ class EntryForm extends StatelessWidget {
               child: TextField(
                 controller: caloriesController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Calories',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: isExercise ? 'Calories Burned' : 'Calories',
+                  border: const OutlineInputBorder(),
                 ),
               ),
             ),
-            const Gap(16),
-            Expanded(
-              child: TextField(
-                controller: proteinController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                decoration: const InputDecoration(
-                  labelText: 'Protein (g)',
-                  border: OutlineInputBorder(),
+            if (isExercise && durationController != null) ...[
+              const Gap(16),
+              Expanded(
+                child: TextField(
+                  controller: durationController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Duration (min)',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
-        const Gap(16),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: carbsController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                decoration: const InputDecoration(
-                  labelText: 'Carbs (g)',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ),
-            const Gap(16),
-            Expanded(
-              child: TextField(
-                controller: fatsController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                decoration: const InputDecoration(
-                  labelText: 'Fats (g)',
-                  border: OutlineInputBorder(),
+        if (!isExercise) ...[
+          const Gap(16),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: proteinController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: const InputDecoration(
+                    labelText: 'Protein (g)',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
+              const Gap(16),
+              Expanded(
+                child: TextField(
+                  controller: carbsController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: const InputDecoration(
+                    labelText: 'Carbs (g)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ),
+              const Gap(16),
+              Expanded(
+                child: TextField(
+                  controller: fatsController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: const InputDecoration(
+                    labelText: 'Fats (g)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }

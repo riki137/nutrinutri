@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:nutrinutri/core/providers.dart';
+import 'package:nutrinutri/core/utils/met_values.dart';
 import 'package:nutrinutri/features/diary/application/diary_controller.dart';
 import 'package:nutrinutri/features/diary/data/diary_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -16,6 +17,7 @@ class AddEntryState {
   final DateTime selectedDate;
   final TimeOfDay selectedTime;
   final String selectedIcon;
+  final EntryType type;
 
   AddEntryState({
     this.image,
@@ -23,6 +25,7 @@ class AddEntryState {
     required this.selectedDate,
     required this.selectedTime,
     this.selectedIcon = 'restaurant',
+    this.type = EntryType.food,
   });
 
   AddEntryState copyWith({
@@ -31,6 +34,7 @@ class AddEntryState {
     DateTime? selectedDate,
     TimeOfDay? selectedTime,
     String? selectedIcon,
+    EntryType? type,
   }) {
     return AddEntryState(
       image: image ?? this.image,
@@ -38,6 +42,7 @@ class AddEntryState {
       selectedDate: selectedDate ?? this.selectedDate,
       selectedTime: selectedTime ?? this.selectedTime,
       selectedIcon: selectedIcon ?? this.selectedIcon,
+      type: type ?? this.type,
     );
   }
 }
@@ -52,16 +57,29 @@ class AddEntryController extends _$AddEntryController {
     return AddEntryState(
       selectedDate: DateTime(now.year, now.month, now.day),
       selectedTime: TimeOfDay.now(),
+      type: EntryType.food,
     );
   }
 
-  void initializeWithEntry(FoodEntry entry) {
+  void initializeWithType(EntryType type) {
+    state = state.copyWith(
+      type: type,
+      selectedIcon: type == EntryType.exercise
+          ? 'directions_run'
+          : 'restaurant',
+    );
+  }
+
+  void initializeWithEntry(DiaryEntry entry) {
     state = state.copyWith(
       image: entry.imagePath != null ? File(entry.imagePath!) : null,
       showForm: true,
       selectedDate: entry.timestamp,
       selectedTime: TimeOfDay.fromDateTime(entry.timestamp),
-      selectedIcon: entry.icon ?? 'restaurant',
+      selectedIcon:
+          entry.icon ??
+          (entry.type == EntryType.exercise ? 'directions_run' : 'restaurant'),
+      type: entry.type,
     );
   }
 
@@ -92,6 +110,10 @@ class AddEntryController extends _$AddEntryController {
     state = state.copyWith(selectedIcon: icon);
   }
 
+  void toggleForm(bool show) {
+    state = state.copyWith(showForm: show);
+  }
+
   Future<void> addOptimistic({required String? description}) async {
     final aiService = await ref.read(aiServiceProvider.future);
     if (aiService.apiKey.isEmpty) {
@@ -105,24 +127,33 @@ class AddEntryController extends _$AddEntryController {
           time: state.selectedTime,
           description: description?.isNotEmpty == true ? description : null,
           imagePath: state.image?.path,
+          type: state.type,
         );
   }
 
   Future<void> saveEntry({
-    required FoodEntry? existingEntry,
+    required DiaryEntry? existingEntry,
     required String name,
     required String calories,
     required String protein,
     required String carbs,
     required String fats,
+    String? durationMinutes,
   }) async {
     final diaryService = ref.read(diaryServiceProvider);
 
-    final finalName = name.trim().isEmpty ? 'Unknown Food' : name.trim();
+    final finalName = name.trim().isEmpty
+        ? (state.type == EntryType.exercise
+              ? 'Unknown Exercise'
+              : 'Unknown Food')
+        : name.trim();
     final finalCalories = int.tryParse(calories) ?? 0;
     final finalProtein = double.tryParse(protein) ?? 0.0;
     final finalCarbs = double.tryParse(carbs) ?? 0.0;
     final finalFats = double.tryParse(fats) ?? 0.0;
+    final finalDuration = durationMinutes != null
+        ? int.tryParse(durationMinutes)
+        : null;
 
     final timestamp = DateTime(
       state.selectedDate.year,
@@ -133,9 +164,10 @@ class AddEntryController extends _$AddEntryController {
     );
 
     if (existingEntry != null) {
-      final updatedEntry = FoodEntry(
+      final updatedEntry = DiaryEntry(
         id: existingEntry.id,
         name: finalName,
+        type: state.type,
         calories: finalCalories,
         protein: finalProtein,
         carbs: finalCarbs,
@@ -143,12 +175,14 @@ class AddEntryController extends _$AddEntryController {
         timestamp: timestamp,
         imagePath: state.image?.path,
         icon: state.selectedIcon,
+        durationMinutes: finalDuration,
       );
       await diaryService.updateEntry(updatedEntry);
     } else {
-      final entry = FoodEntry(
+      final entry = DiaryEntry(
         id: const Uuid().v4(),
         name: finalName,
+        type: state.type,
         calories: finalCalories,
         protein: finalProtein,
         carbs: finalCarbs,
@@ -156,12 +190,31 @@ class AddEntryController extends _$AddEntryController {
         timestamp: timestamp,
         imagePath: state.image?.path,
         icon: state.selectedIcon,
+        durationMinutes: finalDuration,
       );
       await diaryService.addEntry(entry);
     }
   }
 
-  Future<void> deleteEntry(FoodEntry entry) async {
+  Future<void> deleteEntry(DiaryEntry entry) async {
     await ref.read(diaryServiceProvider).deleteEntry(entry);
+  }
+
+  Future<int?> calculateExerciseCalories(
+    String name,
+    int durationMinutes,
+  ) async {
+    if (durationMinutes <= 0) return null;
+
+    final settingsService = ref.read(settingsServiceProvider);
+    final profile = await settingsService.getUserProfile();
+    final weight = profile?['weight'] as double? ?? 70.0;
+
+    final met = MetValues.getMet(name);
+    if (met == 0) return null;
+
+    // Calories = MET * Weight(kg) * Duration(hr)
+    final calories = (met * weight * (durationMinutes / 60)).round();
+    return calories;
   }
 }

@@ -18,7 +18,7 @@ Future<Map<String, double>> dailySummary(Ref ref, DateTime date) async {
 }
 
 @riverpod
-Future<List<FoodEntry>> dayEntries(Ref ref, DateTime date) async {
+Future<List<DiaryEntry>> dayEntries(Ref ref, DateTime date) async {
   ref.watch(syncUpdateProvider);
   final diaryService = ref.watch(diaryServiceProvider);
   return diaryService.getEntriesForDate(date);

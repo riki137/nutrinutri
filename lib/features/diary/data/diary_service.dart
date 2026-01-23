@@ -1,12 +1,16 @@
 import 'package:intl/intl.dart';
 import 'package:nutrinutri/core/services/kv_store.dart';
 
+enum EntryType { food, exercise }
+
 enum FoodEntryStatus { synced, processing, failed, cancelled }
 
-class FoodEntry {
+class DiaryEntry {
   final String id;
   final String name;
-  final int calories;
+  final EntryType type;
+  final int
+  calories; // Consumed (positive) or Burned (positive value, treated as credit)
   final double protein;
   final double carbs;
   final double fats;
@@ -15,24 +19,28 @@ class FoodEntry {
   final String? icon;
   final FoodEntryStatus status;
   final String? description;
+  final int? durationMinutes;
 
-  FoodEntry({
+  DiaryEntry({
     required this.id,
     required this.name,
+    this.type = EntryType.food,
     required this.calories,
-    required this.protein,
-    required this.carbs,
-    required this.fats,
+    this.protein = 0,
+    this.carbs = 0,
+    this.fats = 0,
     required this.timestamp,
     this.imagePath,
     this.icon,
     this.status = FoodEntryStatus.synced,
     this.description,
+    this.durationMinutes,
   });
 
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
+    'type': type.index,
     'calories': calories,
     'protein': protein,
     'carbs': carbs,
@@ -42,15 +50,19 @@ class FoodEntry {
     'icon': icon,
     'status': status.index,
     'description': description,
+    'durationMinutes': durationMinutes,
   };
 
-  factory FoodEntry.fromJson(Map<String, dynamic> json) => FoodEntry(
+  factory DiaryEntry.fromJson(Map<String, dynamic> json) => DiaryEntry(
     id: json['id'],
     name: json['name'],
+    type: json['type'] != null
+        ? EntryType.values[json['type']]
+        : EntryType.food,
     calories: json['calories'],
-    protein: (json['protein'] as num).toDouble(),
-    carbs: (json['carbs'] as num).toDouble(),
-    fats: (json['fats'] as num).toDouble(),
+    protein: (json['protein'] as num?)?.toDouble() ?? 0.0,
+    carbs: (json['carbs'] as num?)?.toDouble() ?? 0.0,
+    fats: (json['fats'] as num?)?.toDouble() ?? 0.0,
     timestamp: DateTime.parse(json['timestamp']),
     imagePath: json['imagePath'],
     icon: json['icon'],
@@ -58,6 +70,7 @@ class FoodEntry {
         ? FoodEntryStatus.values[json['status']]
         : FoodEntryStatus.synced,
     description: json['description'],
+    durationMinutes: json['durationMinutes'],
   );
 }
 
@@ -71,18 +84,18 @@ class DiaryService {
     return '$_collectionPrefix${DateFormat("yyyy-MM-dd").format(date)}';
   }
 
-  Future<List<FoodEntry>> getEntriesForDate(DateTime date) async {
+  Future<List<DiaryEntry>> getEntriesForDate(DateTime date) async {
     final key = _getDateKey(date);
     final data = await _kv.get(key);
     if (data == null) return [];
 
     final List<dynamic> entriesJson = data['entries'];
-    final entries = entriesJson.map((e) => FoodEntry.fromJson(e)).toList();
+    final entries = entriesJson.map((e) => DiaryEntry.fromJson(e)).toList();
     entries.sort((a, b) => a.timestamp.compareTo(b.timestamp));
     return entries;
   }
 
-  Future<void> addEntry(FoodEntry entry) async {
+  Future<void> addEntry(DiaryEntry entry) async {
     final key = _getDateKey(entry.timestamp);
     final currentEntries = await getEntriesForDate(entry.timestamp);
 
@@ -93,7 +106,7 @@ class DiaryService {
     });
   }
 
-  Future<void> deleteEntry(FoodEntry entry) async {
+  Future<void> deleteEntry(DiaryEntry entry) async {
     final key = _getDateKey(entry.timestamp);
     final currentEntries = await getEntriesForDate(entry.timestamp);
 
@@ -104,7 +117,7 @@ class DiaryService {
     });
   }
 
-  Future<void> updateEntry(FoodEntry entry) async {
+  Future<void> updateEntry(DiaryEntry entry) async {
     final key = _getDateKey(entry.timestamp);
     final currentEntries = await getEntriesForDate(entry.timestamp);
 
@@ -120,20 +133,26 @@ class DiaryService {
   /// Get summary for a date
   Future<Map<String, double>> getSummary(DateTime date) async {
     final entries = await getEntriesForDate(date);
-    double calories = 0;
+    double caloriesConsumed = 0;
+    double caloriesBurned = 0;
     double protein = 0;
     double carbs = 0;
     double fats = 0;
 
     for (var e in entries) {
-      calories += e.calories;
-      protein += e.protein;
-      carbs += e.carbs;
-      fats += e.fats;
+      if (e.type == EntryType.exercise) {
+        caloriesBurned += e.calories;
+      } else {
+        caloriesConsumed += e.calories;
+        protein += e.protein;
+        carbs += e.carbs;
+        fats += e.fats;
+      }
     }
 
     return {
-      'calories': calories,
+      'calories': caloriesConsumed, // Consumed
+      'caloriesBurned': caloriesBurned, // Burned
       'protein': protein,
       'carbs': carbs,
       'fats': fats,

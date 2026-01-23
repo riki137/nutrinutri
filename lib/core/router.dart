@@ -41,8 +41,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/add-entry',
         builder: (context, state) {
-          final entry = state.extra as FoodEntry?;
-          return AddEntryPage(existingEntry: entry);
+          final entry = state.extra as DiaryEntry?;
+          final typeStr = state.uri.queryParameters['type'];
+          final initialType = typeStr == 'exercise'
+              ? EntryType.exercise
+              : EntryType.food;
+          return AddEntryPage(existingEntry: entry, initialType: initialType);
         },
       ),
     ],

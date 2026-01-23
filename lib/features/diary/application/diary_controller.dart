@@ -23,6 +23,7 @@ class DiaryController extends _$DiaryController {
     required TimeOfDay time,
     String? description,
     String? imagePath,
+    EntryType type = EntryType.food,
   }) async {
     final diaryService = ref.read(diaryServiceProvider);
 
@@ -35,18 +36,16 @@ class DiaryController extends _$DiaryController {
       time.minute,
     );
 
-    final entry = FoodEntry(
+    final entry = DiaryEntry(
       id: const Uuid().v4(),
       name: 'Analyzing...',
+      type: type,
       calories: 0,
-      protein: 0,
-      carbs: 0,
-      fats: 0,
       timestamp: timestamp,
       imagePath: imagePath,
       description: description,
       status: FoodEntryStatus.processing,
-      icon: 'restaurant', // Default icon
+      icon: type == EntryType.exercise ? 'directions_run' : 'restaurant',
     );
 
     // 1. Add to local store immediately
@@ -62,13 +61,13 @@ class DiaryController extends _$DiaryController {
     _analyzeAndFill(entry);
   }
 
-  Future<void> cancelAnalysis(FoodEntry entry) async {
+  Future<void> cancelAnalysis(DiaryEntry entry) async {
     final aiService = await ref.read(aiServiceProvider.future);
     aiService.cancelRequest(entry.id);
 
     // Update status to cancelled
     final diaryService = ref.read(diaryServiceProvider);
-    final cancelledEntry = FoodEntry(
+    final cancelledEntry = DiaryEntry(
       id: entry.id,
       name: 'Analysis Cancelled',
       calories: 0,
@@ -93,10 +92,10 @@ class DiaryController extends _$DiaryController {
     ref.invalidate(dailySummaryProvider(normalizedDate));
   }
 
-  Future<void> retryAnalysis(FoodEntry entry) async {
+  Future<void> retryAnalysis(DiaryEntry entry) async {
     // Reset to processing state
     final diaryService = ref.read(diaryServiceProvider);
-    final processingEntry = FoodEntry(
+    final processingEntry = DiaryEntry(
       id: entry.id,
       name: 'Analyzing...',
       calories: 0,
@@ -124,12 +123,14 @@ class DiaryController extends _$DiaryController {
     _analyzeAndFill(processingEntry);
   }
 
-  Future<void> _analyzeAndFill(FoodEntry entry) async {
+  Future<void> _analyzeAndFill(DiaryEntry entry) async {
     final aiService = await ref.read(aiServiceProvider.future);
     final settingsService = ref.read(settingsServiceProvider);
 
     // Get fallback model info
     final fallbackModel = await settingsService.getFallbackModel();
+    // Get user profile for exercise calculation
+    final userProfile = await settingsService.getUserProfile();
 
     String? base64Image;
 
@@ -142,12 +143,21 @@ class DiaryController extends _$DiaryController {
     }
 
     try {
-      // Try primary model
-      final result = await aiService.analyzeFood(
-        textDescription: entry.description,
-        base64Image: base64Image,
-        requestId: entry.id,
-      );
+      final Map<String, dynamic> result;
+      if (entry.type == EntryType.exercise) {
+        result = await aiService.analyzeExercise(
+          textDescription: entry.description ?? 'Unspecified exercise',
+          userProfile: userProfile,
+          requestId: entry.id,
+        );
+      } else {
+        result = await aiService.analyzeFood(
+          textDescription: entry.description,
+          base64Image: base64Image,
+          requestId: entry.id,
+        );
+      }
+
       await _updateSuccess(entry, result);
     } catch (e) {
       if (e.toString().contains('Request cancelled')) {
@@ -161,12 +171,22 @@ class DiaryController extends _$DiaryController {
       if (fallbackModel != null && fallbackModel.isNotEmpty) {
         print('Retrying with fallback model: $fallbackModel');
         try {
-          final result = await aiService.analyzeFood(
-            textDescription: entry.description,
-            base64Image: base64Image,
-            requestId: entry.id,
-            modelOverride: fallbackModel,
-          );
+          final Map<String, dynamic> result;
+          if (entry.type == EntryType.exercise) {
+            result = await aiService.analyzeExercise(
+              textDescription: entry.description ?? 'Unspecified exercise',
+              userProfile: userProfile,
+              requestId: entry.id,
+              modelOverride: fallbackModel,
+            );
+          } else {
+            result = await aiService.analyzeFood(
+              textDescription: entry.description,
+              base64Image: base64Image,
+              requestId: entry.id,
+              modelOverride: fallbackModel,
+            );
+          }
           await _updateSuccess(entry, result);
           return;
         } catch (e2) {
@@ -180,9 +200,10 @@ class DiaryController extends _$DiaryController {
 
       // Update as failed
       final diaryService = ref.read(diaryServiceProvider);
-      final failedEntry = FoodEntry(
+      final failedEntry = DiaryEntry(
         id: entry.id,
         name: 'Analysis Failed',
+        type: entry.type,
         calories: 0,
         protein: 0,
         carbs: 0,
@@ -192,6 +213,7 @@ class DiaryController extends _$DiaryController {
         description: entry.description,
         status: FoodEntryStatus.failed,
         icon: 'warning',
+        durationMinutes: entry.durationMinutes,
       );
       await diaryService.updateEntry(failedEntry);
 
@@ -207,12 +229,17 @@ class DiaryController extends _$DiaryController {
   }
 
   Future<void> _updateSuccess(
-    FoodEntry entry,
+    DiaryEntry entry,
     Map<String, dynamic> result,
   ) async {
-    final updatedEntry = FoodEntry(
+    final updatedEntry = DiaryEntry(
       id: entry.id,
-      name: result['food_name'] ?? 'Unknown Food',
+      name:
+          result['food_name'] ??
+          (entry.type == EntryType.exercise
+              ? 'Unknown Exercise'
+              : 'Unknown Food'),
+      type: entry.type,
       calories: _toInt(result['calories']),
       protein: _toDouble(result['protein']),
       carbs: _toDouble(result['carbs']),
@@ -222,6 +249,9 @@ class DiaryController extends _$DiaryController {
       description: entry.description,
       status: FoodEntryStatus.synced,
       icon: _validateIcon(result['icon']),
+      durationMinutes: entry.type == EntryType.exercise
+          ? _toInt(result['durationMinutes'])
+          : null,
     );
 
     // Update in store
