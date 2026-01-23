@@ -1,4 +1,4 @@
-# NutriNutri 🍎
+# <img src="assets/images/nutrinutri.svg" width="48" height="48" vertical-align="middle"> NutriNutri 🍎
 
 > **Your Personal AI Nutritionist. Simple. Private. Open Source. Not-for-profit.**
 

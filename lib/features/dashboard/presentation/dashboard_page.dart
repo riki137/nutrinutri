@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nutrinutri/features/dashboard/presentation/dashboard_providers.dart';
@@ -40,7 +41,14 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('NutriNutri'),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SvgPicture.asset('assets/images/nutrinutri.svg', height: 32),
+            const Gap(8),
+            const Text('NutriNutri'),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
