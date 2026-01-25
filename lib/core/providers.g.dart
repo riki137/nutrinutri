@@ -108,5 +108,25 @@ final syncServiceProvider = Provider<SyncService>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef SyncServiceRef = ProviderRef<SyncService>;
+String _$currentUserHash() => r'b4e60355b9f6ed5b0be4be4ea8c1f9f0a26b3f31';
+
+/// Stream provider that watches the Google Sign-In authentication state.
+/// This ensures the UI rebuilds when sign-in completes.
+///
+/// Copied from [currentUser].
+@ProviderFor(currentUser)
+final currentUserProvider = StreamProvider<GoogleUserInfo?>.internal(
+  currentUser,
+  name: r'currentUserProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$currentUserHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef CurrentUserRef = StreamProviderRef<GoogleUserInfo?>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

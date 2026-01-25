@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:nutrinutri/core/services/google_user_info.dart';
 
 class SyncSection extends StatelessWidget {
-
   const SyncSection({
     super.key,
     required this.currentUser,
@@ -12,7 +11,7 @@ class SyncSection extends StatelessWidget {
     required this.onSignOut,
     required this.onSync,
   });
-  final GoogleSignInAccount? currentUser;
+  final GoogleUserInfo? currentUser;
   final bool isSyncing;
   final VoidCallback onSignIn;
   final VoidCallback onSignOut;
@@ -46,9 +45,18 @@ class SyncSection extends StatelessWidget {
           )
         else ...[
           ListTile(
-            leading: GoogleUserCircleAvatar(identity: currentUser!),
-            title: Text(currentUser!.displayName ?? ''),
-            subtitle: Text(currentUser!.email),
+            leading: CircleAvatar(
+              backgroundImage: currentUser!.photoUrl != null
+                  ? NetworkImage(currentUser!.photoUrl!)
+                  : null,
+              child: currentUser!.photoUrl == null
+                  ? const Icon(Icons.account_circle)
+                  : null,
+            ),
+            title: Text(currentUser!.name ?? currentUser!.email),
+            subtitle: currentUser!.name != null
+                ? Text(currentUser!.email)
+                : const Text('Connected to Google Drive'),
             trailing: IconButton(
               icon: const Icon(Icons.logout),
               onPressed: onSignOut,

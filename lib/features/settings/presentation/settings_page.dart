@@ -114,7 +114,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(settingsControllerProvider);
-    final syncService = ref.watch(syncServiceProvider);
+    final currentUser = ref.watch(currentUserProvider).valueOrNull;
     final controller = ref.read(settingsControllerProvider.notifier);
 
     return PopScope(
@@ -146,7 +146,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               const Divider(),
               const Gap(16),
               SyncSection(
-                currentUser: syncService.currentUser,
+                currentUser: currentUser,
                 isSyncing: state.isSyncing,
                 onSignIn: controller.signIn,
                 onSignOut: controller.signOut,

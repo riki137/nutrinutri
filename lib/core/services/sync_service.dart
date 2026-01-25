@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sign_in_as_googleapis_auth.dart';
 import 'package:flutter/foundation.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:google_sign_in_all_platforms/google_sign_in_all_platforms.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
+import 'package:nutrinutri/core/services/google_user_info.dart';
 import 'package:nutrinutri/core/services/kv_store.dart';
 
 class SyncService {
@@ -12,41 +12,100 @@ class SyncService {
   static const String _isGoogleLoggedInKey = 'is_google_logged_in';
   final KVStore _kv;
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    clientId: _getClientId(),
-    scopes: [drive.DriveApi.driveAppdataScope],
+    params: GoogleSignInParams(
+      clientId: _getClientId(),
+      clientSecret: _getClientSecret(),
+      scopes: [
+        'https://www.googleapis.com/auth/userinfo.email',
+        'https://www.googleapis.com/auth/userinfo.profile',
+        drive.DriveApi.driveAppdataScope,
+      ],
+    ),
   );
 
-  static String? _getClientId() {
-    if (kIsWeb) {
-      return '650205047998-i0plaeno2mrp8e1kf6l52cth4076548p.apps.googleusercontent.com';
-    }
-    switch (defaultTargetPlatform) {
-      case TargetPlatform.android:
-        return '650205047998-rh3ipe08mjo6fdcaio48ei6bta4qkg2k.apps.googleusercontent.com';
-      case TargetPlatform.iOS:
-      case TargetPlatform.macOS:
-        return '650205047998-3k536pv09s3v2lbbkbk0v1t7gvdv6njq.apps.googleusercontent.com';
-      case TargetPlatform.windows:
-      case TargetPlatform.linux:
-        return '650205047998-hmrqpdenuqil56l2p6vladdja8imr02o.apps.googleusercontent.com';
-      default:
-        return null;
-    }
+  static String _getClientId() {
+    // Use same client ID for all platforms as google_sign_in_all_platforms uses web secret everywhere
+    return '650205047998-i0plaeno2mrp8e1kf6l52cth4076548p.apps.googleusercontent.com';
   }
 
-  GoogleSignInAccount? get currentUser => _googleSignIn.currentUser;
-  Stream<GoogleSignInAccount?> get onCurrentUserChanged =>
-      _googleSignIn.onCurrentUserChanged;
+  // Client secret is used for all platforms with google_sign_in_all_platforms
+  static String? _getClientSecret() {
+    return "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";
+  }
+
+  GoogleSignInCredentials? _currentCredentials;
+  GoogleSignInCredentials? get currentCredentials => _currentCredentials;
+
+  GoogleUserInfo? _currentUserInfo;
+
+  /// Returns the cached user info.
+  GoogleUserInfo? get currentUser => _currentUserInfo;
+
+  /// Stream controller for user info changes.
+  final _userInfoController = StreamController<GoogleUserInfo?>.broadcast();
+
+  /// Stream of user info changes.
+  Stream<GoogleUserInfo?> get onCurrentUserChanged =>
+      _userInfoController.stream;
+
+  /// Flag to ensure we only set up the auth state listener once.
+  bool _isListeningToAuthState = false;
 
   final _syncCompleteController = StreamController<void>.broadcast();
   Stream<void> get onSyncCompleted => _syncCompleteController.stream;
 
+  void _listenToAuthState() {
+    if (_isListeningToAuthState) return;
+    _isListeningToAuthState = true;
+
+    // Emit initial value
+    _userInfoController.add(_currentUserInfo);
+
+    _googleSignIn.authenticationState.listen((credentials) async {
+      _currentCredentials = credentials;
+      if (credentials != null) {
+        await _fetchAndCacheUserInfo(credentials.accessToken);
+      } else {
+        _currentUserInfo = null;
+        _userInfoController.add(null);
+      }
+    });
+  }
+
+  Future<void> _fetchAndCacheUserInfo(String accessToken) async {
+    final userInfo = await GoogleUserInfo.fromAccessToken(accessToken);
+    if (userInfo == null) {
+      debugPrint('Failed to fetch user info - token may be invalid');
+      // Clear invalid credentials
+      await clearAccessToken();
+      return;
+    }
+    _currentUserInfo = userInfo;
+    _userInfoController.add(userInfo);
+    debugPrint('User info fetched: ${userInfo.name ?? userInfo.email}');
+  }
+
   Future<void> signIn() async {
     try {
-      await _googleSignIn.signIn();
-      await _kv.put(_isGoogleLoggedInKey, {'value': true});
-    } catch (e) {
+      debugPrint('SyncService.signIn() called');
+      // Set up listener first to ensure stream subscribers are ready
+      _listenToAuthState();
+      debugPrint('About to call _googleSignIn.signIn()');
+      final credentials = await _googleSignIn.signIn();
+      debugPrint('Sign in completed, credentials: ${credentials != null}');
+      _currentCredentials = credentials;
+      if (credentials != null) {
+        debugPrint(
+          'Access Token present: ${credentials.accessToken.isNotEmpty}',
+        );
+        // The auth state listener will also fetch user info, but we do it
+        // explicitly here to ensure it's available immediately
+        await _fetchAndCacheUserInfo(credentials.accessToken);
+        await _kv.put(_isGoogleLoggedInKey, {'value': true});
+      }
+    } catch (e, stackTrace) {
       debugPrint('Sign in failed: $e');
+      debugPrint('Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -58,7 +117,12 @@ class SyncService {
     if (!shouldRestore) return;
 
     try {
-      await _googleSignIn.signInSilently();
+      _listenToAuthState();
+      final credentials = await _googleSignIn.silentSignIn();
+      _currentCredentials = credentials;
+      if (credentials != null) {
+        await _fetchAndCacheUserInfo(credentials.accessToken);
+      }
     } catch (e) {
       debugPrint('Restore session failed: $e');
     }
@@ -66,7 +130,17 @@ class SyncService {
 
   Future<void> signOut() async {
     await _googleSignIn.signOut();
+    _currentCredentials = null;
+    _currentUserInfo = null;
+    _userInfoController.add(null);
     await _kv.delete(_isGoogleLoggedInKey);
+  }
+
+  /// Clears the cached credentials and forces a fresh sign-in.
+  /// Use this when the access token has expired or is invalid.
+  Future<void> clearAccessToken() async {
+    debugPrint('Clearing access token and credentials');
+    await signOut();
   }
 
   Future<void> syncIfNeeded() async {
@@ -75,15 +149,15 @@ class SyncService {
   }
 
   Future<int> sync() async {
-    final account = _googleSignIn.currentUser;
-    if (account == null) {
+    final credentials = _currentCredentials;
+    if (credentials == null) {
       debugPrint('Cannot sync: Not signed in');
       return 0;
     }
 
     int localUpdatesCount = 0;
     try {
-      final client = await _googleSignIn.authenticatedClient();
+      final client = await _googleSignIn.authenticatedClient;
       if (client == null) throw Exception('Authenticated client is null');
 
       final driveApi = drive.DriveApi(client);

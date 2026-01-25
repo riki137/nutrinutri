@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nutrinutri/core/services/ai_service.dart';
+import 'package:nutrinutri/core/services/google_user_info.dart';
 import 'package:nutrinutri/core/services/kv_store.dart';
 import 'package:nutrinutri/core/services/settings_service.dart';
 import 'package:nutrinutri/core/services/sync_service.dart';
@@ -48,4 +49,15 @@ SyncService syncService(Ref ref) {
   final kv = ref.watch(keyValueStoreProvider).valueOrNull;
   if (kv == null) throw UnimplementedError('KVStore not initialized');
   return SyncService(kv);
+}
+
+/// Stream provider that watches the Google Sign-In authentication state.
+/// This ensures the UI rebuilds when sign-in completes.
+@Riverpod(keepAlive: true)
+Stream<GoogleUserInfo?> currentUser(Ref ref) async* {
+  final syncService = ref.watch(syncServiceProvider);
+  // Emit the current cached user info immediately
+  yield syncService.currentUser;
+  // Then listen for changes
+  yield* syncService.onCurrentUserChanged;
 }

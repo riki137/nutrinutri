@@ -250,13 +250,13 @@ packages:
     source: hosted
     version: "2.0.8"
   extension_google_sign_in_as_googleapis_auth:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: extension_google_sign_in_as_googleapis_auth
-      sha256: "0dcb17e399f62e897ac78f0a402a3cb6ab9313ced8b2bf131f684d317e05c9ab"
+      sha256: "8a9c887a377ee5b990b2b29be229de8401a43002a7d0d0b29f7d014c1c6bfeac"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.13"
+    version: "3.0.0"
   fake_async:
     dependency: transitive
     description:
@@ -462,53 +462,93 @@ packages:
     source: hosted
     version: "0.3.3+1"
   google_sign_in:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: google_sign_in
-      sha256: d0a2c3bcb06e607bb11e4daca48bd4b6120f0bbc4015ccebbe757d24ea60ed2a
+      sha256: "521031b65853b4409b8213c0387d57edaad7e2a949ce6dea0d8b2afc9cb29763"
       url: "https://pub.dev"
     source: hosted
-    version: "6.3.0"
+    version: "7.2.0"
+  google_sign_in_all_platforms:
+    dependency: "direct main"
+    description:
+      name: google_sign_in_all_platforms
+      sha256: "3faab55abf133ee5650de9afec4d63663fbe1b99a62bb924f71c73b907a97777"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.2"
+  google_sign_in_all_platforms_desktop:
+    dependency: transitive
+    description:
+      name: google_sign_in_all_platforms_desktop
+      sha256: d0ad9f7ed30eb7d8aa5a781ef58d4f1c9c7ad9d7634e27652411436fb6b2c670
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.0"
+  google_sign_in_all_platforms_interface:
+    dependency: transitive
+    description:
+      name: google_sign_in_all_platforms_interface
+      sha256: bf9b2a17067d2e023862cd565a076555c8de088c64e4d35ee68826cad0ad972d
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.1"
+  google_sign_in_all_platforms_mobile:
+    dependency: transitive
+    description:
+      name: google_sign_in_all_platforms_mobile
+      sha256: "4d09eaf2676bf44925550fc9346ea8e6ff3a32c9885c566025bf0e90feab2aee"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.1"
+  google_sign_in_all_platforms_web:
+    dependency: transitive
+    description:
+      name: google_sign_in_all_platforms_web
+      sha256: "1af470d499396a522740044f70906d3e220a7da40c2976d5a46ec0ede5d2cfb1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.0"
   google_sign_in_android:
     dependency: transitive
     description:
       name: google_sign_in_android
-      sha256: d5e23c56a4b84b6427552f1cf3f98f716db3b1d1a647f16b96dbb5b93afa2805
+      sha256: "5ec98ab35387c68c0050495bb211bd88375873723a80fae7c2e9266ea0bdd8bb"
       url: "https://pub.dev"
     source: hosted
-    version: "6.2.1"
+    version: "7.2.7"
   google_sign_in_ios:
     dependency: transitive
     description:
       name: google_sign_in_ios
-      sha256: "102005f498ce18442e7158f6791033bbc15ad2dcc0afa4cf4752e2722a516c96"
+      sha256: "234fc2830b55d1bbeb7e05662967691f5994143ff43dc70d3f139d1bbb3b8fb2"
       url: "https://pub.dev"
     source: hosted
-    version: "5.9.0"
+    version: "6.2.5"
   google_sign_in_platform_interface:
     dependency: transitive
     description:
       name: google_sign_in_platform_interface
-      sha256: "5f6f79cf139c197261adb6ac024577518ae48fdff8e53205c5373b5f6430a8aa"
+      sha256: "7f59208c42b415a3cca203571128d6f84f885fead2d5b53eb65a9e27f2965bb5"
       url: "https://pub.dev"
     source: hosted
-    version: "2.5.0"
+    version: "3.1.0"
   google_sign_in_web:
     dependency: transitive
     description:
       name: google_sign_in_web
-      sha256: "460547beb4962b7623ac0fb8122d6b8268c951cf0b646dd150d60498430e4ded"
+      sha256: "2fc1f941e6443b2d6984f4056a727a3eaeab15d8ee99ba7125d79029be75a1da"
       url: "https://pub.dev"
     source: hosted
-    version: "0.12.4+4"
+    version: "1.1.0"
   googleapis:
     dependency: "direct main"
     description:
       name: googleapis
-      sha256: "692fb9e90c321b61a7a2123de0353ec8a20691cd979db2553d8d732f710f6535"
+      sha256: "5c9e0f25be1dec13d8d2158263141104c51b5ba83487537c17a2330581e505ee"
       url: "https://pub.dev"
     source: hosted
-    version: "15.0.0"
+    version: "14.0.0"
   googleapis_auth:
     dependency: "direct main"
     description:
@@ -541,6 +581,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.6.0"
+  http_methods:
+    dependency: transitive
+    description:
+      name: http_methods
+      sha256: "6bccce8f1ec7b5d701e7921dca35e202d425b57e317ba1a37f2638590e29e566"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.1"
   http_multi_server:
     dependency: transitive
     description:
@@ -981,6 +1029,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.2"
+  shelf_router:
+    dependency: transitive
+    description:
+      name: shelf_router
+      sha256: f5e5d492440a7fb165fe1e2e1a623f31f734d3370900070b2b1e0d0428d59864
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.4"
   shelf_web_socket:
     dependency: transitive
     description:
