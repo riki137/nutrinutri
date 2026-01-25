@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:nutrinutri/core/providers.dart';
+import 'package:nutrinutri/core/utils/platform_helper.dart';
 import 'package:nutrinutri/core/widgets/responsive_center.dart';
 import 'package:nutrinutri/features/settings/presentation/managers/settings_form_manager.dart';
 import 'package:nutrinutri/features/settings/presentation/settings_controller.dart';
@@ -116,6 +117,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final state = ref.watch(settingsControllerProvider);
     final currentUser = ref.watch(currentUserProvider).valueOrNull;
     final controller = ref.read(settingsControllerProvider.notifier);
+    final isDesktop = PlatformHelper.isDesktopOrWeb;
+    final theme = Theme.of(context);
 
     return PopScope(
       canPop: false,
@@ -127,68 +130,142 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         }
       },
       child: Scaffold(
-        appBar: AppBar(title: const Text('Settings')),
-        body: ResponsiveCenter(
-          child: ListView(
-            padding: const EdgeInsets.all(16),
+        appBar: isDesktop ? null : AppBar(title: const Text('Settings')),
+        body: isDesktop
+            ? _buildDesktopLayout(
+                context,
+                theme,
+                state,
+                currentUser,
+                controller,
+              )
+            : _buildMobileLayout(state, currentUser, controller),
+      ),
+    );
+  }
+
+  Widget _buildDesktopLayout(
+    BuildContext context,
+    ThemeData theme,
+    SettingsState state,
+    dynamic currentUser,
+    SettingsController controller,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Desktop header
+          Row(
             children: [
-              AIConfigurationSection(
-                apiKeyController: _formManager.apiKeyController,
-                customModelController: _formManager.customModelController,
-                selectedModel: state.selectedModel,
-                fallbackModel: state.fallbackModel,
-                availableModels: controller.availableModels,
-                onModelChanged: (v) =>
-                    v != null ? controller.updateModel(v) : null,
-                onFallbackModelChanged: controller.updateFallbackModel,
+              Text(
+                'Settings',
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              const Gap(32),
-              const Divider(),
-              const Gap(16),
-              SyncSection(
-                currentUser: currentUser,
-                isSyncing: state.isSyncing,
-                onSignIn: controller.signIn,
-                onSignOut: controller.signOut,
-                onSync: _handleSync,
-              ),
-              const Gap(32),
-              const Divider(),
-              const Gap(16),
-              ProfileSection(
-                ageController: _formManager.ageController,
-                weightController: _formManager.weightController,
-                heightController: _formManager.heightController,
-                goalController: _formManager.goalController,
-                proteinController: _formManager.proteinController,
-                carbsController: _formManager.carbsController,
-                fatsController: _formManager.fatsController,
-                gender: state.gender,
-                activityLevel: state.activityLevel,
-                onGenderChanged: (v) {
-                  if (v != null) {
-                    controller.updateGender(v);
-                    _formManager.recalculateCalories();
-                  }
-                },
-                onActivityLevelChanged: (v) {
-                  if (v != null) {
-                    controller.updateActivityLevel(v);
-                    _formManager.recalculateCalories();
-                  }
-                },
-              ),
-              const Gap(24),
+              const Spacer(),
               FilledButton.icon(
                 onPressed: state.isLoading ? null : _save,
                 icon: const Icon(Icons.save),
                 label: const Text('Save Settings'),
               ),
-              const Gap(40),
             ],
           ),
-        ),
+          const Gap(24),
+          // Main content
+          Expanded(
+            child: ResponsiveCenter(
+              maxWidth: 900,
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: _buildSettingsSections(
+                  state,
+                  currentUser,
+                  controller,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
+  }
+
+  Widget _buildMobileLayout(
+    SettingsState state,
+    dynamic currentUser,
+    SettingsController controller,
+  ) {
+    return ResponsiveCenter(
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          ..._buildSettingsSections(state, currentUser, controller),
+          const Gap(24),
+          FilledButton.icon(
+            onPressed: state.isLoading ? null : _save,
+            icon: const Icon(Icons.save),
+            label: const Text('Save Settings'),
+          ),
+          const Gap(40),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildSettingsSections(
+    SettingsState state,
+    dynamic currentUser,
+    SettingsController controller,
+  ) {
+    return [
+      AIConfigurationSection(
+        apiKeyController: _formManager.apiKeyController,
+        customModelController: _formManager.customModelController,
+        selectedModel: state.selectedModel,
+        fallbackModel: state.fallbackModel,
+        availableModels: controller.availableModels,
+        onModelChanged: (v) => v != null ? controller.updateModel(v) : null,
+        onFallbackModelChanged: controller.updateFallbackModel,
+      ),
+      const Gap(32),
+      const Divider(),
+      const Gap(16),
+      SyncSection(
+        currentUser: currentUser,
+        isSyncing: state.isSyncing,
+        onSignIn: controller.signIn,
+        onSignOut: controller.signOut,
+        onSync: _handleSync,
+      ),
+      const Gap(32),
+      const Divider(),
+      const Gap(16),
+      ProfileSection(
+        ageController: _formManager.ageController,
+        weightController: _formManager.weightController,
+        heightController: _formManager.heightController,
+        goalController: _formManager.goalController,
+        proteinController: _formManager.proteinController,
+        carbsController: _formManager.carbsController,
+        fatsController: _formManager.fatsController,
+        gender: state.gender,
+        activityLevel: state.activityLevel,
+        onGenderChanged: (v) {
+          if (v != null) {
+            controller.updateGender(v);
+            _formManager.recalculateCalories();
+          }
+        },
+        onActivityLevelChanged: (v) {
+          if (v != null) {
+            controller.updateActivityLevel(v);
+            _formManager.recalculateCalories();
+          }
+        },
+      ),
+    ];
   }
 }
