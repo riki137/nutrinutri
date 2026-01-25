@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nutrinutri/core/providers.dart';
 import 'package:nutrinutri/core/utils/calorie_calculator.dart';
 import 'package:nutrinutri/features/settings/domain/ai_model_info.dart';
@@ -6,7 +7,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'settings_controller.g.dart';
 
 class SettingsState {
-
   SettingsState({
     this.isLoading = false,
     this.isSyncing = false,
@@ -16,6 +16,7 @@ class SettingsState {
     this.gender = 'male',
     this.activityLevel = 'sedentary',
   });
+
   final bool isLoading;
   final bool isSyncing;
   final String? initialHash;
@@ -239,3 +240,5 @@ class SettingsController extends _$SettingsController {
     );
   }
 }
+
+final unsavedSettingsChangesProvider = StateProvider<bool>((ref) => false);
