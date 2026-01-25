@@ -85,7 +85,7 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
             action: e.toString().contains('API Key')
                 ? SnackBarAction(
                     label: 'Settings',
-                    onPressed: () => context.push('/settings'),
+                    onPressed: () => context.go('/settings'),
                   )
                 : null,
           ),
@@ -203,6 +203,10 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
                       }
                     }
                   },
+                  onFoodSearch: (q) => ref
+                      .read(addEntryControllerProvider.notifier)
+                      .searchFood(q),
+                  onAutofill: (e) => _formManager.autofill(e),
                 ),
             ],
           ),

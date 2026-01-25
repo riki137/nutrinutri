@@ -12,7 +12,6 @@ import 'package:uuid/uuid.dart';
 part 'add_entry_controller.g.dart';
 
 class AddEntryState {
-
   AddEntryState({
     this.image,
     this.showForm = false,
@@ -216,5 +215,9 @@ class AddEntryController extends _$AddEntryController {
     // Calories = MET * Weight(kg) * Duration(hr)
     final calories = (met * weight * (durationMinutes / 60)).round();
     return calories;
+  }
+
+  Future<List<DiaryEntry>> searchFood(String query) async {
+    return ref.read(foodIndexServiceProvider).search(query);
   }
 }

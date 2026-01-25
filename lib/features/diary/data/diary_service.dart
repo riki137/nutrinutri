@@ -1,12 +1,12 @@
 import 'package:intl/intl.dart';
 import 'package:nutrinutri/core/services/kv_store.dart';
+import 'package:nutrinutri/core/services/food_index_service.dart';
 
 enum EntryType { food, exercise }
 
 enum FoodEntryStatus { synced, processing, failed, cancelled }
 
 class DiaryEntry {
-
   DiaryEntry({
     required this.id,
     required this.name,
@@ -75,9 +75,9 @@ class DiaryEntry {
 }
 
 class DiaryService {
-
-  DiaryService(this._kv);
+  DiaryService(this._kv, this._foodIndex);
   final KVStore _kv;
+  final FoodIndexService _foodIndex;
   static const String _collectionPrefix = 'diary_';
 
   String _getDateKey(DateTime date) {
@@ -104,6 +104,10 @@ class DiaryService {
     await _kv.put(key, {
       'entries': currentEntries.map((e) => e.toJson()).toList(),
     });
+
+    if (entry.type == EntryType.food) {
+      await _foodIndex.indexEntry(entry);
+    }
   }
 
   Future<void> deleteEntry(DiaryEntry entry) async {

@@ -3,10 +3,10 @@ import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
 import 'package:nutrinutri/core/utils/icon_utils.dart';
 import 'package:nutrinutri/core/utils/met_values.dart';
+import 'package:nutrinutri/features/diary/data/diary_service.dart';
 import 'package:nutrinutri/features/logging/presentation/widgets/icon_picker_button.dart';
 
 class EntryForm extends StatelessWidget {
-
   const EntryForm({
     super.key,
     required this.nameController,
@@ -22,6 +22,8 @@ class EntryForm extends StatelessWidget {
     required this.onPickDate,
     required this.onPickTime,
     this.isExercise = false,
+    this.onFoodSearch,
+    this.onAutofill,
   });
   final TextEditingController nameController;
   final TextEditingController caloriesController;
@@ -36,6 +38,8 @@ class EntryForm extends StatelessWidget {
   final VoidCallback onPickDate;
   final VoidCallback onPickTime;
   final bool isExercise;
+  final Future<List<DiaryEntry>> Function(String)? onFoodSearch;
+  final void Function(DiaryEntry)? onAutofill;
 
   @override
   Widget build(BuildContext context) {
@@ -47,29 +51,100 @@ class EntryForm extends StatelessWidget {
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const Gap(16),
-        IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              IconPickerButton(
-                selectedIcon: selectedIcon,
-                onIconChanged: (val) => onIconChanged(val),
-                availableIcons: isExercise
-                    ? IconUtils.availableExerciseIcons
-                    : IconUtils.availableFoodIcons,
-              ),
-              const Gap(16),
-              Expanded(
-                child: TextField(
-                  controller: nameController,
-                  decoration: InputDecoration(
-                    labelText: isExercise ? 'Exercise Name' : 'Food Name',
-                    border: const OutlineInputBorder(),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            // IconPickerButton width (60) + Gap (16) = 76
+            final dropdownWidth = (constraints.maxWidth - 76).clamp(
+              0.0,
+              double.infinity,
+            );
+
+            return IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  IconPickerButton(
+                    selectedIcon: selectedIcon,
+                    onIconChanged: (val) => onIconChanged(val),
+                    availableIcons: isExercise
+                        ? IconUtils.availableExerciseIcons
+                        : IconUtils.availableFoodIcons,
                   ),
-                ),
+                  const Gap(16),
+                  Expanded(
+                    child: isExercise
+                        ? TextField(
+                            controller: nameController,
+                            decoration: const InputDecoration(
+                              labelText: 'Exercise Name',
+                              border: OutlineInputBorder(),
+                            ),
+                          )
+                        : RawAutocomplete<DiaryEntry>(
+                            textEditingController: nameController,
+                            focusNode: FocusNode(),
+                            optionsBuilder: (text) async {
+                              if (onFoodSearch == null) return [];
+                              return onFoodSearch!(text.text);
+                            },
+                            displayStringForOption: (option) => option.name,
+                            onSelected: (entry) {
+                              if (onAutofill != null) onAutofill!(entry);
+                            },
+                            fieldViewBuilder:
+                                (context, controller, focusNode, onSubmitted) {
+                                  return TextField(
+                                    controller: controller,
+                                    focusNode: focusNode,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Food Name',
+                                      border: OutlineInputBorder(),
+                                      suffixIcon: Icon(Icons.search),
+                                    ),
+                                  );
+                                },
+                            optionsViewBuilder: (context, onSelected, options) {
+                              return Align(
+                                alignment: Alignment.topLeft,
+                                child: Material(
+                                  elevation: 4,
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      maxWidth: dropdownWidth,
+                                      maxHeight: 250,
+                                    ),
+                                    child: ListView.builder(
+                                      padding: EdgeInsets.zero,
+                                      shrinkWrap: true,
+                                      itemCount: options.length,
+                                      itemBuilder: (context, index) {
+                                        final option = options.elementAt(index);
+                                        return ListTile(
+                                          leading: Icon(
+                                            IconUtils.getIcon(option.icon) ??
+                                                Icons.restaurant,
+                                          ),
+                                          title: Text(option.name),
+                                          subtitle: Text(
+                                            '${option.calories} cal | P:${option.protein} C:${option.carbs} F:${option.fats}',
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                          onTap: () => onSelected(option),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         ),
         if (isExercise) ...[
           const Gap(8),

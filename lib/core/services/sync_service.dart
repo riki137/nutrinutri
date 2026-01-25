@@ -181,7 +181,12 @@ class SyncService {
       }
 
       // 3. Merge Logic
-      final allKeys = {...localSnapshot.keys, ...remoteSnapshot.keys};
+      // Filter out local-only keys (starting with 'local_')
+      final allKeys = {
+        ...localSnapshot.keys,
+        ...remoteSnapshot.keys,
+      }.where((k) => !k.startsWith('local_'));
+
       bool remoteNeedsUpdate = false;
 
       final nextRemoteSnapshot = Map<String, dynamic>.from(remoteSnapshot);
