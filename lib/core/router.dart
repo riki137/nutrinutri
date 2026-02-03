@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nutrinutri/core/providers.dart';
@@ -62,13 +63,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/add-entry',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final entry = state.extra as DiaryEntry?;
           final typeStr = state.uri.queryParameters['type'];
           final initialType = typeStr == 'exercise'
               ? EntryType.exercise
               : EntryType.food;
-          return AddEntryPage(existingEntry: entry, initialType: initialType);
+          return MaterialPage(
+            key: state.pageKey,
+            child: AddEntryPage(existingEntry: entry, initialType: initialType),
+          );
         },
       ),
     ],

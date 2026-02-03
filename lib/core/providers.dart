@@ -5,6 +5,8 @@ import 'package:nutrinutri/core/services/kv_store.dart';
 import 'package:nutrinutri/core/services/settings_service.dart';
 import 'package:nutrinutri/core/services/sync_service.dart';
 import 'package:nutrinutri/features/diary/data/diary_service.dart';
+import 'package:nutrinutri/core/services/food_index_service.dart';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'providers.g.dart';
@@ -40,8 +42,9 @@ Future<AIService> aiService(Ref ref) async {
 @Riverpod(keepAlive: true)
 DiaryService diaryService(Ref ref) {
   final kv = ref.watch(keyValueStoreProvider).valueOrNull;
+  final foodIndex = ref.read(foodIndexServiceProvider);
   if (kv == null) throw UnimplementedError('KVStore not initialized');
-  return DiaryService(kv);
+  return DiaryService(kv, foodIndex);
 }
 
 @Riverpod(keepAlive: true)
@@ -49,6 +52,13 @@ SyncService syncService(Ref ref) {
   final kv = ref.watch(keyValueStoreProvider).valueOrNull;
   if (kv == null) throw UnimplementedError('KVStore not initialized');
   return SyncService(kv);
+}
+
+@Riverpod(keepAlive: true)
+FoodIndexService foodIndexService(Ref ref) {
+  final kv = ref.watch(keyValueStoreProvider).valueOrNull;
+  if (kv == null) throw UnimplementedError('KVStore not initialized');
+  return FoodIndexService(kv);
 }
 
 /// Stream provider that watches the Google Sign-In authentication state.

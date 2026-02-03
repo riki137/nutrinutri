@@ -94,8 +94,9 @@ class AdaptiveShell extends ConsumerWidget {
 }
 
 /// Desktop layout with navigation rail or sidebar
-class _DesktopLayoutShell extends StatelessWidget {
+class _DesktopLayoutShell extends ConsumerWidget {
   const _DesktopLayoutShell({
+    super.key,
     required this.currentPath,
     required this.selectedIndex,
     required this.isExpanded,
@@ -115,7 +116,7 @@ class _DesktopLayoutShell extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 

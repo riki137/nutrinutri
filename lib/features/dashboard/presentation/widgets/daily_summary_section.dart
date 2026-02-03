@@ -7,7 +7,6 @@ import 'package:nutrinutri/core/utils/calorie_calculator.dart';
 import 'package:nutrinutri/features/dashboard/presentation/dashboard_providers.dart';
 
 class DailySummarySection extends ConsumerWidget {
-
   const DailySummarySection({super.key, required this.today});
   final DateTime today;
 
@@ -144,7 +143,11 @@ class DailySummarySection extends ConsumerWidget {
                           style: TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.bold,
-                            color: isOver ? Colors.redAccent : Colors.black,
+                            color: isOver
+                                ? Colors.redAccent
+                                : Theme.of(
+                                    context,
+                                  ).textTheme.headlineMedium?.color,
                           ),
                         ),
                         Text(
@@ -192,7 +195,6 @@ class DailySummarySection extends ConsumerWidget {
 }
 
 class _MacroRing extends StatelessWidget {
-
   const _MacroRing({
     required this.label,
     required this.value,
@@ -254,7 +256,9 @@ class _MacroRing extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
-                    color: isOver ? color : Colors.black,
+                    color: isOver
+                        ? color
+                        : Theme.of(context).textTheme.bodyMedium?.color,
                   ),
                 ),
               ),

@@ -74,7 +74,7 @@ final aiServiceProvider = FutureProvider<AIService>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AiServiceRef = FutureProviderRef<AIService>;
-String _$diaryServiceHash() => r'20a5f67093c14abed9e2898d33373579615e7ba9';
+String _$diaryServiceHash() => r'4e9a8b6297ca37b4de2dd69c81e33993d12a7b0b';
 
 /// See also [diaryService].
 @ProviderFor(diaryService)
@@ -108,6 +108,23 @@ final syncServiceProvider = Provider<SyncService>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef SyncServiceRef = ProviderRef<SyncService>;
+String _$foodIndexServiceHash() => r'90aaebc70e62158d63a7efd0fa643e12a0152bb9';
+
+/// See also [foodIndexService].
+@ProviderFor(foodIndexService)
+final foodIndexServiceProvider = Provider<FoodIndexService>.internal(
+  foodIndexService,
+  name: r'foodIndexServiceProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$foodIndexServiceHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef FoodIndexServiceRef = ProviderRef<FoodIndexService>;
 String _$currentUserHash() => r'b4e60355b9f6ed5b0be4be4ea8c1f9f0a26b3f31';
 
 /// Stream provider that watches the Google Sign-In authentication state.

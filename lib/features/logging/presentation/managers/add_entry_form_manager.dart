@@ -4,7 +4,6 @@ import 'package:nutrinutri/features/diary/data/diary_service.dart';
 import 'package:nutrinutri/features/logging/presentation/add_entry_controller.dart';
 
 class AddEntryFormManager {
-
   AddEntryFormManager({required this.ref, required this.onStateChanged}) {
     nameController.addListener(_updateCalories);
     durationController.addListener(_updateCalories);
@@ -61,6 +60,17 @@ class AddEntryFormManager {
   void initializeWithType(EntryType type) {
     ref.read(addEntryControllerProvider.notifier).initializeWithType(type);
     onStateChanged();
+  }
+
+  void autofill(DiaryEntry entry) {
+    nameController.text = entry.name;
+    caloriesController.text = entry.calories.toString();
+    proteinController.text = entry.protein.toString();
+    carbsController.text = entry.carbs.toString();
+    fatsController.text = entry.fats.toString();
+    if (entry.icon != null) {
+      ref.read(addEntryControllerProvider.notifier).updateIcon(entry.icon!);
+    }
   }
 
   Future<void> addOptimistic() async {
