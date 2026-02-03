@@ -176,7 +176,7 @@ class SettingsController extends _$SettingsController {
     AIModelInfo(
       id: 'google/gemini-3-flash-preview',
       name: 'Gemini 3 Flash',
-      price: r'~$0.008',
+      price: r'~$0.0008',
       description: 'Recommended, Default, Fast, Accurate',
     ),
     AIModelInfo(
