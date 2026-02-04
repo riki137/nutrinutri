@@ -172,8 +172,10 @@ class AddEntryController extends _$AddEntryController {
         carbs: finalCarbs,
         fats: finalFats,
         timestamp: timestamp,
-        imagePath: state.image?.path,
+        imagePath: state.image?.path ?? existingEntry.imagePath,
         icon: state.selectedIcon,
+        status: existingEntry.status,
+        description: existingEntry.description,
         durationMinutes: finalDuration,
       );
       await diaryService.updateEntry(updatedEntry);
@@ -218,6 +220,8 @@ class AddEntryController extends _$AddEntryController {
   }
 
   Future<List<DiaryEntry>> searchFood(String query) async {
-    return ref.read(diaryServiceProvider).searchFoodSuggestions(query);
+    return ref
+        .read(diaryServiceProvider)
+        .searchEntrySuggestions(query, type: state.type);
   }
 }

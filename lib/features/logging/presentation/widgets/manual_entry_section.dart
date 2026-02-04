@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:nutrinutri/features/diary/domain/diary_entry.dart';
 import 'package:nutrinutri/features/logging/presentation/widgets/entry_action_buttons.dart';
 import 'package:nutrinutri/features/logging/presentation/widgets/entry_form.dart';
 
@@ -24,8 +23,6 @@ class ManualEntrySection extends StatelessWidget {
     required this.onPickTime,
     required this.onSave,
     required this.onDeleteConfirmed,
-    required this.onFoodSearch,
-    required this.onAutofill,
   });
   final bool isEditing;
   final bool isExercise;
@@ -44,8 +41,6 @@ class ManualEntrySection extends StatelessWidget {
   final VoidCallback onPickTime;
   final Future<void> Function() onSave;
   final Future<void> Function() onDeleteConfirmed;
-  final Future<List<DiaryEntry>> Function(String) onFoodSearch;
-  final void Function(DiaryEntry) onAutofill;
 
   @override
   Widget build(BuildContext context) {
@@ -74,8 +69,6 @@ class ManualEntrySection extends StatelessWidget {
           onPickDate: onPickDate,
           onPickTime: onPickTime,
           isExercise: isExercise,
-          onFoodSearch: onFoodSearch,
-          onAutofill: onAutofill,
         ),
         const Gap(24),
         EntryActionButtons(

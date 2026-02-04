@@ -162,6 +162,9 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
                   onPickImage: (source) => ref
                       .read(addEntryControllerProvider.notifier)
                       .pickImage(source),
+                  onPromptSearch: (q) => ref
+                      .read(addEntryControllerProvider.notifier)
+                      .searchFood(q),
                   onAddOptimistic: _addOptimistic,
                   onEnterManually: () => ref
                       .read(addEntryControllerProvider.notifier)
@@ -203,10 +206,6 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
                       }
                     }
                   },
-                  onFoodSearch: (q) => ref
-                      .read(addEntryControllerProvider.notifier)
-                      .searchFood(q),
-                  onAutofill: (e) => _formManager.autofill(e),
                 ),
             ],
           ),

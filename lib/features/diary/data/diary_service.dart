@@ -146,40 +146,88 @@ class DiaryService {
     };
   }
 
-  Future<List<DiaryEntry>> searchFoodSuggestions(String query) async {
+  Future<List<DiaryEntry>> searchEntrySuggestions(
+    String query, {
+    required EntryType type,
+  }) async {
     final normalizedQuery = _normalize(query);
     if (normalizedQuery.isEmpty) return const [];
 
-    final rows =
-        await (_db.select(_db.diaryEntries)
-              ..where(
-                (t) =>
-                    t.deletedAt.isNull() &
-                    t.type.equals(EntryType.food.index) &
-                    t.normalizedName.like('%$normalizedQuery%'),
-              )
-              ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)])
-              ..limit(50))
-            .get();
+    final t = _db.diaryEntries;
+    final table = t.actualTableName;
+    final nameCol = t.name.$name;
+    final caloriesCol = t.calories.$name;
+    final proteinCol = t.protein.$name;
+    final carbsCol = t.carbs.$name;
+    final fatsCol = t.fats.$name;
+    final iconCol = t.icon.$name;
+    final descriptionCol = t.description.$name;
+    final normalizedNameCol = t.normalizedName.$name;
+    final deletedAtCol = t.deletedAt.$name;
+    final typeCol = t.type.$name;
+    final statusCol = t.status.$name;
+    final updatedAtCol = t.updatedAt.$name;
+
+    final rows = await _db
+        .customSelect(
+          '''
+SELECT
+  $nameCol AS name,
+  $descriptionCol AS description,
+  $caloriesCol AS calories,
+  $proteinCol AS protein,
+  $carbsCol AS carbs,
+  $fatsCol AS fats,
+  $iconCol AS icon,
+  $normalizedNameCol AS normalizedName
+FROM $table
+WHERE $deletedAtCol IS NULL
+  AND $typeCol = ?
+  AND $statusCol = ?
+  AND (
+    $normalizedNameCol LIKE ?
+    OR LOWER(COALESCE($descriptionCol, '')) LIKE ?
+  )
+ORDER BY $updatedAtCol DESC
+LIMIT 200
+''',
+          variables: [
+            Variable.withInt(type.index),
+            Variable.withInt(FoodEntryStatus.synced.index),
+            Variable.withString('%$normalizedQuery%'),
+            Variable.withString('%$normalizedQuery%'),
+          ],
+          readsFrom: {t},
+        )
+        .get();
 
     final seen = <String>{};
     final results = <DiaryEntry>[];
     for (final row in rows) {
-      if (seen.add(row.normalizedName)) {
+      final name = row.read<String>('name');
+      final description = row.readNullable<String>('description');
+
+      final suggestionText =
+          (description?.trim().isNotEmpty == true) ? description!.trim() : name;
+      final suggestionKey = _normalize(suggestionText);
+
+      if (seen.add(suggestionKey)) {
         results.add(
           DiaryEntry(
             id: '',
-            name: row.name,
-            calories: row.calories,
-            protein: row.protein,
-            carbs: row.carbs,
-            fats: row.fats,
+            name: name,
+            calories: row.read<int>('calories'),
+            protein: row.read<double>('protein'),
+            carbs: row.read<double>('carbs'),
+            fats: row.read<double>('fats'),
             timestamp: DateTime.now(),
-            type: EntryType.food,
-            icon: row.icon,
+            type: type,
+            icon: row.readNullable<String>('icon'),
+            description: description,
           ),
         );
       }
+
       if (results.length >= 20) break;
     }
 
