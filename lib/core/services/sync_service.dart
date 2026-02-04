@@ -5,15 +5,14 @@ import 'package:flutter/foundation.dart';
 import 'package:google_sign_in_all_platforms/google_sign_in_all_platforms.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:nutrinutri/core/db/app_database.dart';
-import 'package:nutrinutri/core/services/drive_snapshot_v2.dart';
+import 'package:nutrinutri/core/services/drive_snapshot.dart';
 import 'package:nutrinutri/core/services/google_drive_appdata.dart';
 import 'package:nutrinutri/core/services/google_user_info.dart';
 
 class SyncService {
   SyncService({required AppDatabase db}) : _db = db;
 
-  static const _snapshotFileName = 'nutrinutri_v2.json';
-  static const _prefGoogleLoggedIn = 'google_logged_in';
+  static const _snapshotFileName = 'nutrinutri.json';
 
   final AppDatabase _db;
   final _drive = const GoogleDriveAppData();
@@ -77,7 +76,6 @@ class SyncService {
     _currentCredentials = credentials;
 
     if (credentials != null) {
-      await _setLocalPref(_prefGoogleLoggedIn, '1');
       final userInfo = GoogleUserInfo.fromIdToken(credentials.idToken);
       _currentUserInfo = userInfo;
       _userInfoController.add(userInfo);
@@ -85,8 +83,6 @@ class SyncService {
   }
 
   Future<void> restoreSession() async {
-    if (await _getLocalPref(_prefGoogleLoggedIn) != '1') return;
-
     try {
       _listenToAuthState();
       final credentials = await _googleSignIn.silentSignIn();
@@ -106,11 +102,6 @@ class SyncService {
     _currentCredentials = null;
     _currentUserInfo = null;
     _userInfoController.add(null);
-    await _deleteLocalPref(_prefGoogleLoggedIn);
-  }
-
-  Future<void> clearAccessToken() async {
-    await signOut();
   }
 
   Future<void> syncIfNeeded() async {
@@ -130,7 +121,7 @@ class SyncService {
     final remoteRaw = fileId == null
         ? ''
         : await _drive.downloadText(driveApi, fileId: fileId);
-    final remote = DriveSnapshotV2.decode(remoteRaw);
+    final remote = DriveSnapshot.decode(remoteRaw);
 
     final localDiaryRows = await _db.select(_db.diaryEntries).get();
     final localDiary = <String, SyncDiaryEntry>{
@@ -220,7 +211,7 @@ class SyncService {
     }
 
     if (remoteNeedsUpdate) {
-      final nextSnapshot = DriveSnapshotV2(
+      final nextSnapshot = DriveSnapshot(
         diaryEntries: nextDiary,
         userProfile: nextProfile,
         appSettings: nextSettings,
@@ -363,26 +354,6 @@ class SyncService {
       return _Revision(updatedAt: value.updatedAt, updatedBy: value.updatedBy);
     }
     throw ArgumentError.value(value, 'value', 'Unsupported sync type');
-  }
-
-  Future<String?> _getLocalPref(String key) async {
-    final row = await (_db.select(
-      _db.localPrefs,
-    )..where((t) => t.key.equals(key))).getSingleOrNull();
-    return row?.value;
-  }
-
-  Future<void> _setLocalPref(String key, String value) async {
-    await _db
-        .into(_db.localPrefs)
-        .insert(
-          LocalPrefsCompanion.insert(key: key, value: value),
-          mode: InsertMode.insertOrReplace,
-        );
-  }
-
-  Future<void> _deleteLocalPref(String key) async {
-    await (_db.delete(_db.localPrefs)..where((t) => t.key.equals(key))).go();
   }
 }
 

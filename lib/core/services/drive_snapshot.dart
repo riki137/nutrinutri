@@ -2,10 +2,8 @@ import 'dart:convert';
 
 import 'package:nutrinutri/core/db/app_database.dart';
 
-const currentSnapshotVersion = 2;
-
-class DriveSnapshotV2 {
-  DriveSnapshotV2({
+class DriveSnapshot {
+  DriveSnapshot({
     required this.diaryEntries,
     required this.userProfile,
     required this.appSettings,
@@ -15,12 +13,11 @@ class DriveSnapshotV2 {
   final SyncUserProfile? userProfile; // id==1
   final SyncAppSettings? appSettings; // id==1
 
-  static DriveSnapshotV2 empty() =>
-      DriveSnapshotV2(diaryEntries: {}, userProfile: null, appSettings: null);
+  static DriveSnapshot empty() =>
+      DriveSnapshot(diaryEntries: {}, userProfile: null, appSettings: null);
 
   String encode() {
     final map = <String, dynamic>{
-      'v': currentSnapshotVersion,
       'diaryEntries': diaryEntries.values.map((e) => e.toJson()).toList(),
       'userProfile': userProfile?.toJson(),
       'appSettings': appSettings?.toJson(),
@@ -28,12 +25,11 @@ class DriveSnapshotV2 {
     return jsonEncode(map);
   }
 
-  static DriveSnapshotV2 decode(String raw) {
-    if (raw.trim().isEmpty) return DriveSnapshotV2.empty();
+  static DriveSnapshot decode(String raw) {
+    if (raw.trim().isEmpty) return DriveSnapshot.empty();
 
     final root = jsonDecode(raw);
-    if (root is! Map<String, dynamic>) return DriveSnapshotV2.empty();
-    if (root['v'] != currentSnapshotVersion) return DriveSnapshotV2.empty();
+    if (root is! Map<String, dynamic>) return DriveSnapshot.empty();
 
     final diaryEntries = <String, SyncDiaryEntry>{};
     final diaryList = root['diaryEntries'];
@@ -44,7 +40,7 @@ class DriveSnapshotV2 {
       }
     }
 
-    return DriveSnapshotV2(
+    return DriveSnapshot(
       diaryEntries: diaryEntries,
       userProfile: SyncUserProfile.fromJson(root['userProfile']),
       appSettings: SyncAppSettings.fromJson(root['appSettings']),
@@ -144,18 +140,28 @@ class SyncDiaryEntry {
     final name = s(json['name']);
     final type = i(json['type']);
     final calories = i(json['calories']);
-    final protein = d(json['protein']) ?? 0;
-    final carbs = d(json['carbs']) ?? 0;
-    final fats = d(json['fats']) ?? 0;
+    final protein = d(json['protein']);
+    final carbs = d(json['carbs']);
+    final fats = d(json['fats']);
     final timestamp = i(json['timestamp']);
+    final normalizedName = s(json['normalizedName']);
+    final status = i(json['status']);
     final updatedAt = i(json['updatedAt']);
+    final updatedBy = s(json['updatedBy']);
 
     if (id == null ||
         name == null ||
         type == null ||
         calories == null ||
+        protein == null ||
+        carbs == null ||
+        fats == null ||
         timestamp == null ||
-        updatedAt == null) {
+        normalizedName == null ||
+        status == null ||
+        updatedAt == null ||
+        updatedBy == null ||
+        updatedBy.isEmpty) {
       return null;
     }
 
@@ -168,14 +174,14 @@ class SyncDiaryEntry {
       carbs: carbs,
       fats: fats,
       timestamp: timestamp,
-      normalizedName: s(json['normalizedName']) ?? name.trim().toLowerCase(),
+      normalizedName: normalizedName,
       imagePath: s(json['imagePath']),
       icon: s(json['icon']),
-      status: i(json['status']) ?? 0,
+      status: status,
       description: s(json['description']),
       durationMinutes: i(json['durationMinutes']),
       updatedAt: updatedAt,
-      updatedBy: s(json['updatedBy']) ?? '',
+      updatedBy: updatedBy,
       deletedAt: i(json['deletedAt']),
     );
   }
@@ -267,6 +273,7 @@ class SyncUserProfile {
     final goalCalories = i(json['goalCalories']);
     final isConfigured = b(json['isConfigured']);
     final updatedAt = i(json['updatedAt']);
+    final updatedBy = s(json['updatedBy']);
 
     if (id == null ||
         age == null ||
@@ -276,7 +283,9 @@ class SyncUserProfile {
         activityLevel == null ||
         goalCalories == null ||
         isConfigured == null ||
-        updatedAt == null) {
+        updatedAt == null ||
+        updatedBy == null ||
+        updatedBy.isEmpty) {
       return null;
     }
 
@@ -293,7 +302,7 @@ class SyncUserProfile {
       goalFat: i(json['goalFat']),
       isConfigured: isConfigured,
       updatedAt: updatedAt,
-      updatedBy: s(json['updatedBy']) ?? '',
+      updatedBy: updatedBy,
       deletedAt: i(json['deletedAt']),
     );
   }
@@ -349,8 +358,15 @@ class SyncAppSettings {
     final id = i(json['id']);
     final aiModel = s(json['aiModel']);
     final updatedAt = i(json['updatedAt']);
+    final updatedBy = s(json['updatedBy']);
 
-    if (id == null || aiModel == null || updatedAt == null) return null;
+    if (id == null ||
+        aiModel == null ||
+        updatedAt == null ||
+        updatedBy == null ||
+        updatedBy.isEmpty) {
+      return null;
+    }
 
     return SyncAppSettings(
       id: id,
@@ -358,7 +374,7 @@ class SyncAppSettings {
       aiModel: aiModel,
       fallbackModel: s(json['fallbackModel']),
       updatedAt: updatedAt,
-      updatedBy: s(json['updatedBy']) ?? '',
+      updatedBy: updatedBy,
       deletedAt: i(json['deletedAt']),
     );
   }
