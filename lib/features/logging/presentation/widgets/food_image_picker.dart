@@ -4,7 +4,6 @@ import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
 
 class FoodImagePicker extends StatelessWidget {
-
   const FoodImagePicker({
     super.key,
     required this.image,

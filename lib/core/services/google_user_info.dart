@@ -16,7 +16,9 @@ class GoogleUserInfo {
     if (accessToken == null || accessToken.isEmpty) return null;
 
     try {
-      debugPrint('Fetching user info with token: ${accessToken.substring(0, 20)}...');
+      debugPrint(
+        'Fetching user info with token: ${accessToken.substring(0, 20)}...',
+      );
       final response = await http.get(
         Uri.parse('https://www.googleapis.com/oauth2/v3/userinfo'),
         headers: {'Authorization': 'Bearer $accessToken'},

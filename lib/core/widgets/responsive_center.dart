@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 class ResponsiveCenter extends StatelessWidget {
-
   const ResponsiveCenter({
     super.key,
     required this.child,

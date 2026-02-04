@@ -73,7 +73,6 @@ class CalorieCalculator {
 }
 
 class MacroGoals {
-
   const MacroGoals({
     required this.protein,
     required this.carbs,

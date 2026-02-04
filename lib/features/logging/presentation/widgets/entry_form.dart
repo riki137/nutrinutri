@@ -3,7 +3,7 @@ import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
 import 'package:nutrinutri/core/utils/icon_utils.dart';
 import 'package:nutrinutri/core/utils/met_values.dart';
-import 'package:nutrinutri/features/diary/data/diary_service.dart';
+import 'package:nutrinutri/features/diary/domain/diary_entry.dart';
 import 'package:nutrinutri/features/logging/presentation/widgets/icon_picker_button.dart';
 
 class EntryForm extends StatelessWidget {
@@ -121,8 +121,7 @@ class EntryForm extends StatelessWidget {
                                         final option = options.elementAt(index);
                                         return ListTile(
                                           leading: Icon(
-                                            IconUtils.getIcon(option.icon) ??
-                                                Icons.restaurant,
+                                            IconUtils.getIcon(option.icon),
                                           ),
                                           title: Text(option.name),
                                           subtitle: Text(

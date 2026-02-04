@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 class ConfirmDialog extends StatelessWidget {
-
   const ConfirmDialog({
     super.key,
     required this.title,

@@ -8,10 +8,9 @@ import 'package:nutrinutri/core/utils/icon_utils.dart';
 import 'package:nutrinutri/core/widgets/confirm_dialog.dart';
 import 'package:nutrinutri/features/dashboard/presentation/dashboard_providers.dart';
 import 'package:nutrinutri/features/diary/application/diary_controller.dart';
-import 'package:nutrinutri/features/diary/data/diary_service.dart';
+import 'package:nutrinutri/features/diary/domain/diary_entry.dart';
 
 class EntriesList extends ConsumerWidget {
-
   const EntriesList({super.key, required this.today, required this.onRefresh});
   final DateTime today;
   final VoidCallback onRefresh;

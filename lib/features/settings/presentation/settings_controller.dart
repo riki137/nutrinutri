@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nutrinutri/core/domain/user_profile.dart';
 import 'package:nutrinutri/core/providers.dart';
 import 'package:nutrinutri/core/utils/calorie_calculator.dart';
 import 'package:nutrinutri/features/settings/domain/ai_model_info.dart';
@@ -57,7 +58,7 @@ class SettingsController extends _$SettingsController {
   Future<void> loadSettings({
     required void Function(String key) onKeyLoaded,
     required void Function(String modelId) onCustomModelLoaded,
-    required void Function(Map<String, dynamic> profile) onProfileLoaded,
+    required void Function(UserProfile profile) onProfileLoaded,
   }) async {
     final settings = ref.read(settingsServiceProvider);
 
@@ -84,8 +85,8 @@ class SettingsController extends _$SettingsController {
     final profile = await settings.getUserProfile();
     if (profile != null) {
       state = state.copyWith(
-        gender: profile['gender'] ?? 'male',
-        activityLevel: profile['activityLevel'] ?? 'sedentary',
+        gender: profile.gender,
+        activityLevel: profile.activityLevel,
       );
       onProfileLoaded(profile);
     }

@@ -1,24 +1,28 @@
 import 'dart:async';
-import 'dart:convert';
 
+import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in_all_platforms/google_sign_in_all_platforms.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
-import 'package:nutrinutri/core/services/food_index_service.dart';
+import 'package:nutrinutri/core/db/app_database.dart';
+import 'package:nutrinutri/core/services/drive_snapshot_v2.dart';
+import 'package:nutrinutri/core/services/google_drive_appdata.dart';
 import 'package:nutrinutri/core/services/google_user_info.dart';
-import 'package:nutrinutri/core/services/kv_store.dart';
-import 'package:nutrinutri/features/diary/data/diary_service.dart';
 
 class SyncService {
-  SyncService(this._kv, this._foodIndex);
-  static const String _isGoogleLoggedInKey = 'is_google_logged_in';
-  final KVStore _kv;
-  final FoodIndexService _foodIndex;
+  SyncService({required AppDatabase db}) : _db = db;
+
+  static const _snapshotFileName = 'nutrinutri_v2.json';
+  static const _prefGoogleLoggedIn = 'google_logged_in';
+
+  final AppDatabase _db;
+  final _drive = const GoogleDriveAppData();
+
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     params: GoogleSignInParams(
-      clientId: _getClientId(),
-      clientSecret: _getClientSecret(),
-      scopes: [
+      clientId: _clientId,
+      clientSecret: _clientSecret,
+      scopes: const [
         'https://www.googleapis.com/auth/userinfo.email',
         'https://www.googleapis.com/auth/userinfo.profile',
         drive.DriveApi.driveAppdataScope,
@@ -26,122 +30,71 @@ class SyncService {
     ),
   );
 
-  static String _getClientId() {
-    // Use same client ID for all platforms as google_sign_in_all_platforms uses web secret everywhere
-    return '650205047998-i0plaeno2mrp8e1kf6l52cth4076548p.apps.googleusercontent.com';
-  }
+  static const String _clientId =
+      '650205047998-i0plaeno2mrp8e1kf6l52cth4076548p.apps.googleusercontent.com';
 
-  // Client secret is used for all platforms with google_sign_in_all_platforms
-  static String? _getClientSecret() {
-    return "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";
-  }
+  // TODO: Move to runtime config. This should not live in source control.
+  static const String _clientSecret = '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';
 
   GoogleSignInCredentials? _currentCredentials;
   GoogleSignInCredentials? get currentCredentials => _currentCredentials;
 
   GoogleUserInfo? _currentUserInfo;
-
-  /// Returns the cached user info.
   GoogleUserInfo? get currentUser => _currentUserInfo;
 
-  /// Stream controller for user info changes.
   final _userInfoController = StreamController<GoogleUserInfo?>.broadcast();
-
-  /// Stream of user info changes.
   Stream<GoogleUserInfo?> get onCurrentUserChanged =>
       _userInfoController.stream;
 
-  /// Flag to ensure we only set up the auth state listener once.
-  bool _isListeningToAuthState = false;
-
   final _syncCompleteController = StreamController<void>.broadcast();
   Stream<void> get onSyncCompleted => _syncCompleteController.stream;
+
+  bool _isListeningToAuthState = false;
 
   void _listenToAuthState() {
     if (_isListeningToAuthState) return;
     _isListeningToAuthState = true;
 
-    // Emit initial value
     _userInfoController.add(_currentUserInfo);
 
     _googleSignIn.authenticationState.listen((credentials) async {
       _currentCredentials = credentials;
-      if (credentials != null) {
-        await _fetchAndCacheUserInfo(credentials.accessToken);
-      } else {
+      if (credentials == null) {
         _currentUserInfo = null;
         _userInfoController.add(null);
+        return;
       }
+
+      final userInfo = GoogleUserInfo.fromIdToken(credentials.idToken);
+      _currentUserInfo = userInfo;
+      _userInfoController.add(userInfo);
     });
   }
 
-  Future<void> _fetchAndCacheUserInfo(String accessToken,
-      {bool isRetry = false}) async {
-    final userInfo = await GoogleUserInfo.fromAccessToken(accessToken);
-    if (userInfo == null) {
-      if (!isRetry) {
-        debugPrint('Failed to fetch user info - trying to refresh token...');
-        try {
-          final newCredentials = await _googleSignIn.silentSignIn();
-          if (newCredentials != null) {
-            _currentCredentials = newCredentials;
-            return _fetchAndCacheUserInfo(
-              newCredentials.accessToken,
-              isRetry: true,
-            );
-          }
-        } catch (e) {
-          debugPrint('Failed to refresh token: $e');
-        }
-      }
-
-      debugPrint('Failed to fetch user info - token may be invalid');
-      // Clear invalid credentials
-      await clearAccessToken();
-      return;
-    }
-    _currentUserInfo = userInfo;
-    _userInfoController.add(userInfo);
-    debugPrint('User info fetched: ${userInfo.name ?? userInfo.email}');
-  }
-
   Future<void> signIn() async {
-    try {
-      debugPrint('SyncService.signIn() called');
-      // Set up listener first to ensure stream subscribers are ready
-      _listenToAuthState();
-      debugPrint('About to call _googleSignIn.signIn()');
-      final credentials = await _googleSignIn.signIn();
-      debugPrint('Sign in completed, credentials: ${credentials != null}');
-      _currentCredentials = credentials;
-      if (credentials != null) {
-        debugPrint(
-          'Access Token present: ${credentials.accessToken.isNotEmpty}',
-        );
-        // The auth state listener will also fetch user info, but we do it
-        // explicitly here to ensure it's available immediately
-        await _fetchAndCacheUserInfo(credentials.accessToken);
-        await _kv.put(_isGoogleLoggedInKey, {'value': true});
-      }
-    } catch (e, stackTrace) {
-      debugPrint('Sign in failed: $e');
-      debugPrint('Stack trace: $stackTrace');
-      rethrow;
+    _listenToAuthState();
+    final credentials = await _googleSignIn.signIn();
+    _currentCredentials = credentials;
+
+    if (credentials != null) {
+      await _setLocalPref(_prefGoogleLoggedIn, '1');
+      final userInfo = GoogleUserInfo.fromIdToken(credentials.idToken);
+      _currentUserInfo = userInfo;
+      _userInfoController.add(userInfo);
     }
   }
 
   Future<void> restoreSession() async {
-    final loggedInState = await _kv.get(_isGoogleLoggedInKey);
-    final shouldRestore = loggedInState?['value'] == true;
-
-    if (!shouldRestore) return;
+    if (await _getLocalPref(_prefGoogleLoggedIn) != '1') return;
 
     try {
       _listenToAuthState();
       final credentials = await _googleSignIn.silentSignIn();
       _currentCredentials = credentials;
       if (credentials != null) {
-        await _fetchAndCacheUserInfo(credentials.accessToken);
+        final userInfo = GoogleUserInfo.fromIdToken(credentials.idToken);
+        _currentUserInfo = userInfo;
+        _userInfoController.add(userInfo);
       }
     } catch (e) {
       debugPrint('Restore session failed: $e');
@@ -153,13 +106,10 @@ class SyncService {
     _currentCredentials = null;
     _currentUserInfo = null;
     _userInfoController.add(null);
-    await _kv.delete(_isGoogleLoggedInKey);
+    await _deleteLocalPref(_prefGoogleLoggedIn);
   }
 
-  /// Clears the cached credentials and forces a fresh sign-in.
-  /// Use this when the access token has expired or is invalid.
   Future<void> clearAccessToken() async {
-    debugPrint('Clearing access token and credentials');
     await signOut();
   }
 
@@ -169,178 +119,287 @@ class SyncService {
   }
 
   Future<int> sync() async {
-    final credentials = _currentCredentials;
-    if (credentials == null) {
-      debugPrint('Cannot sync: Not signed in');
-      return 0;
-    }
+    if (_currentCredentials == null) return 0;
 
-    int localUpdatesCount = 0;
-    try {
-      final client = await _googleSignIn.authenticatedClient;
-      if (client == null) throw Exception('Authenticated client is null');
+    final client = await _googleSignIn.authenticatedClient;
+    if (client == null) return 0;
 
-      final driveApi = drive.DriveApi(client);
+    final driveApi = drive.DriveApi(client);
+    final fileId = await _drive.findFileId(driveApi, name: _snapshotFileName);
 
-      // 1. Get or Create Snapshot File
-      final fileId = await _getSnapshotFileId(driveApi);
-      Map<String, dynamic> remoteSnapshot = {};
+    final remoteRaw = fileId == null
+        ? ''
+        : await _drive.downloadText(driveApi, fileId: fileId);
+    final remote = DriveSnapshotV2.decode(remoteRaw);
 
-      if (fileId != null) {
-        remoteSnapshot = await _downloadSnapshot(driveApi, fileId);
-      }
+    final localDiaryRows = await _db.select(_db.diaryEntries).get();
+    final localDiary = <String, SyncDiaryEntry>{
+      for (final row in localDiaryRows) row.id: SyncDiaryEntry.fromRow(row),
+    };
 
-      // 2. Get Local Data
-      final localRows = await _kv.getAllSync();
+    final localProfile = await (_db.select(
+      _db.userProfiles,
+    )..where((t) => t.id.equals(1))).getSingleOrNull();
+    final localSettings = await (_db.select(
+      _db.appSettings,
+    )..where((t) => t.id.equals(1))).getSingleOrNull();
 
-      // Convert local rows to Map for easier lookup
-      // Local row: {key, value, updated_at, deleted_at}
-      final localSnapshot = <String, Map<String, dynamic>>{};
-      for (final row in localRows) {
-        localSnapshot[row['key']] = row;
-      }
+    final nextDiary = Map<String, SyncDiaryEntry>.from(remote.diaryEntries);
+    SyncUserProfile? nextProfile = remote.userProfile;
+    SyncAppSettings? nextSettings = remote.appSettings;
 
-      // 3. Merge Logic
-      // Filter out local-only keys (starting with 'local_')
-      final allKeys = {
-        ...localSnapshot.keys,
-        ...remoteSnapshot.keys,
-      }.where((k) => !k.startsWith('local_'));
+    var remoteNeedsUpdate = false;
+    var localUpdates = 0;
 
-      bool remoteNeedsUpdate = false;
+    await _db.transaction(() async {
+      final allIds = {...localDiary.keys, ...remote.diaryEntries.keys};
 
-      final nextRemoteSnapshot = Map<String, dynamic>.from(remoteSnapshot);
+      for (final id in allIds) {
+        final local = localDiary[id];
+        final remoteEntry = remote.diaryEntries[id];
 
-      for (final key in allKeys) {
-        final local = localSnapshot[key];
-        final remote =
-            remoteSnapshot[key] as Map<String, dynamic>?; // {v, u, d}
-
-        // Case 1: Exists locally only -> push to remote
-        if (remote == null) {
-          // Push local to remote
-          nextRemoteSnapshot[key] = {
-            'v': local!['value'],
-            'u': local['updated_at'],
-            'd': local['deleted_at'],
-          };
+        if (remoteEntry == null && local != null) {
+          nextDiary[id] = local;
           remoteNeedsUpdate = true;
           continue;
         }
 
-        // Case 2: Exists remotely only -> pull to local
-        if (local == null) {
-          // Pull remote to local (even if deleted, we sync the deletion state)
-          await _kv.putSync(key, remote['v'], remote['u'], remote['d']);
-          await _updateIndexFromRemote(key, remote['v']);
-          localUpdatesCount++;
+        if (local == null && remoteEntry != null) {
+          await _applyRemoteDiaryEntry(remoteEntry);
+          localUpdates++;
           continue;
         }
 
-        // Case 3: Exists in both -> compare timestamps
-        final localTs = local['updated_at'] as int? ?? 0;
-        final remoteTs = remote['u'] as int? ?? 0;
+        if (local == null || remoteEntry == null) continue;
 
-        if (localTs > remoteTs) {
-          // Local is newer -> update remote
-          nextRemoteSnapshot[key] = {
-            'v': local['value'],
-            'u': localTs,
-            'd': local['deleted_at'],
-          };
+        final cmp = _compareRevision(
+          local.updatedAt,
+          local.updatedBy,
+          remoteEntry.updatedAt,
+          remoteEntry.updatedBy,
+        );
+        if (cmp > 0) {
+          nextDiary[id] = local;
           remoteNeedsUpdate = true;
-        } else if (remoteTs > localTs) {
-          // Remote is newer -> update local
-          await _kv.putSync(key, remote['v'], remoteTs, remote['d']);
-          await _updateIndexFromRemote(key, remote['v']);
-          localUpdatesCount++;
+        } else if (cmp < 0) {
+          await _applyRemoteDiaryEntry(remoteEntry);
+          localUpdates++;
         }
-        // Else: equal, do nothing
       }
 
-      // 4. Upload if needed
-      if (remoteNeedsUpdate) {
-        await _uploadSnapshot(driveApi, fileId, nextRemoteSnapshot);
-      }
+      final localProfileSync = localProfile == null
+          ? null
+          : SyncUserProfile.fromRow(localProfile);
+      final profileResult = await _mergeSingleton(
+        local: localProfileSync,
+        remote: remote.userProfile,
+        applyRemote: (remote) => _applyRemoteUserProfile(remote),
+      );
+      localUpdates += profileResult.localUpdates;
+      remoteNeedsUpdate = remoteNeedsUpdate || profileResult.remoteNeedsUpdate;
+      nextProfile = profileResult.nextRemote;
 
-      if (localUpdatesCount > 0) {
-        _syncCompleteController.add(null);
-      }
+      final localSettingsSync = localSettings == null
+          ? null
+          : SyncAppSettings.fromRow(localSettings);
+      final settingsResult = await _mergeSingleton(
+        local: localSettingsSync,
+        remote: remote.appSettings,
+        applyRemote: (remote) => _applyRemoteAppSettings(remote),
+      );
+      localUpdates += settingsResult.localUpdates;
+      remoteNeedsUpdate = remoteNeedsUpdate || settingsResult.remoteNeedsUpdate;
+      nextSettings = settingsResult.nextRemote;
+    });
 
-      return localUpdatesCount;
-    } catch (e) {
-      debugPrint('Sync Error: $e');
-      rethrow;
+    if (fileId == null &&
+        (localDiary.isNotEmpty ||
+            localProfile != null ||
+            localSettings != null)) {
+      remoteNeedsUpdate = true;
     }
-  }
 
-  Future<String?> _getSnapshotFileId(drive.DriveApi driveApi) async {
-    final fileName = 'nutrinutri_v1.json';
-    final q =
-        "name = '$fileName' and 'appDataFolder' in parents and trashed = false";
-    final fileList = await driveApi.files.list(q: q, spaces: 'appDataFolder');
-
-    if (fileList.files?.isNotEmpty == true) {
-      return fileList.files!.first.id;
-    }
-    return null;
-  }
-
-  Future<Map<String, dynamic>> _downloadSnapshot(
-    drive.DriveApi driveApi,
-    String fileId,
-  ) async {
-    final media =
-        await driveApi.files.get(
-              fileId,
-              downloadOptions: drive.DownloadOptions.fullMedia,
-            )
-            as drive.Media;
-    final jsonString = await utf8.decodeStream(media.stream);
-    if (jsonString.isEmpty) return {};
-    try {
-      return jsonDecode(jsonString) as Map<String, dynamic>;
-    } catch (e) {
-      debugPrint('Failed to decode snapshot: $e');
-      return {};
-    }
-  }
-
-  Future<void> _uploadSnapshot(
-    drive.DriveApi driveApi,
-    String? fileId,
-    Map<String, dynamic> data,
-  ) async {
-    final fileName = 'nutrinutri_v1.json';
-    final jsonContent = jsonEncode(data);
-    final media = drive.Media(
-      Stream.value(utf8.encode(jsonContent)),
-      utf8.encode(jsonContent).length,
-    );
-
-    if (fileId != null) {
-      await driveApi.files.update(drive.File(), fileId, uploadMedia: media);
-    } else {
-      await driveApi.files.create(
-        drive.File(name: fileName, parents: ['appDataFolder']),
-        uploadMedia: media,
+    if (remoteNeedsUpdate) {
+      final nextSnapshot = DriveSnapshotV2(
+        diaryEntries: nextDiary,
+        userProfile: nextProfile,
+        appSettings: nextSettings,
+      );
+      await _drive.uploadText(
+        driveApi,
+        name: _snapshotFileName,
+        content: nextSnapshot.encode(),
+        fileId: fileId,
       );
     }
-  }
 
-  Future<void> _updateIndexFromRemote(String key, dynamic value) async {
-    if (!key.startsWith('diary_') || value == null) return;
-
-    try {
-      final entriesJson = (value['entries'] as List?) ?? [];
-      for (final entryJson in entriesJson) {
-        final entry = DiaryEntry.fromJson(entryJson);
-        if (entry.type == EntryType.food) {
-          await _foodIndex.indexEntry(entry);
-        }
-      }
-    } catch (e) {
-      debugPrint('Error indexing synced entry ($key): $e');
+    if (localUpdates > 0) {
+      _syncCompleteController.add(null);
     }
+
+    return localUpdates;
   }
+
+  Future<void> _applyRemoteDiaryEntry(SyncDiaryEntry remote) async {
+    await _db
+        .into(_db.diaryEntries)
+        .insert(
+          DiaryEntriesCompanion.insert(
+            id: remote.id,
+            name: remote.name,
+            type: remote.type,
+            calories: remote.calories,
+            protein: Value(remote.protein),
+            carbs: Value(remote.carbs),
+            fats: Value(remote.fats),
+            timestamp: remote.timestamp,
+            normalizedName: remote.normalizedName,
+            imagePath: Value(remote.imagePath),
+            icon: Value(remote.icon),
+            status: Value(remote.status),
+            description: Value(remote.description),
+            durationMinutes: Value(remote.durationMinutes),
+            updatedAt: Value(remote.updatedAt),
+            updatedBy: Value(remote.updatedBy),
+            deletedAt: Value(remote.deletedAt),
+          ),
+          mode: InsertMode.insertOrReplace,
+        );
+  }
+
+  Future<void> _applyRemoteUserProfile(SyncUserProfile remote) async {
+    await _db
+        .into(_db.userProfiles)
+        .insert(
+          UserProfilesCompanion.insert(
+            id: Value(remote.id),
+            age: remote.age,
+            weightKg: remote.weightKg,
+            heightCm: remote.heightCm,
+            gender: remote.gender,
+            activityLevel: remote.activityLevel,
+            goalCalories: remote.goalCalories,
+            goalProtein: Value(remote.goalProtein),
+            goalCarbs: Value(remote.goalCarbs),
+            goalFat: Value(remote.goalFat),
+            isConfigured: Value(remote.isConfigured),
+            updatedAt: Value(remote.updatedAt),
+            updatedBy: Value(remote.updatedBy),
+            deletedAt: Value(remote.deletedAt),
+          ),
+          mode: InsertMode.insertOrReplace,
+        );
+  }
+
+  Future<void> _applyRemoteAppSettings(SyncAppSettings remote) async {
+    await _db
+        .into(_db.appSettings)
+        .insert(
+          AppSettingsCompanion.insert(
+            id: Value(remote.id),
+            apiKey: Value(remote.apiKey),
+            aiModel: Value(remote.aiModel),
+            fallbackModel: Value(remote.fallbackModel),
+            updatedAt: Value(remote.updatedAt),
+            updatedBy: Value(remote.updatedBy),
+            deletedAt: Value(remote.deletedAt),
+          ),
+          mode: InsertMode.insertOrReplace,
+        );
+  }
+
+  static int _compareRevision(int aAt, String aBy, int bAt, String bBy) {
+    final ts = aAt.compareTo(bAt);
+    if (ts != 0) return ts;
+    return aBy.compareTo(bBy);
+  }
+
+  Future<_MergeSingletonResult<T>> _mergeSingleton<T extends Object>({
+    required T? local,
+    required T? remote,
+    required Future<void> Function(T remote) applyRemote,
+  }) async {
+    if (remote == null && local == null) {
+      return _MergeSingletonResult(nextRemote: null);
+    }
+
+    if (remote == null && local != null) {
+      return _MergeSingletonResult(nextRemote: local, remoteNeedsUpdate: true);
+    }
+
+    if (local == null && remote != null) {
+      await applyRemote(remote);
+      return _MergeSingletonResult(nextRemote: remote, localUpdates: 1);
+    }
+
+    if (local == null || remote == null) {
+      return _MergeSingletonResult(nextRemote: remote);
+    }
+
+    final localRev = _revisionOf(local);
+    final remoteRev = _revisionOf(remote);
+    final cmp = _compareRevision(
+      localRev.updatedAt,
+      localRev.updatedBy,
+      remoteRev.updatedAt,
+      remoteRev.updatedBy,
+    );
+
+    if (cmp > 0) {
+      return _MergeSingletonResult(nextRemote: local, remoteNeedsUpdate: true);
+    } else if (cmp < 0) {
+      await applyRemote(remote);
+      return _MergeSingletonResult(nextRemote: remote, localUpdates: 1);
+    }
+
+    return _MergeSingletonResult(nextRemote: remote);
+  }
+
+  static _Revision _revisionOf(Object value) {
+    if (value is SyncUserProfile) {
+      return _Revision(updatedAt: value.updatedAt, updatedBy: value.updatedBy);
+    }
+    if (value is SyncAppSettings) {
+      return _Revision(updatedAt: value.updatedAt, updatedBy: value.updatedBy);
+    }
+    throw ArgumentError.value(value, 'value', 'Unsupported sync type');
+  }
+
+  Future<String?> _getLocalPref(String key) async {
+    final row = await (_db.select(
+      _db.localPrefs,
+    )..where((t) => t.key.equals(key))).getSingleOrNull();
+    return row?.value;
+  }
+
+  Future<void> _setLocalPref(String key, String value) async {
+    await _db
+        .into(_db.localPrefs)
+        .insert(
+          LocalPrefsCompanion.insert(key: key, value: value),
+          mode: InsertMode.insertOrReplace,
+        );
+  }
+
+  Future<void> _deleteLocalPref(String key) async {
+    await (_db.delete(_db.localPrefs)..where((t) => t.key.equals(key))).go();
+  }
+}
+
+class _MergeSingletonResult<T extends Object> {
+  const _MergeSingletonResult({
+    required this.nextRemote,
+    this.localUpdates = 0,
+    this.remoteNeedsUpdate = false,
+  });
+
+  final T? nextRemote;
+  final int localUpdates;
+  final bool remoteNeedsUpdate;
+}
+
+class _Revision {
+  const _Revision({required this.updatedAt, required this.updatedBy});
+  final int updatedAt;
+  final String updatedBy;
 }

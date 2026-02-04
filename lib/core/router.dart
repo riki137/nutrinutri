@@ -5,7 +5,7 @@ import 'package:nutrinutri/core/providers.dart';
 import 'package:nutrinutri/core/utils/platform_helper.dart';
 import 'package:nutrinutri/core/widgets/adaptive_shell.dart';
 import 'package:nutrinutri/features/dashboard/presentation/dashboard_page.dart';
-import 'package:nutrinutri/features/diary/data/diary_service.dart';
+import 'package:nutrinutri/features/diary/domain/diary_entry.dart';
 import 'package:nutrinutri/features/logging/presentation/add_entry_page.dart';
 import 'package:nutrinutri/features/onboarding/presentation/onboarding_page.dart';
 import 'package:nutrinutri/features/settings/presentation/settings_page.dart';

@@ -4,7 +4,6 @@ import 'package:nutrinutri/features/settings/domain/ai_model_info.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AIConfigurationSection extends StatelessWidget {
-
   const AIConfigurationSection({
     super.key,
     required this.apiKeyController,

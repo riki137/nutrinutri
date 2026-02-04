@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:nutrinutri/core/domain/user_profile.dart';
 
 class AIService {
-
   AIService({required this.apiKey, required this.model});
   static const String _baseUrl =
       'https://openrouter.ai/api/v1/chat/completions';
@@ -120,7 +120,7 @@ If unclear, provide best guess with lower confidence.
 
   Future<Map<String, dynamic>> analyzeExercise({
     required String textDescription,
-    Map<String, dynamic>? userProfile,
+    UserProfile? userProfile,
     String? requestId,
     String? modelOverride,
   }) async {
@@ -145,10 +145,10 @@ If unclear, provide best guess with lower confidence.
     if (userProfile != null) {
       profileInfo =
           'User Profile for Calorie Calculation:\n'
-          'Age: ${userProfile['age']}\n'
-          'Weight: ${userProfile['weight']} kg\n'
-          'Height: ${userProfile['height']} cm\n'
-          'Gender: ${userProfile['gender']}\n';
+          'Age: ${userProfile.age}\n'
+          'Weight: ${userProfile.weightKg} kg\n'
+          'Height: ${userProfile.heightCm} cm\n'
+          'Gender: ${userProfile.gender}\n';
     }
 
     final messages = <Map<String, dynamic>>[

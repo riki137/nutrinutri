@@ -5,7 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:nutrinutri/core/providers.dart';
 import 'package:nutrinutri/core/utils/met_values.dart';
 import 'package:nutrinutri/features/diary/application/diary_controller.dart';
-import 'package:nutrinutri/features/diary/data/diary_service.dart';
+import 'package:nutrinutri/features/diary/domain/diary_entry.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 
@@ -207,7 +207,7 @@ class AddEntryController extends _$AddEntryController {
 
     final settingsService = ref.read(settingsServiceProvider);
     final profile = await settingsService.getUserProfile();
-    final weight = profile?['weight'] as double? ?? 70.0;
+    final weight = profile?.weightKg ?? 70.0;
 
     final met = MetValues.getMet(name);
     if (met == 0) return null;
@@ -218,6 +218,6 @@ class AddEntryController extends _$AddEntryController {
   }
 
   Future<List<DiaryEntry>> searchFood(String query) async {
-    return ref.read(foodIndexServiceProvider).search(query);
+    return ref.read(diaryServiceProvider).searchFoodSuggestions(query);
   }
 }

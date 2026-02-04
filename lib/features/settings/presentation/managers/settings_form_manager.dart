@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nutrinutri/core/domain/user_profile.dart';
 import 'package:nutrinutri/features/settings/presentation/settings_controller.dart';
 
 class SettingsFormManager {
-
   SettingsFormManager({required this.ref, required this.onStateChanged}) {
     _apiKeyControllerListener();
     _setupCalorieListeners();
@@ -51,14 +51,14 @@ class SettingsFormManager {
         .loadSettings(
           onKeyLoaded: (key) => apiKeyController.text = key,
           onCustomModelLoaded: (model) => customModelController.text = model,
-          onProfileLoaded: (profile) {
-            ageController.text = profile['age']?.toString() ?? '';
-            weightController.text = profile['weight']?.toString() ?? '';
-            heightController.text = profile['height']?.toString() ?? '';
-            goalController.text = profile['goalCalories']?.toString() ?? '';
-            proteinController.text = profile['goalProtein']?.toString() ?? '';
-            carbsController.text = profile['goalCarbs']?.toString() ?? '';
-            fatsController.text = profile['goalFat']?.toString() ?? '';
+          onProfileLoaded: (UserProfile profile) {
+            ageController.text = profile.age.toString();
+            weightController.text = profile.weightKg.toString();
+            heightController.text = profile.heightCm.toString();
+            goalController.text = profile.goalCalories.toString();
+            proteinController.text = profile.goalProtein?.toString() ?? '';
+            carbsController.text = profile.goalCarbs?.toString() ?? '';
+            fatsController.text = profile.goalFat?.toString() ?? '';
           },
         );
     _initialHash = _computeHash();

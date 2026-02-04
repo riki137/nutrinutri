@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
+import 'package:nutrinutri/core/domain/user_profile.dart';
 import 'package:nutrinutri/core/providers.dart';
 import 'package:nutrinutri/core/utils/calorie_calculator.dart';
 import 'package:nutrinutri/features/dashboard/presentation/dashboard_providers.dart';
@@ -36,10 +37,10 @@ class DailySummarySection extends ConsumerWidget {
 
   Widget _buildContent(
     BuildContext context,
-    Map<String, dynamic> profile,
+    UserProfile profile,
     Map<String, double> summary,
   ) {
-    final goal = profile['goalCalories'] as int;
+    final goal = profile.goalCalories;
     final consumed = summary['calories']!;
     final burned = summary['caloriesBurned'] ?? 0.0;
     final effectiveGoal = goal + burned;
@@ -59,18 +60,17 @@ class DailySummarySection extends ConsumerWidget {
     final defaults = CalorieCalculator.calculateMacroGoals(goal);
 
     final double proteinGoal =
-        (profile['goalProtein'] != null && profile['goalProtein'] > 0)
-        ? (profile['goalProtein'] as int).toDouble()
+        (profile.goalProtein != null && profile.goalProtein! > 0)
+        ? profile.goalProtein!.toDouble()
         : defaults.protein;
 
     final double carbsGoal =
-        (profile['goalCarbs'] != null && profile['goalCarbs'] > 0)
-        ? (profile['goalCarbs'] as int).toDouble()
+        (profile.goalCarbs != null && profile.goalCarbs! > 0)
+        ? profile.goalCarbs!.toDouble()
         : defaults.carbs;
 
-    final double fatsGoal =
-        (profile['goalFat'] != null && profile['goalFat'] > 0)
-        ? (profile['goalFat'] as int).toDouble()
+    final double fatsGoal = (profile.goalFat != null && profile.goalFat! > 0)
+        ? profile.goalFat!.toDouble()
         : defaults.fats;
 
     return Card(

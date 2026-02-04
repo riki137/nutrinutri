@@ -6,24 +6,41 @@ part of 'providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$keyValueStoreHash() => r'78b920813d032d9e9a1cea015c77bf446a256a8c';
+String _$appDatabaseHash() => r'59cce38d45eeaba199eddd097d8e149d66f9f3e1';
 
-/// See also [keyValueStore].
-@ProviderFor(keyValueStore)
-final keyValueStoreProvider = FutureProvider<KVStore>.internal(
-  keyValueStore,
-  name: r'keyValueStoreProvider',
+/// See also [appDatabase].
+@ProviderFor(appDatabase)
+final appDatabaseProvider = Provider<AppDatabase>.internal(
+  appDatabase,
+  name: r'appDatabaseProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
       ? null
-      : _$keyValueStoreHash,
+      : _$appDatabaseHash,
   dependencies: null,
   allTransitiveDependencies: null,
 );
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-typedef KeyValueStoreRef = FutureProviderRef<KVStore>;
-String _$settingsServiceHash() => r'ea09814a0aa21a0f1fe7696df556e15a2baab86b';
+typedef AppDatabaseRef = ProviderRef<AppDatabase>;
+String _$deviceIdServiceHash() => r'8b4b4342cad2aef5471ea8ef7d5d4b046c02f601';
+
+/// See also [deviceIdService].
+@ProviderFor(deviceIdService)
+final deviceIdServiceProvider = Provider<DeviceIdService>.internal(
+  deviceIdService,
+  name: r'deviceIdServiceProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$deviceIdServiceHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef DeviceIdServiceRef = ProviderRef<DeviceIdService>;
+String _$settingsServiceHash() => r'3a244e957496328dc9b67abf4413d6d6a2bb13fc';
 
 /// See also [settingsService].
 @ProviderFor(settingsService)
@@ -40,7 +57,7 @@ final settingsServiceProvider = Provider<SettingsService>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef SettingsServiceRef = ProviderRef<SettingsService>;
-String _$apiKeyHash() => r'f57f2517816f8b768ac9ffbb591baefc9b6f2de0';
+String _$apiKeyHash() => r'924832eaef3085a68ee2a4785acc71d4f23887b0';
 
 /// See also [apiKey].
 @ProviderFor(apiKey)
@@ -74,7 +91,7 @@ final aiServiceProvider = FutureProvider<AIService>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AiServiceRef = FutureProviderRef<AIService>;
-String _$diaryServiceHash() => r'4e9a8b6297ca37b4de2dd69c81e33993d12a7b0b';
+String _$diaryServiceHash() => r'716d71e447b58f3ef2ff161b9ee3417af4dc9954';
 
 /// See also [diaryService].
 @ProviderFor(diaryService)
@@ -91,7 +108,7 @@ final diaryServiceProvider = Provider<DiaryService>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef DiaryServiceRef = ProviderRef<DiaryService>;
-String _$syncServiceHash() => r'37c64bbe5dc8030dd13b40a270dd62778b0e21c6';
+String _$syncServiceHash() => r'6f40bb09a4e10f8a54a0b34a1e49b72ca8060e27';
 
 /// See also [syncService].
 @ProviderFor(syncService)
@@ -108,29 +125,9 @@ final syncServiceProvider = Provider<SyncService>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef SyncServiceRef = ProviderRef<SyncService>;
-String _$foodIndexServiceHash() => r'90aaebc70e62158d63a7efd0fa643e12a0152bb9';
-
-/// See also [foodIndexService].
-@ProviderFor(foodIndexService)
-final foodIndexServiceProvider = Provider<FoodIndexService>.internal(
-  foodIndexService,
-  name: r'foodIndexServiceProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$foodIndexServiceHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
-
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef FoodIndexServiceRef = ProviderRef<FoodIndexService>;
 String _$currentUserHash() => r'b4e60355b9f6ed5b0be4be4ea8c1f9f0a26b3f31';
 
-/// Stream provider that watches the Google Sign-In authentication state.
-/// This ensures the UI rebuilds when sign-in completes.
-///
-/// Copied from [currentUser].
+/// See also [currentUser].
 @ProviderFor(currentUser)
 final currentUserProvider = StreamProvider<GoogleUserInfo?>.internal(
   currentUser,

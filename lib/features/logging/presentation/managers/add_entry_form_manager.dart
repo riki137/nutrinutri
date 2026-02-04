@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nutrinutri/features/diary/data/diary_service.dart';
+import 'package:nutrinutri/features/diary/domain/diary_entry.dart';
 import 'package:nutrinutri/features/logging/presentation/add_entry_controller.dart';
 
 class AddEntryFormManager {

@@ -3,7 +3,6 @@ import 'package:gap/gap.dart';
 import 'package:nutrinutri/core/widgets/confirm_dialog.dart';
 
 class EntryActionButtons extends StatelessWidget {
-
   const EntryActionButtons({
     super.key,
     required this.isEditing,

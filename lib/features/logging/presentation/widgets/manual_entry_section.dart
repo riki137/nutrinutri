@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:nutrinutri/features/diary/data/diary_service.dart';
+import 'package:nutrinutri/features/diary/domain/diary_entry.dart';
 import 'package:nutrinutri/features/logging/presentation/widgets/entry_action_buttons.dart';
 import 'package:nutrinutri/features/logging/presentation/widgets/entry_form.dart';
 

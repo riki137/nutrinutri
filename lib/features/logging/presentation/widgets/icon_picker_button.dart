@@ -3,7 +3,6 @@ import 'package:gap/gap.dart';
 import 'package:nutrinutri/core/utils/icon_utils.dart';
 
 class IconPickerButton extends StatelessWidget {
-
   const IconPickerButton({
     super.key,
     required this.selectedIcon,

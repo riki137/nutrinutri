@@ -6,7 +6,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:nutrinutri/features/logging/presentation/widgets/food_image_picker.dart';
 
 class AIEntryWizard extends StatelessWidget {
-
   const AIEntryWizard({
     super.key,
     required this.isExercise,

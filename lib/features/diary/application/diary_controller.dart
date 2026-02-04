@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:nutrinutri/core/providers.dart';
 import 'package:nutrinutri/core/utils/icon_utils.dart';
 import 'package:nutrinutri/features/dashboard/presentation/dashboard_providers.dart';
-import 'package:nutrinutri/features/diary/data/diary_service.dart';
+import 'package:nutrinutri/features/diary/domain/diary_entry.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 

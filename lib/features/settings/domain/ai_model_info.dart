@@ -1,5 +1,4 @@
 class AIModelInfo {
-
   const AIModelInfo({
     required this.id,
     required this.name,

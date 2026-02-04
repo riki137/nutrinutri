@@ -96,7 +96,6 @@ class AdaptiveShell extends ConsumerWidget {
 /// Desktop layout with navigation rail or sidebar
 class _DesktopLayoutShell extends ConsumerWidget {
   const _DesktopLayoutShell({
-    super.key,
     required this.currentPath,
     required this.selectedIndex,
     required this.isExpanded,

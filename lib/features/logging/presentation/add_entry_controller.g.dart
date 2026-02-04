@@ -7,7 +7,7 @@ part of 'add_entry_controller.dart';
 // **************************************************************************
 
 String _$addEntryControllerHash() =>
-    r'84df7e7a3c883b1adfc4f5ffb1655748736704de';
+    r'a16a90be8dda69b28af746a058187204658f886e';
 
 /// See also [AddEntryController].
 @ProviderFor(AddEntryController)

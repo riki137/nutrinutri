@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nutrinutri/core/widgets/responsive_center.dart';
-import 'package:nutrinutri/features/diary/data/diary_service.dart';
+import 'package:nutrinutri/features/diary/domain/diary_entry.dart';
 import 'package:nutrinutri/features/logging/presentation/add_entry_controller.dart';
 import 'package:nutrinutri/features/logging/presentation/managers/add_entry_form_manager.dart';
 import 'package:nutrinutri/features/logging/presentation/widgets/ai_entry_wizard.dart';
