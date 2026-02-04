@@ -75,9 +75,26 @@ class SyncService {
     });
   }
 
-  Future<void> _fetchAndCacheUserInfo(String accessToken) async {
+  Future<void> _fetchAndCacheUserInfo(String accessToken,
+      {bool isRetry = false}) async {
     final userInfo = await GoogleUserInfo.fromAccessToken(accessToken);
     if (userInfo == null) {
+      if (!isRetry) {
+        debugPrint('Failed to fetch user info - trying to refresh token...');
+        try {
+          final newCredentials = await _googleSignIn.silentSignIn();
+          if (newCredentials != null) {
+            _currentCredentials = newCredentials;
+            return _fetchAndCacheUserInfo(
+              newCredentials.accessToken,
+              isRetry: true,
+            );
+          }
+        } catch (e) {
+          debugPrint('Failed to refresh token: $e');
+        }
+      }
+
       debugPrint('Failed to fetch user info - token may be invalid');
       // Clear invalid credentials
       await clearAccessToken();
