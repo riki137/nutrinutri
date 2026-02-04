@@ -124,8 +124,8 @@ class SyncService {
     final remote = DriveSnapshot.decode(remoteRaw);
 
     final localDiaryRows = await _db.select(_db.diaryEntries).get();
-    final localDiary = <String, SyncDiaryEntry>{
-      for (final row in localDiaryRows) row.id: SyncDiaryEntry.fromRow(row),
+    final localDiary = <String, DiaryEntryRow>{
+      for (final row in localDiaryRows) row.id: row,
     };
 
     final localProfile = await (_db.select(
@@ -135,9 +135,9 @@ class SyncService {
       _db.appSettings,
     )..where((t) => t.id.equals(1))).getSingleOrNull();
 
-    final nextDiary = Map<String, SyncDiaryEntry>.from(remote.diaryEntries);
-    SyncUserProfile? nextProfile = remote.userProfile;
-    SyncAppSettings? nextSettings = remote.appSettings;
+    final nextDiary = Map<String, DiaryEntryRow>.from(remote.diaryEntries);
+    UserProfileRow? nextProfile = remote.userProfile;
+    AppSettingsRow? nextSettings = remote.appSettings;
 
     var remoteNeedsUpdate = false;
     var localUpdates = 0;
@@ -178,24 +178,22 @@ class SyncService {
         }
       }
 
-      final localProfileSync = localProfile == null
-          ? null
-          : SyncUserProfile.fromRow(localProfile);
       final profileResult = await _mergeSingleton(
-        local: localProfileSync,
+        local: localProfile,
         remote: remote.userProfile,
+        revisionOf: (p) =>
+            _Revision(updatedAt: p.updatedAt, updatedBy: p.updatedBy),
         applyRemote: (remote) => _applyRemoteUserProfile(remote),
       );
       localUpdates += profileResult.localUpdates;
       remoteNeedsUpdate = remoteNeedsUpdate || profileResult.remoteNeedsUpdate;
       nextProfile = profileResult.nextRemote;
 
-      final localSettingsSync = localSettings == null
-          ? null
-          : SyncAppSettings.fromRow(localSettings);
       final settingsResult = await _mergeSingleton(
-        local: localSettingsSync,
+        local: localSettings,
         remote: remote.appSettings,
+        revisionOf: (s) =>
+            _Revision(updatedAt: s.updatedAt, updatedBy: s.updatedBy),
         applyRemote: (remote) => _applyRemoteAppSettings(remote),
       );
       localUpdates += settingsResult.localUpdates;
@@ -231,72 +229,22 @@ class SyncService {
     return localUpdates;
   }
 
-  Future<void> _applyRemoteDiaryEntry(SyncDiaryEntry remote) async {
+  Future<void> _applyRemoteDiaryEntry(DiaryEntryRow remote) async {
     await _db
         .into(_db.diaryEntries)
-        .insert(
-          DiaryEntriesCompanion.insert(
-            id: remote.id,
-            name: remote.name,
-            type: remote.type,
-            calories: remote.calories,
-            protein: Value(remote.protein),
-            carbs: Value(remote.carbs),
-            fats: Value(remote.fats),
-            timestamp: remote.timestamp,
-            normalizedName: remote.normalizedName,
-            imagePath: Value(remote.imagePath),
-            icon: Value(remote.icon),
-            status: Value(remote.status),
-            description: Value(remote.description),
-            durationMinutes: Value(remote.durationMinutes),
-            updatedAt: Value(remote.updatedAt),
-            updatedBy: Value(remote.updatedBy),
-            deletedAt: Value(remote.deletedAt),
-          ),
-          mode: InsertMode.insertOrReplace,
-        );
+        .insert(remote.toCompanion(false), mode: InsertMode.insertOrReplace);
   }
 
-  Future<void> _applyRemoteUserProfile(SyncUserProfile remote) async {
+  Future<void> _applyRemoteUserProfile(UserProfileRow remote) async {
     await _db
         .into(_db.userProfiles)
-        .insert(
-          UserProfilesCompanion.insert(
-            id: Value(remote.id),
-            age: remote.age,
-            weightKg: remote.weightKg,
-            heightCm: remote.heightCm,
-            gender: remote.gender,
-            activityLevel: remote.activityLevel,
-            goalCalories: remote.goalCalories,
-            goalProtein: Value(remote.goalProtein),
-            goalCarbs: Value(remote.goalCarbs),
-            goalFat: Value(remote.goalFat),
-            isConfigured: Value(remote.isConfigured),
-            updatedAt: Value(remote.updatedAt),
-            updatedBy: Value(remote.updatedBy),
-            deletedAt: Value(remote.deletedAt),
-          ),
-          mode: InsertMode.insertOrReplace,
-        );
+        .insert(remote.toCompanion(false), mode: InsertMode.insertOrReplace);
   }
 
-  Future<void> _applyRemoteAppSettings(SyncAppSettings remote) async {
+  Future<void> _applyRemoteAppSettings(AppSettingsRow remote) async {
     await _db
         .into(_db.appSettings)
-        .insert(
-          AppSettingsCompanion.insert(
-            id: Value(remote.id),
-            apiKey: Value(remote.apiKey),
-            aiModel: Value(remote.aiModel),
-            fallbackModel: Value(remote.fallbackModel),
-            updatedAt: Value(remote.updatedAt),
-            updatedBy: Value(remote.updatedBy),
-            deletedAt: Value(remote.deletedAt),
-          ),
-          mode: InsertMode.insertOrReplace,
-        );
+        .insert(remote.toCompanion(false), mode: InsertMode.insertOrReplace);
   }
 
   static int _compareRevision(int aAt, String aBy, int bAt, String bBy) {
@@ -308,6 +256,7 @@ class SyncService {
   Future<_MergeSingletonResult<T>> _mergeSingleton<T extends Object>({
     required T? local,
     required T? remote,
+    required _Revision Function(T value) revisionOf,
     required Future<void> Function(T remote) applyRemote,
   }) async {
     if (remote == null && local == null) {
@@ -327,8 +276,8 @@ class SyncService {
       return _MergeSingletonResult(nextRemote: remote);
     }
 
-    final localRev = _revisionOf(local);
-    final remoteRev = _revisionOf(remote);
+    final localRev = revisionOf(local);
+    final remoteRev = revisionOf(remote);
     final cmp = _compareRevision(
       localRev.updatedAt,
       localRev.updatedBy,
@@ -344,16 +293,6 @@ class SyncService {
     }
 
     return _MergeSingletonResult(nextRemote: remote);
-  }
-
-  static _Revision _revisionOf(Object value) {
-    if (value is SyncUserProfile) {
-      return _Revision(updatedAt: value.updatedAt, updatedBy: value.updatedBy);
-    }
-    if (value is SyncAppSettings) {
-      return _Revision(updatedAt: value.updatedAt, updatedBy: value.updatedBy);
-    }
-    throw ArgumentError.value(value, 'value', 'Unsupported sync type');
   }
 }
 
