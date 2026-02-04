@@ -4,13 +4,16 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in_all_platforms/google_sign_in_all_platforms.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
+import 'package:nutrinutri/core/services/food_index_service.dart';
 import 'package:nutrinutri/core/services/google_user_info.dart';
 import 'package:nutrinutri/core/services/kv_store.dart';
+import 'package:nutrinutri/features/diary/data/diary_service.dart';
 
 class SyncService {
-  SyncService(this._kv);
+  SyncService(this._kv, this._foodIndex);
   static const String _isGoogleLoggedInKey = 'is_google_logged_in';
   final KVStore _kv;
+  final FoodIndexService _foodIndex;
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     params: GoogleSignInParams(
       clientId: _getClientId(),
@@ -212,6 +215,7 @@ class SyncService {
         if (local == null) {
           // Pull remote to local (even if deleted, we sync the deletion state)
           await _kv.putSync(key, remote['v'], remote['u'], remote['d']);
+          await _updateIndexFromRemote(key, remote['v']);
           localUpdatesCount++;
           continue;
         }
@@ -231,6 +235,7 @@ class SyncService {
         } else if (remoteTs > localTs) {
           // Remote is newer -> update local
           await _kv.putSync(key, remote['v'], remoteTs, remote['d']);
+          await _updateIndexFromRemote(key, remote['v']);
           localUpdatesCount++;
         }
         // Else: equal, do nothing
@@ -303,6 +308,22 @@ class SyncService {
         drive.File(name: fileName, parents: ['appDataFolder']),
         uploadMedia: media,
       );
+    }
+  }
+
+  Future<void> _updateIndexFromRemote(String key, dynamic value) async {
+    if (!key.startsWith('diary_') || value == null) return;
+
+    try {
+      final entriesJson = (value['entries'] as List?) ?? [];
+      for (final entryJson in entriesJson) {
+        final entry = DiaryEntry.fromJson(entryJson);
+        if (entry.type == EntryType.food) {
+          await _foodIndex.indexEntry(entry);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error indexing synced entry ($key): $e');
     }
   }
 }

@@ -50,8 +50,9 @@ DiaryService diaryService(Ref ref) {
 @Riverpod(keepAlive: true)
 SyncService syncService(Ref ref) {
   final kv = ref.watch(keyValueStoreProvider).valueOrNull;
+  final foodIndex = ref.read(foodIndexServiceProvider);
   if (kv == null) throw UnimplementedError('KVStore not initialized');
-  return SyncService(kv);
+  return SyncService(kv, foodIndex);
 }
 
 @Riverpod(keepAlive: true)
