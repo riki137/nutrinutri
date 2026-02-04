@@ -8,9 +8,56 @@ class DiaryService {
   final AppDatabase _db;
   final DeviceIdService _deviceId;
 
-  Future<List<DiaryEntry>> getEntriesForDate(DateTime date) async {
+  ({int startMs, int endMsInclusive}) _dayBounds(DateTime date) {
     final start = DateTime(date.year, date.month, date.day);
-    final end = start.add(const Duration(days: 1));
+    final endExclusive = start.add(const Duration(days: 1));
+    return (
+      startMs: start.millisecondsSinceEpoch,
+      endMsInclusive: endExclusive.millisecondsSinceEpoch - 1,
+    );
+  }
+
+  DiaryEntriesCompanion _entryCompanion(
+    DiaryEntry entry, {
+    required String deviceId,
+    required int now,
+    required bool includeId,
+  }) {
+    final normalizedName = _normalize(entry.name);
+    return DiaryEntriesCompanion(
+      id: includeId ? Value(entry.id) : const Value.absent(),
+      name: Value(entry.name),
+      type: Value(entry.type.index),
+      calories: Value(entry.calories),
+      protein: Value(entry.protein),
+      carbs: Value(entry.carbs),
+      fats: Value(entry.fats),
+      timestamp: Value(entry.timestamp.millisecondsSinceEpoch),
+      normalizedName: Value(normalizedName),
+      imagePath: Value(entry.imagePath),
+      icon: Value(entry.icon),
+      status: Value(entry.status.index),
+      description: Value(entry.description),
+      durationMinutes: Value(entry.durationMinutes),
+      updatedAt: Value(now),
+      updatedBy: Value(deviceId),
+      deletedAt: const Value(null),
+    );
+  }
+
+  DiaryEntriesCompanion _entryDeleteCompanion({
+    required String deviceId,
+    required int now,
+  }) {
+    return DiaryEntriesCompanion(
+      updatedAt: Value(now),
+      updatedBy: Value(deviceId),
+      deletedAt: Value(now),
+    );
+  }
+
+  Future<List<DiaryEntry>> getEntriesForDate(DateTime date) async {
+    final bounds = _dayBounds(date);
 
     final rows =
         await (_db.select(_db.diaryEntries)
@@ -18,8 +65,8 @@ class DiaryService {
                 (t) =>
                     t.deletedAt.isNull() &
                     t.timestamp.isBetweenValues(
-                      start.millisecondsSinceEpoch,
-                      end.millisecondsSinceEpoch - 1,
+                      bounds.startMs,
+                      bounds.endMsInclusive,
                     ),
               )
               ..orderBy([(t) => OrderingTerm.asc(t.timestamp)]))
@@ -31,30 +78,11 @@ class DiaryService {
   Future<void> addEntry(DiaryEntry entry) async {
     final deviceId = await _deviceId.getOrCreate();
     final now = DateTime.now().millisecondsSinceEpoch;
-    final normalized = _normalize(entry.name);
 
     await _db
         .into(_db.diaryEntries)
         .insert(
-          DiaryEntriesCompanion.insert(
-            id: entry.id,
-            name: entry.name,
-            type: entry.type.index,
-            calories: entry.calories,
-            protein: Value(entry.protein),
-            carbs: Value(entry.carbs),
-            fats: Value(entry.fats),
-            timestamp: entry.timestamp.millisecondsSinceEpoch,
-            normalizedName: normalized,
-            imagePath: Value(entry.imagePath),
-            icon: Value(entry.icon),
-            status: Value(entry.status.index),
-            description: Value(entry.description),
-            durationMinutes: Value(entry.durationMinutes),
-            updatedAt: Value(now),
-            updatedBy: Value(deviceId),
-            deletedAt: const Value(null),
-          ),
+          _entryCompanion(entry, deviceId: deviceId, now: now, includeId: true),
           mode: InsertMode.insertOrReplace,
         );
   }
@@ -62,29 +90,11 @@ class DiaryService {
   Future<void> updateEntry(DiaryEntry entry) async {
     final deviceId = await _deviceId.getOrCreate();
     final now = DateTime.now().millisecondsSinceEpoch;
-    final normalized = _normalize(entry.name);
 
     await (_db.update(
       _db.diaryEntries,
     )..where((t) => t.id.equals(entry.id))).write(
-      DiaryEntriesCompanion(
-        name: Value(entry.name),
-        type: Value(entry.type.index),
-        calories: Value(entry.calories),
-        protein: Value(entry.protein),
-        carbs: Value(entry.carbs),
-        fats: Value(entry.fats),
-        timestamp: Value(entry.timestamp.millisecondsSinceEpoch),
-        normalizedName: Value(normalized),
-        imagePath: Value(entry.imagePath),
-        icon: Value(entry.icon),
-        status: Value(entry.status.index),
-        description: Value(entry.description),
-        durationMinutes: Value(entry.durationMinutes),
-        updatedAt: Value(now),
-        updatedBy: Value(deviceId),
-        deletedAt: const Value(null),
-      ),
+      _entryCompanion(entry, deviceId: deviceId, now: now, includeId: false),
     );
   }
 
@@ -92,28 +102,20 @@ class DiaryService {
     final deviceId = await _deviceId.getOrCreate();
     final now = DateTime.now().millisecondsSinceEpoch;
 
-    await (_db.update(
-      _db.diaryEntries,
-    )..where((t) => t.id.equals(entry.id))).write(
-      DiaryEntriesCompanion(
-        updatedAt: Value(now),
-        updatedBy: Value(deviceId),
-        deletedAt: Value(now),
-      ),
-    );
+    await (_db.update(_db.diaryEntries)..where((t) => t.id.equals(entry.id)))
+        .write(_entryDeleteCompanion(deviceId: deviceId, now: now));
   }
 
   Future<Map<String, double>> getSummary(DateTime date) async {
-    final start = DateTime(date.year, date.month, date.day);
-    final end = start.add(const Duration(days: 1));
+    final bounds = _dayBounds(date);
 
     final rows =
         await (_db.select(_db.diaryEntries)..where(
               (t) =>
                   t.deletedAt.isNull() &
                   t.timestamp.isBetweenValues(
-                    start.millisecondsSinceEpoch,
-                    end.millisecondsSinceEpoch - 1,
+                    bounds.startMs,
+                    bounds.endMsInclusive,
                   ),
             ))
             .get();

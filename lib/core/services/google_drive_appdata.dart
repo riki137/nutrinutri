@@ -8,8 +8,16 @@ class GoogleDriveAppData {
   Future<String?> findFileId(drive.DriveApi api, {required String name}) async {
     final q =
         "name = '$name' and 'appDataFolder' in parents and trashed = false";
-    final fileList = await api.files.list(q: q, spaces: 'appDataFolder');
-    return fileList.files?.isNotEmpty == true ? fileList.files!.first.id : null;
+    // Deterministic behavior: if multiple files match, pick the newest one.
+    final fileList = await api.files.list(
+      q: q,
+      spaces: 'appDataFolder',
+      orderBy: 'modifiedTime desc',
+      pageSize: 2,
+      $fields: 'files(id,name,modifiedTime)',
+    );
+    final files = fileList.files ?? const <drive.File>[];
+    return files.isNotEmpty ? files.first.id : null;
   }
 
   Future<String> downloadText(

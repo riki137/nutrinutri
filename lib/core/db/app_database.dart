@@ -5,8 +5,14 @@ part 'app_database.g.dart';
 
 int _nowMs() => DateTime.now().millisecondsSinceEpoch;
 
+mixin AuditColumns on Table {
+  IntColumn get updatedAt => integer().clientDefault(_nowMs)();
+  TextColumn get updatedBy => text().withDefault(const Constant(''))();
+  IntColumn get deletedAt => integer().nullable()();
+}
+
 @DataClassName('DiaryEntryRow')
-class DiaryEntries extends Table {
+class DiaryEntries extends Table with AuditColumns {
   TextColumn get id => text()();
   TextColumn get name => text()();
   IntColumn get type => integer()(); // EntryType.index
@@ -23,16 +29,12 @@ class DiaryEntries extends Table {
   TextColumn get description => text().nullable()();
   IntColumn get durationMinutes => integer().nullable()();
 
-  IntColumn get updatedAt => integer().clientDefault(_nowMs)();
-  TextColumn get updatedBy => text().withDefault(const Constant(''))();
-  IntColumn get deletedAt => integer().nullable()();
-
   @override
   Set<Column> get primaryKey => {id};
 }
 
 @DataClassName('UserProfileRow')
-class UserProfiles extends Table {
+class UserProfiles extends Table with AuditColumns {
   IntColumn get id => integer()(); // always 1
   IntColumn get age => integer()();
   RealColumn get weightKg => real()();
@@ -45,25 +47,17 @@ class UserProfiles extends Table {
   IntColumn get goalFat => integer().nullable()();
   BoolColumn get isConfigured => boolean().withDefault(const Constant(false))();
 
-  IntColumn get updatedAt => integer().clientDefault(_nowMs)();
-  TextColumn get updatedBy => text().withDefault(const Constant(''))();
-  IntColumn get deletedAt => integer().nullable()();
-
   @override
   Set<Column> get primaryKey => {id};
 }
 
 @DataClassName('AppSettingsRow')
-class AppSettings extends Table {
+class AppSettings extends Table with AuditColumns {
   IntColumn get id => integer()(); // always 1
   TextColumn get apiKey => text().nullable()();
   TextColumn get aiModel =>
       text().withDefault(const Constant('google/gemini-3-flash-preview'))();
   TextColumn get fallbackModel => text().nullable()();
-
-  IntColumn get updatedAt => integer().clientDefault(_nowMs)();
-  TextColumn get updatedBy => text().withDefault(const Constant(''))();
-  IntColumn get deletedAt => integer().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

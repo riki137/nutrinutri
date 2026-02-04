@@ -50,48 +50,39 @@ class SyncService {
 
   bool _isListeningToAuthState = false;
 
+  void _setCredentials(GoogleSignInCredentials? credentials) {
+    _currentCredentials = credentials;
+    if (credentials == null) {
+      _currentUserInfo = null;
+      _userInfoController.add(null);
+      return;
+    }
+
+    final userInfo = GoogleUserInfo.fromIdToken(credentials.idToken);
+    _currentUserInfo = userInfo;
+    _userInfoController.add(userInfo);
+  }
+
   void _listenToAuthState() {
     if (_isListeningToAuthState) return;
     _isListeningToAuthState = true;
 
     _userInfoController.add(_currentUserInfo);
 
-    _googleSignIn.authenticationState.listen((credentials) async {
-      _currentCredentials = credentials;
-      if (credentials == null) {
-        _currentUserInfo = null;
-        _userInfoController.add(null);
-        return;
-      }
-
-      final userInfo = GoogleUserInfo.fromIdToken(credentials.idToken);
-      _currentUserInfo = userInfo;
-      _userInfoController.add(userInfo);
-    });
+    _googleSignIn.authenticationState.listen(_setCredentials);
   }
 
   Future<void> signIn() async {
     _listenToAuthState();
     final credentials = await _googleSignIn.signIn();
-    _currentCredentials = credentials;
-
-    if (credentials != null) {
-      final userInfo = GoogleUserInfo.fromIdToken(credentials.idToken);
-      _currentUserInfo = userInfo;
-      _userInfoController.add(userInfo);
-    }
+    _setCredentials(credentials);
   }
 
   Future<void> restoreSession() async {
     try {
       _listenToAuthState();
       final credentials = await _googleSignIn.silentSignIn();
-      _currentCredentials = credentials;
-      if (credentials != null) {
-        final userInfo = GoogleUserInfo.fromIdToken(credentials.idToken);
-        _currentUserInfo = userInfo;
-        _userInfoController.add(userInfo);
-      }
+      _setCredentials(credentials);
     } catch (e) {
       debugPrint('Restore session failed: $e');
     }
@@ -99,9 +90,7 @@ class SyncService {
 
   Future<void> signOut() async {
     await _googleSignIn.signOut();
-    _currentCredentials = null;
-    _currentUserInfo = null;
-    _userInfoController.add(null);
+    _setCredentials(null);
   }
 
   Future<void> syncIfNeeded() async {

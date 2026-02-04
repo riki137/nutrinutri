@@ -11,6 +11,12 @@ class SettingsService {
   static const _settingsId = 1;
   static const _profileId = 1;
 
+  Future<({String deviceId, int now})> _audit() async {
+    final deviceId = await _deviceId.getOrCreate();
+    final now = DateTime.now().millisecondsSinceEpoch;
+    return (deviceId: deviceId, now: now);
+  }
+
   Future<void> saveApiKey(String key) async {
     await _updateSettings(
       apiKey: Value(key.trim().isEmpty ? null : key.trim()),
@@ -52,8 +58,7 @@ class SettingsService {
     int? goalCarbs,
     int? goalFat,
   }) async {
-    final deviceId = await _deviceId.getOrCreate();
-    final now = DateTime.now().millisecondsSinceEpoch;
+    final audit = await _audit();
 
     await _db
         .into(_db.userProfiles)
@@ -70,8 +75,8 @@ class SettingsService {
             goalCarbs: Value(goalCarbs),
             goalFat: Value(goalFat),
             isConfigured: const Value(true),
-            updatedAt: Value(now),
-            updatedBy: Value(deviceId),
+            updatedAt: Value(audit.now),
+            updatedBy: Value(audit.deviceId),
             deletedAt: Value<int?>(null),
           ),
           mode: InsertMode.insertOrReplace,
@@ -116,39 +121,30 @@ class SettingsService {
     Value<String> aiModel = const Value.absent(),
     Value<String?> fallbackModel = const Value.absent(),
   }) async {
-    final deviceId = await _deviceId.getOrCreate();
-    final now = DateTime.now().millisecondsSinceEpoch;
-
+    final audit = await _audit();
     final existing = await _settings();
-    if (existing == null) {
-      await _db
-          .into(_db.appSettings)
-          .insert(
-            AppSettingsCompanion.insert(
-              id: Value(_settingsId),
-              apiKey: apiKey,
-              aiModel: aiModel,
-              fallbackModel: fallbackModel,
-              updatedAt: Value(now),
-              updatedBy: Value(deviceId),
-              deletedAt: Value<int?>(null),
-            ),
-            mode: InsertMode.insertOrReplace,
-          );
-      return;
-    }
 
-    await (_db.update(
-      _db.appSettings,
-    )..where((t) => t.id.equals(_settingsId))).write(
-      AppSettingsCompanion(
-        apiKey: apiKey,
-        aiModel: aiModel,
-        fallbackModel: fallbackModel,
-        updatedAt: Value(now),
-        updatedBy: Value(deviceId),
-        deletedAt: Value<int?>(null),
-      ),
-    );
+    final nextApiKey = apiKey.present ? apiKey.value : existing?.apiKey;
+    final nextAiModel = aiModel.present
+        ? aiModel.value
+        : (existing?.aiModel ?? 'google/gemini-3-flash-preview');
+    final nextFallbackModel = fallbackModel.present
+        ? fallbackModel.value
+        : existing?.fallbackModel;
+
+    await _db
+        .into(_db.appSettings)
+        .insert(
+          AppSettingsCompanion(
+            id: const Value(_settingsId),
+            apiKey: Value(nextApiKey),
+            aiModel: Value(nextAiModel),
+            fallbackModel: Value(nextFallbackModel),
+            updatedAt: Value(audit.now),
+            updatedBy: Value(audit.deviceId),
+            deletedAt: const Value(null),
+          ),
+          mode: InsertMode.insertOrReplace,
+        );
   }
 }

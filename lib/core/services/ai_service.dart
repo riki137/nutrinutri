@@ -13,33 +13,17 @@ class AIService {
   // Track active clients for cancellation
   final Map<String, http.Client> _activeRequests = {};
 
-  /// Analyzes food from text description or base64 image
-  /// [requestId] is optional. If provided, allows cancellation of the request.
-  /// [modelOverride] is optional. If provided, uses this model instead of the default.
-  Future<Map<String, dynamic>> analyzeFood({
+  Map<String, String> _headers() => {
+    'Authorization': 'Bearer $apiKey',
+    'Content-Type': 'application/json',
+    'HTTP-Referer': 'https://nutrinutri.popelis.sk', // OpenRouter requirement
+    'X-Title': 'NutriNutri',
+  };
+
+  List<Map<String, dynamic>> _foodMessages({
     String? textDescription,
     String? base64Image,
-    String? requestId,
-    String? modelOverride,
-  }) async {
-    if (apiKey.isEmpty) {
-      throw Exception('API Key is missing');
-    }
-
-    final client = http.Client();
-    if (requestId != null) {
-      _activeRequests[requestId]?.close(); // Cancel previous if exists
-      _activeRequests[requestId] = client;
-    }
-
-    final headers = {
-      'Authorization': 'Bearer $apiKey',
-      'Content-Type': 'application/json',
-      'HTTP-Referer':
-          'https://nutrinutri.popelis.sk', // Required by OpenRouter usually
-      'X-Title': 'NutriNutri',
-    };
-
+  }) {
     final messages = <Map<String, dynamic>>[
       {
         'role': 'system',
@@ -82,76 +66,22 @@ If unclear, provide best guess with lower confidence.
       });
     }
 
-    final body = jsonEncode({
-      'model': modelOverride ?? model, // Use override or configured model
-      'messages': messages,
-      'response_format': {'type': 'json_object'},
-    });
-
-    try {
-      final response = await client.post(
-        Uri.parse(_baseUrl),
-        headers: headers,
-        body: body,
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final content = data['choices'][0]['message']['content'];
-        return jsonDecode(_extractJson(content));
-      } else {
-        throw Exception('AI Error: ${response.statusCode} - ${response.body}');
-      }
-    } catch (e) {
-      if (e.toString().contains('ClientException') &&
-          requestId != null &&
-          !_activeRequests.containsKey(requestId)) {
-        throw Exception('Request cancelled');
-      }
-      debugPrint('AI Service Error: $e');
-      rethrow;
-    } finally {
-      if (requestId != null) {
-        _activeRequests.remove(requestId);
-      }
-      client.close();
-    }
+    return messages;
   }
 
-  Future<Map<String, dynamic>> analyzeExercise({
+  List<Map<String, dynamic>> _exerciseMessages({
     required String textDescription,
     UserProfile? userProfile,
-    String? requestId,
-    String? modelOverride,
-  }) async {
-    if (apiKey.isEmpty) {
-      throw Exception('API Key is missing');
-    }
+  }) {
+    final profileInfo = userProfile == null
+        ? ''
+        : 'User Profile for Calorie Calculation:\n'
+              'Age: ${userProfile.age}\n'
+              'Weight: ${userProfile.weightKg} kg\n'
+              'Height: ${userProfile.heightCm} cm\n'
+              'Gender: ${userProfile.gender}\n';
 
-    final client = http.Client();
-    if (requestId != null) {
-      _activeRequests[requestId]?.close();
-      _activeRequests[requestId] = client;
-    }
-
-    final headers = {
-      'Authorization': 'Bearer $apiKey',
-      'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://nutrinutri.popelis.sk',
-      'X-Title': 'NutriNutri',
-    };
-
-    String profileInfo = '';
-    if (userProfile != null) {
-      profileInfo =
-          'User Profile for Calorie Calculation:\n'
-          'Age: ${userProfile.age}\n'
-          'Weight: ${userProfile.weightKg} kg\n'
-          'Height: ${userProfile.heightCm} cm\n'
-          'Gender: ${userProfile.gender}\n';
-    }
-
-    final messages = <Map<String, dynamic>>[
+    return <Map<String, dynamic>>[
       {
         'role': 'system',
         'content':
@@ -175,6 +105,27 @@ Calculate calories based on the user profile provided and standard MET values.
       },
       {'role': 'user', 'content': textDescription},
     ];
+  }
+
+  bool _looksLikeClientException(Object error) {
+    return error is http.ClientException ||
+        error.toString().contains('ClientException');
+  }
+
+  Future<Map<String, dynamic>> _chatCompletion({
+    required List<Map<String, dynamic>> messages,
+    String? modelOverride,
+    String? requestId,
+  }) async {
+    if (apiKey.isEmpty) {
+      throw Exception('API Key is missing');
+    }
+
+    final client = http.Client();
+    if (requestId != null) {
+      _activeRequests[requestId]?.close(); // Cancel previous if exists
+      _activeRequests[requestId] = client;
+    }
 
     final body = jsonEncode({
       'model': modelOverride ?? model,
@@ -185,31 +136,66 @@ Calculate calories based on the user profile provided and standard MET values.
     try {
       final response = await client.post(
         Uri.parse(_baseUrl),
-        headers: headers,
+        headers: _headers(),
         body: body,
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final content = data['choices'][0]['message']['content'];
-        return jsonDecode(_extractJson(content));
-      } else {
+      if (response.statusCode != 200) {
         throw Exception('AI Error: ${response.statusCode} - ${response.body}');
       }
+
+      final data = jsonDecode(response.body);
+      final content = data['choices'][0]['message']['content'];
+      return jsonDecode(_extractJson(content));
     } catch (e) {
-      if (e.toString().contains('ClientException') &&
-          requestId != null &&
-          !_activeRequests.containsKey(requestId)) {
+      if (requestId != null &&
+          _looksLikeClientException(e) &&
+          _activeRequests[requestId] != client) {
         throw Exception('Request cancelled');
       }
       debugPrint('AI Service Error: $e');
       rethrow;
     } finally {
-      if (requestId != null) {
+      if (requestId != null && _activeRequests[requestId] == client) {
         _activeRequests.remove(requestId);
       }
       client.close();
     }
+  }
+
+  /// Analyzes food from text description or base64 image
+  /// [requestId] is optional. If provided, allows cancellation of the request.
+  /// [modelOverride] is optional. If provided, uses this model instead of the default.
+  Future<Map<String, dynamic>> analyzeFood({
+    String? textDescription,
+    String? base64Image,
+    String? requestId,
+    String? modelOverride,
+  }) async {
+    return _chatCompletion(
+      messages: _foodMessages(
+        textDescription: textDescription,
+        base64Image: base64Image,
+      ),
+      modelOverride: modelOverride,
+      requestId: requestId,
+    );
+  }
+
+  Future<Map<String, dynamic>> analyzeExercise({
+    required String textDescription,
+    UserProfile? userProfile,
+    String? requestId,
+    String? modelOverride,
+  }) async {
+    return _chatCompletion(
+      messages: _exerciseMessages(
+        textDescription: textDescription,
+        userProfile: userProfile,
+      ),
+      modelOverride: modelOverride,
+      requestId: requestId,
+    );
   }
 
   void cancelRequest(String requestId) {
