@@ -1,0 +1,134 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Navbar from "../components/Navbar.astro";
+import Footer from "../components/Footer.astro";
+---
+
+<Layout title="Privacy Policy - NutriNutri">
+    <Navbar />
+
+    <main class="container">
+        <section class="privacy-section glass">
+            <h1>Privacy Policy</h1>
+            <p class="last-updated">Last updated: February 2026</p>
+
+            <div class="content">
+                <h2>Privacy by Default</h2>
+                <p>
+                    NutriNutri is built with privacy as a core principle. We
+                    believe your health data belongs to you and only you.
+                </p>
+
+                <h2>Data Collection</h2>
+                <p>
+                    <strong>We do not track you.</strong> We do not use Google Analytics,
+                    Mixpanel, or any other user tracking services. We do not collect
+                    telemetry data about how you use the app.
+                </p>
+
+                <h2>Data Storage</h2>
+                <p>
+                    <strong>Local First:</strong> All your data (nutrition logs, settings,
+                    preferences) is stored locally on your device properly secured.
+                </p>
+                <p>
+                    <strong>Optional Sync:</strong> If you choose to enable cross-device
+                    sync, your data is stored in your personal Google Drive (via Google
+                    Drive App Folder). We (the developers of NutriNutri) do not have
+                    access to this data. It remains in your control within your Google
+                    account.
+                </p>
+
+                <h2>Google Drive Integration</h2>
+                <p>
+                    When you connect NutriNutri to Google Drive, the app
+                    requests access only to its own specific configuration and
+                    data files. It cannot access your other files or photos in
+                    Google Drive. This permissions model ("drive.appdata")
+                    ensures that NutriNutri only interacts with data it has
+                    created.
+                </p>
+
+                <h2>Open Source</h2>
+                <p>
+                    NutriNutri is open source software. You can verify our
+                    privacy claims by inspecting our source code on <a
+                        href="https://github.com/riki137/nutrinutri">GitHub</a
+                    >.
+                </p>
+
+                <h2>Contact Us</h2>
+                <p>
+                    If you have any questions about this Privacy Policy, please
+                    contact us via GitHub Issues.
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <Footer />
+</Layout>
+
+<style>
+    main {
+        padding-top: 8rem;
+        padding-bottom: 4rem;
+        min-height: calc(100vh - 200px);
+    }
+
+    .privacy-section {
+        padding: 3rem;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    h1 {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+        color: var(--color-text);
+        background: linear-gradient(
+            135deg,
+            var(--color-primary),
+            var(--color-secondary)
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .last-updated {
+        color: var(--color-text-muted);
+        margin-bottom: 3rem;
+        font-size: 0.9rem;
+    }
+
+    .content h2 {
+        font-size: 1.5rem;
+        margin: 2rem 0 1rem;
+        color: var(--color-text);
+    }
+
+    .content p {
+        margin-bottom: 1rem;
+        line-height: 1.7;
+        color: var(--color-text-muted);
+    }
+
+    .content a {
+        color: var(--color-primary);
+        text-decoration: none;
+    }
+
+    .content a:hover {
+        text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+        .privacy-section {
+            padding: 1.5rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+        }
+    }
+</style>
