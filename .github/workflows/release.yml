@@ -107,7 +107,7 @@ jobs:
         with:
           channel: 'stable'
       - run: flutter pub get
-      - run: flutter build web --release
+      - run: flutter build web --release --base-href "/nutrinutri/"
       - name: Compress Web Build
         run: cd build/web && zip -r ../../nutrinutri-web.zip .
       - name: Upload Web Artifacts
@@ -116,3 +116,8 @@ jobs:
           files: nutrinutri-web.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
