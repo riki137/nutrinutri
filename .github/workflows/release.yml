@@ -3,7 +3,7 @@ name: Build and Release
 on:
   push:
     tags:
-      - "v*"
+      - "*"
   workflow_dispatch:
 
 permissions:
@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   build_android:
-    name: Build Android
+    name: Build Android (Signed)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,11 +22,25 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+      
+      # 1. Decode Keystore
+      - name: Decode Keystore
+        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
+
+      # 2. Create key.properties
+      - name: Create key.properties
+        run: |
+          echo "storePassword=${{ secrets.ANDROID_STORE_PASSWORD }}" > android/key.properties
+          echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> android/key.properties
+          echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> android/key.properties
+          echo "storeFile=upload-keystore.jks" >> android/key.properties
+      
       - run: flutter pub get
       - run: flutter build apk --release
-        # Note: If no signing configuration is found, this produces an unsigned APK.
+
       - name: Rename APK
-        run: find build/app/outputs/flutter-apk -name "app-release*.apk" -exec mv {} nutrinutri-android.apk \;
+        run: mv build/app/outputs/flutter-apk/app-release.apk nutrinutri-android.apk
+      
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
@@ -45,7 +59,7 @@ jobs:
       - run: flutter pub get
       - run: flutter build windows --release
       - name: Compress Windows Build
-        run: Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath nutrinutri-windows.zip
+        run: Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath nutrinutri-windows.zip
       - name: Upload Windows Artifacts
         uses: softprops/action-gh-release@v1
         with:
@@ -77,7 +91,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build_macos:
-    name: Build MacOS
+    name: Build MacOS (DMG)
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -85,16 +99,35 @@ jobs:
         with:
           channel: 'stable'
       - run: flutter pub get
+      
+      # 1. Install create-dmg utility
+      - name: Install create-dmg
+        run: brew install create-dmg
+
       - run: flutter build macos --release
-      - name: Compress MacOS Build
+
+      # 2. Package into DMG
+      - name: Create DMG
         run: |
           cd build/macos/Build/Products/Release
           APP_NAME=$(find . -maxdepth 1 -name "*.app" -exec basename {} \;)
-          zip -r ../../../../nutrinutri-macos.zip "$APP_NAME"
+          create-dmg \
+            --volname "NutriNutri Installer" \
+            --window-pos 200 120 \
+            --window-size 800 400 \
+            --icon-size 100 \
+            --icon "$APP_NAME" 200 190 \
+            --hide-extension "$APP_NAME" \
+            --app-drop-link 600 185 \
+            "nutrinutri.dmg" \
+            "$APP_NAME"
+          # Move DMG to workspace root for upload
+          mv nutrinutri.dmg $GITHUB_WORKSPACE/nutrinutri-macos.dmg
+
       - name: Upload MacOS Artifacts
         uses: softprops/action-gh-release@v1
         with:
-          files: nutrinutri-macos.zip
+          files: nutrinutri-macos.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
