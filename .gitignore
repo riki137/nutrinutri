@@ -44,3 +44,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Secrets
+google-services.json
+GoogleService-Info.plist
+wes_client_secret.json

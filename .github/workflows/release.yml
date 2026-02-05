@@ -1,0 +1,118 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build_android:
+    name: Build Android
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - run: flutter pub get
+      - run: flutter build apk --release
+        # Note: If no signing configuration is found, this produces an unsigned APK.
+      - name: Rename APK
+        run: find build/app/outputs/flutter-apk -name "app-release*.apk" -exec mv {} nutrinutri-android.apk \;
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: nutrinutri-android.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build_windows:
+    name: Build Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - run: flutter pub get
+      - run: flutter build windows --release
+      - name: Compress Windows Build
+        run: Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath nutrinutri-windows.zip
+      - name: Upload Windows Artifacts
+        uses: softprops/action-gh-release@v1
+        with:
+          files: nutrinutri-windows.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build_linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - run: flutter pub get
+      - run: flutter build linux --release
+      - name: Compress Linux Build
+        run: tar -czf nutrinutri-linux.tar.gz -C build/linux/x64/release/bundle .
+      - name: Upload Linux Artifacts
+        uses: softprops/action-gh-release@v1
+        with:
+          files: nutrinutri-linux.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build_macos:
+    name: Build MacOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - run: flutter pub get
+      - run: flutter build macos --release
+      - name: Compress MacOS Build
+        run: |
+          cd build/macos/Build/Products/Release
+          APP_NAME=$(find . -maxdepth 1 -name "*.app" -exec basename {} \;)
+          zip -r ../../../../nutrinutri-macos.zip "$APP_NAME"
+      - name: Upload MacOS Artifacts
+        uses: softprops/action-gh-release@v1
+        with:
+          files: nutrinutri-macos.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build_web:
+    name: Build Web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - run: flutter pub get
+      - run: flutter build web --release
+      - name: Compress Web Build
+        run: cd build/web && zip -r ../../nutrinutri-web.zip .
+      - name: Upload Web Artifacts
+        uses: softprops/action-gh-release@v1
+        with:
+          files: nutrinutri-web.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

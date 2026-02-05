@@ -32,7 +32,8 @@ class SyncService {
   static const String _clientId =
       '650205047998-i0plaeno2mrp8e1kf6l52cth4076548p.apps.googleusercontent.com';
 
-  // TODO: Move to runtime config. This should not live in source control.
+  // This is not actually a secret, Google just calls it that.
+  // The app must have this to use Google Sign In, so there's no way to hide it.
   static const String _clientSecret = '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';
 
   GoogleSignInCredentials? _currentCredentials;
