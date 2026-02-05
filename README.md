@@ -1,4 +1,4 @@
-# <img src="assets/images/nutrinutri.svg" width="48" height="48" vertical-align="middle"> NutriNutri 🍎
+# <img src="assets/images/nutrinutri.svg" width="48" height="48" vertical-align="middle"> NutriNutri
 
 > **Your Personal AI Nutritionist. Simple. Private. Open Source. Not-for-profit.**
 
@@ -50,7 +50,7 @@ I believe that health tools should be accessible to everyone and respect your pr
 
 ## 🚀 Roadmap
 
-- [ ] **Activities tracking**: Track your activities and get calories burned.
+- [x] **Activities tracking**: Track your activities and get calories burned.
 - [ ] **UX Improvements**: Make the app more user-friendly and intuitive. Repeated food entries, stats, etc.
 - [ ] **Charts**: Weekly and monthly trends for your intake.
 - [ ] **Recipe Builder**: AI Recipe Generator with preferences, with option to save and list recipes and add them to your diary.
