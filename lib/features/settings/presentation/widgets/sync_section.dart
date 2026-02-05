@@ -10,12 +10,14 @@ class SyncSection extends StatelessWidget {
     required this.onSignIn,
     required this.onSignOut,
     required this.onSync,
+    this.webSignInButton,
   });
   final GoogleUserInfo? currentUser;
   final bool isSyncing;
   final VoidCallback onSignIn;
   final VoidCallback onSignOut;
   final VoidCallback onSync;
+  final Widget? webSignInButton;
 
   @override
   Widget build(BuildContext context) {
@@ -33,16 +35,19 @@ class SyncSection extends StatelessWidget {
         ),
         const Gap(16),
         if (currentUser == null)
-          FilledButton.icon(
-            onPressed: onSignIn,
-            icon: const Icon(Icons.login),
-            label: const Text('Sign in with Google'),
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.black,
-              side: const BorderSide(color: Colors.grey),
-            ),
-          )
+          if (webSignInButton != null)
+            Center(child: webSignInButton!)
+          else
+            FilledButton.icon(
+              onPressed: onSignIn,
+              icon: const Icon(Icons.login),
+              label: const Text('Sign in with Google'),
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+                side: const BorderSide(color: Colors.grey),
+              ),
+            )
         else ...[
           ListTile(
             leading: CircleAvatar(

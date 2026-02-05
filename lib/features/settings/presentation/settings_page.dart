@@ -246,6 +246,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         onSignIn: controller.signIn,
         onSignOut: controller.signOut,
         onSync: _handleSync,
+        webSignInButton: controller.webSignInButton,
       ),
       const Gap(32),
       const Divider(),

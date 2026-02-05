@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nutrinutri/core/domain/user_profile.dart';
 import 'package:nutrinutri/core/providers.dart';
@@ -169,6 +170,8 @@ class SettingsController extends _$SettingsController {
   Future<void> signIn() async {
     await ref.read(syncServiceProvider).signIn();
   }
+
+  Widget? get webSignInButton => ref.read(syncServiceProvider).webSignInButton;
 
   Future<void> signOut() async {
     await ref.read(syncServiceProvider).signOut();

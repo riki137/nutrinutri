@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:google_sign_in_all_platforms/google_sign_in_all_platforms.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:nutrinutri/core/db/app_database.dart';
@@ -97,6 +98,13 @@ class SyncService {
   Future<void> syncIfNeeded() async {
     if (currentUser == null) return;
     await sync();
+  }
+
+  Widget? get webSignInButton {
+    if (kIsWeb) {
+      return _googleSignIn.signInButton();
+    }
+    return null;
   }
 
   Future<int> sync() async {
