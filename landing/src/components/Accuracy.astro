@@ -1,0 +1,135 @@
+---
+import { Quote, Sparkles } from "lucide-astro";
+---
+
+<section class="accuracy container">
+    <div class="glass accuracy-card">
+        <div class="icon-wrapper">
+            <Sparkles size={24} />
+        </div>
+        <div class="content">
+            <div class="quote-icon">
+                <Quote size={40} />
+            </div>
+            <blockquote>
+                "I tracked my day using a strict food database alongside
+                NutriNutri. Even when being vague with my prompts, the AI result
+                was <strong>surprisingly accurate</strong>, staying within a
+                <strong>10% difference</strong> by the end of the day."
+            </blockquote>
+            <div class="meta">
+                <div class="author">
+                    <span class="name">Developer's Note</span>
+                    <span class="role">Real-world Test</span>
+                </div>
+                <div class="tag">
+                    Using <strong>Gemini 3 Flash</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .accuracy {
+        padding: 0 1.5rem 4rem;
+        display: flex;
+        justify-content: center;
+    }
+
+    .accuracy-card {
+        position: relative;
+        padding: 3rem;
+        max-width: 900px;
+        width: 100%;
+        border-radius: 2rem;
+        background: linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.9),
+            rgba(255, 255, 255, 0.6)
+        );
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        overflow: hidden;
+    }
+
+    .icon-wrapper {
+        position: absolute;
+        top: 2rem;
+        right: 2rem;
+        width: 3rem;
+        height: 3rem;
+        background: linear-gradient(135deg, #fff5f2, #fff);
+        color: var(--color-primary);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .quote-icon {
+        color: var(--color-primary);
+        opacity: 0.2;
+        margin-bottom: 1rem;
+    }
+
+    blockquote {
+        font-size: 1.5rem;
+        font-weight: 500;
+        line-height: 1.6;
+        color: var(--color-text);
+        margin: 0 0 2rem 0;
+        position: relative;
+        z-index: 1;
+    }
+
+    .meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 2rem;
+        border-top: 1px solid rgba(0, 0, 0, 0.05);
+        padding-top: 1.5rem;
+    }
+
+    .author {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .name {
+        font-weight: 700;
+        color: var(--color-text);
+    }
+
+    .role {
+        font-size: 0.875rem;
+        color: var(--color-text-muted);
+    }
+
+    .tag {
+        background: rgba(255, 255, 255, 0.8);
+        padding: 0.5rem 1rem;
+        border-radius: 2rem;
+        font-size: 0.875rem;
+        color: var(--color-text-muted);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    @media (max-width: 768px) {
+        .accuracy-card {
+            padding: 2rem;
+        }
+
+        blockquote {
+            font-size: 1.25rem;
+        }
+
+        .meta {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+    }
+</style>
