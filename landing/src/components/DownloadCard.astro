@@ -11,11 +11,11 @@ const Icon = app.icon;
     <div class="dl-icon">
         {
             typeof app.icon === "string" ? (
-                <img
-                    src={app.icon}
-                    alt={app.name}
-                    width={iconSize}
-                    height={iconSize}
+                <div
+                    class="dl-icon-img"
+                    style={`-webkit-mask-image: url(${app.icon}); mask-image: url(${app.icon}); width: ${iconSize}px; height: ${iconSize}px;`}
+                    role="img"
+                    aria-label={app.name}
                 />
             ) : (
                 <Icon size={iconSize} />
@@ -94,13 +94,14 @@ const Icon = app.icon;
         background: rgba(255, 255, 255, 0.3);
     }
 
-    .dl-icon img {
-        display: block;
-        object-fit: contain;
-    }
-
-    .dl-card.primary .dl-icon img {
-        filter: brightness(0) invert(1);
+    .dl-icon-img {
+        background-color: currentColor;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
     }
 
     .dl-info {

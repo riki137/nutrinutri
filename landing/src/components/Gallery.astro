@@ -9,13 +9,16 @@ import SectionHeader from "./SectionHeader.astro";
     />
     <div class="mobile-showcase">
         <div class="glass screen-container mobile-tilt-left">
-            <img src="/img/mobile-placeholder-1.svg" alt="Mobile Diary" />
+            <img src="/img/android-screenshot-add.png" alt="Mobile Diary" />
         </div>
         <div class="glass screen-container mobile-main">
-            <img src="/img/mobile-placeholder-2.svg" alt="Mobile Stats" />
+            <img src="/img/android-screenshot-home.png" alt="Mobile Stats" />
         </div>
         <div class="glass screen-container mobile-tilt-right">
-            <img src="/img/mobile-placeholder-1.svg" alt="Mobile Settings" />
+            <img
+                src="/img/android-screenshot-settings.png"
+                alt="Mobile Settings"
+            />
         </div>
     </div>
 </section>
@@ -43,6 +46,10 @@ import SectionHeader from "./SectionHeader.astro";
         padding: 0.5rem;
         transition: transform 0.5s ease;
         background: rgba(255, 255, 255, 0.5);
+    }
+    .screen-container img {
+        border-radius: 0.75rem;
+        margin-bottom: -4px;
     }
 
     .mobile-tilt-left {

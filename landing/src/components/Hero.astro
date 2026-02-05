@@ -30,9 +30,9 @@ import { Github, ArrowRight } from "lucide-astro";
         </div>
     </div>
     <div class="hero-visual">
-        <div class="glass screen-container desktop-tilt">
+        <div class="desktop-tilt">
             <img
-                src="/img/desktop-placeholder.svg"
+                src="/img/macos-screenshot.png"
                 alt="App Screenshot"
                 class="app-screen"
             />
@@ -47,7 +47,6 @@ import { Github, ArrowRight } from "lucide-astro";
         min-height: auto;
         display: grid;
         grid-template-columns: 1.2fr 1fr;
-        gap: 4rem;
         align-items: center;
     }
 
@@ -112,16 +111,19 @@ import { Github, ArrowRight } from "lucide-astro";
             0.5
         ); /* Lighter glass for screen container */
     }
+    .screen-container img {
+        border-radius: 0.75rem;
+        overflow: hidden;
+    }
 
     .app-screen {
         width: 100%;
         height: auto;
-        border-radius: 0.75rem;
         display: block;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     }
 
     .desktop-tilt {
+        transition: transform 0.5s ease;
         transform: rotateY(-10deg) rotateX(5deg);
         width: 100%;
     }
