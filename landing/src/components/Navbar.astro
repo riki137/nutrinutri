@@ -1,0 +1,95 @@
+---
+import { Github, Download } from "lucide-astro";
+---
+
+<nav class="glass nav">
+    <div class="container nav-content">
+        <a href="/" class="logo">
+            <img
+                src="/nutrinutri.svg"
+                alt="NutriNutri Logo"
+                width="32"
+                height="32"
+            />
+            <span>NutriNutri</span>
+        </a>
+        <div class="nav-links">
+            <a
+                href="https://github.com/riki137/nutrinutri"
+                target="_blank"
+                class="nav-icon-link"
+                aria-label="GitHub"
+            >
+                <Github size={20} />
+            </a>
+            <a href="#download" class="btn btn-primary btn-sm">
+                <Download size={16} />
+                <span>Download</span>
+            </a>
+        </div>
+    </div>
+</nav>
+
+<style>
+    .nav {
+        position: fixed;
+        top: 1rem;
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100% - 2rem);
+        max-width: 1200px;
+        z-index: 100;
+        padding: 0.75rem 1.25rem;
+        transition: all 0.3s ease;
+    }
+
+    .nav-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0;
+    }
+
+    .logo {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        text-decoration: none;
+        color: var(--color-text);
+        font-weight: 700;
+        font-size: 1.25rem;
+    }
+
+    .logo span {
+        background: linear-gradient(
+            135deg,
+            var(--color-primary),
+            var(--color-secondary)
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+    }
+
+    .nav-icon-link {
+        color: var(--color-text-muted);
+        transition: color 0.2s;
+        display: flex;
+        align-items: center;
+    }
+
+    .nav-icon-link:hover {
+        color: var(--color-primary);
+    }
+
+    .btn-sm {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        border-radius: 0.75rem;
+    }
+</style>

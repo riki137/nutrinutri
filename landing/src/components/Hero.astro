@@ -1,0 +1,161 @@
+---
+import { Github, ArrowRight } from "lucide-astro";
+---
+
+<section class="hero container">
+    <div class="hero-content">
+        <div class="badge">
+            <span class="badge-dot"></span>
+            Open Source & Private
+        </div>
+        <h1>
+            Nutrition Tracking, <br /><span class="text-gradient">Evolved.</span
+            >
+        </h1>
+        <p class="hero-text">
+            The privacy-first, AI-powered nutrition tracker. Completely free,
+            open-source, and yours. Bring your own AI key.
+        </p>
+        <div class="hero-cta">
+            <a href="#download" class="btn btn-primary">
+                Get Started <ArrowRight size={18} />
+            </a>
+            <a
+                href="https://github.com/riki137/nutrinutri"
+                target="_blank"
+                class="btn btn-outline"
+            >
+                <Github size={18} /> Star on GitHub
+            </a>
+        </div>
+    </div>
+    <div class="hero-visual">
+        <div class="glass screen-container desktop-tilt">
+            <img
+                src="/img/desktop-placeholder.svg"
+                alt="App Screenshot"
+                class="app-screen"
+            />
+        </div>
+    </div>
+</section>
+
+<style>
+    .hero {
+        padding-top: 140px;
+        padding-bottom: 5rem;
+        min-height: auto;
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 4rem;
+        align-items: center;
+    }
+
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.375rem 0.875rem;
+        background: rgba(255, 111, 97, 0.1);
+        color: var(--color-primary);
+        border-radius: 99px;
+        border: 1px solid rgba(255, 111, 97, 0.2);
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+    }
+
+    .badge-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--color-primary);
+    }
+
+    h1 {
+        font-size: 4rem;
+        line-height: 1.1;
+        font-weight: 800;
+        margin-bottom: 1.5rem;
+        letter-spacing: -0.02em;
+        color: var(--color-text);
+    }
+
+    .hero-text {
+        font-size: 1.25rem;
+        color: var(--color-text-muted);
+        margin-bottom: 2.5rem;
+        line-height: 1.5;
+        max-width: 500px;
+    }
+
+    .hero-cta {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .hero-visual {
+        display: flex;
+        justify-content: center;
+        perspective: 1000px;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .screen-container {
+        padding: 0.5rem;
+        transition: transform 0.5s ease;
+        background: rgba(
+            255,
+            255,
+            255,
+            0.5
+        ); /* Lighter glass for screen container */
+    }
+
+    .app-screen {
+        width: 100%;
+        height: auto;
+        border-radius: 0.75rem;
+        display: block;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .desktop-tilt {
+        transform: rotateY(-10deg) rotateX(5deg);
+        width: 100%;
+    }
+
+    .desktop-tilt:hover {
+        transform: rotateY(-5deg) rotateX(2deg) translateY(-10px);
+    }
+
+    @media (max-width: 768px) {
+        .hero {
+            grid-template-columns: 1fr;
+            padding-top: 100px;
+            text-align: center;
+            gap: 3rem;
+        }
+
+        h1 {
+            font-size: 2.75rem;
+        }
+
+        .hero-cta {
+            justify-content: center;
+            flex-direction: column;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        .desktop-tilt {
+            transform: none;
+            margin-top: 1rem;
+        }
+
+        .desktop-tilt:hover {
+            transform: none;
+        }
+    }
+</style>

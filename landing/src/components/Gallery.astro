@@ -1,0 +1,82 @@
+---
+import SectionHeader from "./SectionHeader.astro";
+---
+
+<section class="gallery container">
+    <SectionHeader
+        title="Beautifully Simple"
+        subtitle="Designed to be fast, minimal, and out of your way."
+    />
+    <div class="mobile-showcase">
+        <div class="glass screen-container mobile-tilt-left">
+            <img src="/img/mobile-placeholder-1.svg" alt="Mobile Diary" />
+        </div>
+        <div class="glass screen-container mobile-main">
+            <img src="/img/mobile-placeholder-2.svg" alt="Mobile Stats" />
+        </div>
+        <div class="glass screen-container mobile-tilt-right">
+            <img src="/img/mobile-placeholder-1.svg" alt="Mobile Settings" />
+        </div>
+    </div>
+</section>
+
+<style>
+    .gallery {
+        padding: 4rem 1.5rem;
+        overflow: hidden;
+    }
+
+    .mobile-showcase {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 2rem;
+        padding: 2rem 0;
+    }
+
+    .mobile-showcase .screen-container img {
+        width: 100%;
+        max-width: 280px;
+    }
+
+    .screen-container {
+        padding: 0.5rem;
+        transition: transform 0.5s ease;
+        background: rgba(255, 255, 255, 0.5);
+    }
+
+    .mobile-tilt-left {
+        transform: perspective(1000px) rotateY(15deg) scale(0.9);
+        opacity: 0.6;
+        filter: blur(1px);
+    }
+
+    .mobile-tilt-right {
+        transform: perspective(1000px) rotateY(-15deg) scale(0.9);
+        opacity: 0.6;
+        filter: blur(1px);
+    }
+
+    .mobile-main {
+        z-index: 10;
+        transform: scale(1.05);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+
+    @media (max-width: 768px) {
+        .mobile-showcase {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .mobile-tilt-left,
+        .mobile-tilt-right {
+            display: none;
+        }
+
+        .mobile-main {
+            transform: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+    }
+</style>

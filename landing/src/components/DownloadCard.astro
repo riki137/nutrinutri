@@ -1,0 +1,133 @@
+---
+const { app, iconSize = 24 } = Astro.props;
+const Icon = app.icon;
+---
+
+<a
+    href={app.link}
+    target="_blank"
+    class={`dl-card ${app.primary ? "primary" : ""}`}
+>
+    <div class="dl-icon">
+        {
+            typeof app.icon === "string" ? (
+                <img
+                    src={app.icon}
+                    alt={app.name}
+                    width={iconSize}
+                    height={iconSize}
+                />
+            ) : (
+                <Icon size={iconSize} />
+            )
+        }
+    </div>
+    <div class="dl-info">
+        <span class="dl-name">{app.name}</span>
+        {app.sub && <span class="dl-sub">{app.sub}</span>}
+    </div>
+    {app.primary && <div class="dl-arrow">→</div>}
+</a>
+
+<style>
+    .dl-card {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 1rem;
+        text-decoration: none;
+        color: var(--color-text);
+        transition: all 0.2s;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .dl-card:hover {
+        transform: translateX(4px);
+        border-color: var(--color-primary);
+        box-shadow: 0 4px 12px -2px rgba(255, 111, 97, 0.15);
+    }
+
+    .dl-card.primary {
+        background: var(--color-primary);
+        color: white;
+        border-color: var(--color-primary);
+    }
+
+    .dl-card.primary:hover {
+        background: var(--color-primary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(255, 111, 97, 0.3);
+    }
+
+    .dl-card.primary .dl-icon {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+    .dl-card.primary .dl-name,
+    .dl-card.primary .dl-sub {
+        color: white;
+    }
+
+    .dl-icon {
+        width: 3rem;
+        height: 3rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f1f5f9;
+        color: var(--color-text-muted);
+        border-radius: 0.75rem;
+        transition: all 0.2s;
+    }
+
+    .dl-card:hover .dl-icon {
+        color: var(--color-primary);
+        background: #fff5f2;
+    }
+
+    .dl-card.primary:hover .dl-icon {
+        color: white;
+        background: rgba(255, 255, 255, 0.3);
+    }
+
+    .dl-icon img {
+        display: block;
+        object-fit: contain;
+    }
+
+    .dl-card.primary .dl-icon img {
+        filter: brightness(0) invert(1);
+    }
+
+    .dl-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .dl-name {
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    .dl-sub {
+        font-size: 0.75rem;
+        color: var(--color-text-muted);
+    }
+
+    .dl-arrow {
+        font-size: 1.25rem;
+        opacity: 0;
+        transform: translateX(-10px);
+        transition: all 0.2s;
+    }
+
+    .dl-card:hover .dl-arrow {
+        opacity: 1;
+        transform: translateX(0);
+    }
+</style>

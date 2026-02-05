@@ -1,0 +1,206 @@
+---
+interface Props {
+    title: string;
+    description?: string;
+}
+
+const {
+    title,
+    description = "NutriNutri - The Private, AI-Powered Nutrition Tracker",
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="description" content={description} />
+        <meta name="viewport" content="width=device-width" />
+        <link rel="icon" type="image/svg+xml" href="/nutrinutri.svg" />
+        <meta name="generator" content={Astro.generator} />
+        <title>{title}</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap"
+            rel="stylesheet"
+        />
+    </head>
+    <body>
+        <div class="background-globes">
+            <div class="globe globe-1"></div>
+            <div class="globe globe-2"></div>
+            <div class="globe globe-3"></div>
+        </div>
+        <slot />
+    </body>
+</html>
+
+<style is:global>
+    :root {
+        --color-bg: #fffcfb;
+        --color-text: #2c1816;
+        --color-text-muted: #7d6a68;
+        --color-primary: #ff6f61; /* Vibrant Coral */
+        --color-primary-dark: #e56357;
+        --color-secondary: #ffab91; /* Lighter Coral/Peach */
+        --color-accent: #ffa726; /* Warm Orange */
+
+        --glass-bg: rgba(255, 255, 255, 0.8);
+        --glass-border: rgba(255, 255, 255, 0.9);
+        --glass-shadow:
+            0 8px 32px -8px rgba(255, 111, 97, 0.15),
+            0 4px 12px -4px rgba(0, 0, 0, 0.05);
+    }
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    html {
+        font-family: "Outfit", system-ui, sans-serif;
+        background: var(--color-bg);
+        color: var(--color-text);
+        scroll-behavior: smooth;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+        min-height: 100vh;
+        position: relative;
+        overflow-x: hidden;
+    }
+
+    /* Background Animation - Subtler for Light Mode */
+    .background-globes {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: -1;
+        overflow: hidden;
+        pointer-events: none;
+        background:
+            radial-gradient(circle at top right, #fff5f2, transparent 40%),
+            radial-gradient(circle at bottom left, #fff9f0, transparent 40%);
+    }
+
+    .globe {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(100px);
+        opacity: 0.15;
+        animation: float 20s infinite ease-in-out;
+        mix-blend-mode: multiply;
+    }
+
+    .globe-1 {
+        width: 800px;
+        height: 800px;
+        background: var(--color-primary);
+        top: -200px;
+        left: -200px;
+        animation-delay: 0s;
+    }
+
+    .globe-2 {
+        width: 600px;
+        height: 600px;
+        background: var(--color-secondary);
+        bottom: -100px;
+        right: -100px;
+        animation-delay: -5s;
+    }
+
+    .globe-3 {
+        width: 400px;
+        height: 400px;
+        background: var(--color-accent);
+        top: 40%;
+        left: 30%;
+        animation-delay: -10s;
+    }
+
+    @keyframes float {
+        0%,
+        100% {
+            transform: translate(0, 0) scale(1);
+        }
+        33% {
+            transform: translate(30px, -50px) scale(1.05);
+        }
+        66% {
+            transform: translate(-20px, 20px) scale(0.95);
+        }
+    }
+
+    /* Utility Classes */
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+    }
+
+    .glass {
+        background: var(--glass-bg);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--glass-shadow);
+        border-radius: 1.5rem;
+    }
+
+    .text-gradient {
+        background: linear-gradient(
+            135deg,
+            var(--color-primary),
+            var(--color-secondary)
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.875rem 1.75rem;
+        border-radius: 1rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        border: none;
+        font-size: 1rem;
+        gap: 0.5rem;
+    }
+
+    .btn-primary {
+        background: var(--color-primary);
+        color: white;
+        box-shadow: 0 4px 6px -1px rgba(255, 111, 97, 0.3);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 12px -1px rgba(255, 111, 97, 0.4);
+        background: var(--color-primary-dark);
+    }
+
+    .btn-outline {
+        background: white;
+        border: 1px solid #e2e8f0;
+        color: var(--color-text);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    }
+
+    .btn-outline:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+        transform: translateY(-1px);
+    }
+</style>

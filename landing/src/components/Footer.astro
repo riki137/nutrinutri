@@ -1,0 +1,65 @@
+---
+
+---
+
+<footer class="container footer">
+    <div class="footer-content">
+        <p>
+            &copy; {new Date().getFullYear()} NutriNutri. <br
+                class="mobile-break"
+            />Licensed under GPL-3.0.
+        </p>
+        <div class="footer-links">
+            <a href="https://github.com/riki137/nutrinutri" target="_blank"
+                >GitHub</a
+            >
+            <a href="#">Privacy Policy</a>
+        </div>
+    </div>
+</footer>
+
+<style>
+    .footer {
+        text-align: center;
+        padding: 3rem 1.5rem;
+        color: var(--color-text-muted);
+        font-size: 0.875rem;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .footer-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .footer-links {
+        display: flex;
+        gap: 1.5rem;
+    }
+
+    .footer-links a {
+        color: var(--color-text-muted);
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+        color: var(--color-primary);
+    }
+
+    .mobile-break {
+        display: none;
+    }
+
+    @media (max-width: 768px) {
+        .footer-content {
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .mobile-break {
+            display: block;
+        }
+    }
+</style>

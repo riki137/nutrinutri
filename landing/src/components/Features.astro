@@ -1,0 +1,96 @@
+---
+import SectionHeader from "./SectionHeader.astro";
+import { Globe, Shield, Zap, Heart } from "lucide-astro";
+
+const features = [
+    {
+        icon: Shield,
+        title: "100% Private",
+        desc: "Your metrics stay on your device. Zero tracking. You own your data completely.",
+    },
+    {
+        icon: Zap,
+        title: "AI Powered",
+        desc: "Instant, accurate calorie tracking. Just describe your meal or snap a photo.",
+    },
+    {
+        icon: Heart,
+        title: "Free & Open",
+        desc: "GPL licensed and non-profit. No ads, no subscriptions, forever.",
+    },
+    {
+        icon: Globe,
+        title: "Sync Anywhere",
+        desc: "Optional Google Drive sync keeps your data consistent across all devices.",
+    },
+];
+---
+
+<section class="features container">
+    <SectionHeader
+        title="Why NutriNutri?"
+        subtitle="Built for health, not for profit."
+    />
+    <div class="features-grid">
+        {
+            features.map((item) => (
+                <div class="glass feature-card">
+                    <div class="icon-box">
+                        <item.icon size={32} />
+                    </div>
+                    <h3>{item.title}</h3>
+                    <p>{item.desc}</p>
+                </div>
+            ))
+        }
+    </div>
+</section>
+
+<style>
+    .features {
+        padding: 4rem 1.5rem;
+    }
+
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .feature-card {
+        padding: 2rem;
+        text-align: left;
+        transition: all 0.3s ease;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
+    }
+
+    .icon-box {
+        width: 3.5rem;
+        height: 3.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 1rem;
+        background: linear-gradient(135deg, #fff5f2, #fff);
+        color: var(--color-primary);
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .feature-card h3 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        color: var(--color-text);
+    }
+
+    .feature-card p {
+        color: var(--color-text-muted);
+        line-height: 1.6;
+        font-size: 0.95rem;
+    }
+</style>

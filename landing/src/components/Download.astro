@@ -1,0 +1,131 @@
+---
+import SectionHeader from "./SectionHeader.astro";
+import DownloadCard from "./DownloadCard.astro";
+import { Globe } from "lucide-astro";
+
+const downloads = {
+    mobile: [
+        {
+            name: "Android",
+            icon: "/img/android-svgrepo-com.svg",
+            link: "https://play.google.com/store/apps",
+            primary: true,
+            sub: "Google Play Store",
+        },
+    ],
+    desktop: [
+        {
+            name: "Windows",
+            icon: "/img/windows-174-svgrepo-com.svg",
+            link: "https://github.com/riki137/nutrinutri/releases",
+        },
+        {
+            name: "macOS",
+            icon: "/img/macos-svgrepo-com.svg",
+            link: "https://github.com/riki137/nutrinutri/releases",
+        },
+        {
+            name: "Linux",
+            icon: "/img/linux-svgrepo-com.svg",
+            link: "https://github.com/riki137/nutrinutri/releases",
+        },
+    ],
+    web: [{ name: "Web App", icon: Globe, link: "#", sub: "Run in browser" }],
+};
+
+const categories = [
+    { title: "Mobile", items: downloads.mobile, iconSize: 28 },
+    { title: "Desktop", items: downloads.desktop, iconSize: 24 },
+    { title: "Web", items: downloads.web, iconSize: 24 },
+];
+---
+
+<section id="download" class="download container">
+    <div class="download-content">
+        <SectionHeader
+            title="Get NutriNutri"
+            subtitle="Choose your platform. Always free."
+        />
+
+        <div class="download-grid">
+            {
+                categories.map((cat) => (
+                    <div class="download-category">
+                        <h3>{cat.title}</h3>
+                        <div class="buttons-col">
+                            {cat.items.map((app) => (
+                                <DownloadCard
+                                    app={app}
+                                    iconSize={cat.iconSize}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                ))
+            }
+        </div>
+
+        <p class="note">
+            <span class="highlight">Note:</span> NutriNutri requires a private OpenRouter
+            API key to function.
+        </p>
+    </div>
+</section>
+
+<style>
+    .download {
+        padding: 5rem 1.5rem 6rem 1.5rem;
+    }
+
+    .download-content {
+        max-width: 900px;
+        margin: 0 auto;
+        text-align: center;
+    }
+
+    .download-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+        margin-top: 3rem;
+        text-align: left;
+    }
+
+    .download-category h3 {
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--color-text-muted);
+        margin-bottom: 1rem;
+        font-weight: 700;
+    }
+
+    .buttons-col {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .note {
+        margin-top: 4rem;
+        font-size: 0.875rem;
+        color: var(--color-text-muted);
+        background: #fffcfb;
+        border: 1px solid #fce8e6;
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+    }
+
+    .highlight {
+        color: var(--color-primary);
+        font-weight: 700;
+    }
+
+    @media (max-width: 768px) {
+        .download-grid {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+    }
+</style>
