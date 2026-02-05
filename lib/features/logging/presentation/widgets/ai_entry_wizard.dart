@@ -60,7 +60,7 @@ class AIEntryWizard extends StatelessWidget {
               },
               fieldViewBuilder: (context, controller, focusNode, onSubmitted) {
                 return TextField(
-                  controller: controller,
+                  controller: descriptionController,
                   focusNode: focusNode,
                   decoration: InputDecoration(
                     labelText: isExercise
