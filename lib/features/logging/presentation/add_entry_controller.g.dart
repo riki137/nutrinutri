@@ -6,22 +6,58 @@ part of 'add_entry_controller.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$addEntryControllerHash() =>
-    r'a16a90be8dda69b28af746a058187204658f886e';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
 
-/// See also [AddEntryController].
 @ProviderFor(AddEntryController)
-final addEntryControllerProvider =
-    AutoDisposeNotifierProvider<AddEntryController, AddEntryState>.internal(
-      AddEntryController.new,
-      name: r'addEntryControllerProvider',
-      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-          ? null
-          : _$addEntryControllerHash,
-      dependencies: null,
-      allTransitiveDependencies: null,
-    );
+final addEntryControllerProvider = AddEntryControllerProvider._();
 
-typedef _$AddEntryController = AutoDisposeNotifier<AddEntryState>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+final class AddEntryControllerProvider
+    extends $NotifierProvider<AddEntryController, AddEntryState> {
+  AddEntryControllerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'addEntryControllerProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$addEntryControllerHash();
+
+  @$internal
+  @override
+  AddEntryController create() => AddEntryController();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AddEntryState value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AddEntryState>(value),
+    );
+  }
+}
+
+String _$addEntryControllerHash() =>
+    r'ff3eb2788f473821e8239bb2caf9b5ec43d51ddb';
+
+abstract class _$AddEntryController extends $Notifier<AddEntryState> {
+  AddEntryState build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AddEntryState, AddEntryState>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AddEntryState, AddEntryState>,
+              AddEntryState,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}

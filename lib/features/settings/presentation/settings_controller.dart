@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:nutrinutri/core/domain/user_profile.dart';
 import 'package:nutrinutri/core/providers.dart';
 import 'package:nutrinutri/core/utils/calorie_calculator.dart';
@@ -245,4 +245,10 @@ class SettingsController extends _$SettingsController {
   }
 }
 
-final unsavedSettingsChangesProvider = StateProvider<bool>((ref) => false);
+@riverpod
+class UnsavedSettingsChanges extends _$UnsavedSettingsChanges {
+  @override
+  bool build() => false;
+
+  void set(bool value) => state = value;
+}

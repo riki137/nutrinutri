@@ -30,8 +30,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       onStateChanged: () {
         if (mounted) {
           setState(() {});
-          ref.read(unsavedSettingsChangesProvider.notifier).state = _formManager
-              .hasChanges();
+          ref
+              .read(unsavedSettingsChangesProvider.notifier)
+              .set(_formManager.hasChanges());
         }
       },
     );
@@ -44,7 +45,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   @override
   void dispose() {
     Future.microtask(
-      () => ref.read(unsavedSettingsChangesProvider.notifier).state = false,
+      () => ref.read(unsavedSettingsChangesProvider.notifier).set(false),
     );
     _formManager.dispose();
     super.dispose();
@@ -124,7 +125,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(settingsControllerProvider);
-    final currentUser = ref.watch(currentUserProvider).valueOrNull;
+    final currentUser = ref.watch(currentUserProvider).value;
     final controller = ref.read(settingsControllerProvider.notifier);
     final isDesktop = PlatformHelper.isDesktopOrWeb;
     final theme = Theme.of(context);

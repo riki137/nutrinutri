@@ -6,283 +6,190 @@ part of 'dashboard_providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$syncUpdateHash() => r'10a4d54f9d17cc704a6e664d05cc1510e593301c';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
 
-/// See also [syncUpdate].
 @ProviderFor(syncUpdate)
-final syncUpdateProvider = AutoDisposeStreamProvider<void>.internal(
-  syncUpdate,
-  name: r'syncUpdateProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$syncUpdateHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+final syncUpdateProvider = SyncUpdateProvider._();
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef SyncUpdateRef = AutoDisposeStreamProviderRef<void>;
-String _$dailySummaryHash() => r'98c688de6fa15fdb44eba545d188412c167f96a2';
-
-/// Copied from Dart SDK
-class _SystemHash {
-  _SystemHash._();
-
-  static int combine(int hash, int value) {
-    // ignore: parameter_assignments
-    hash = 0x1fffffff & (hash + value);
-    // ignore: parameter_assignments
-    hash = 0x1fffffff & (hash + ((0x0007ffff & hash) << 10));
-    return hash ^ (hash >> 6);
-  }
-
-  static int finish(int hash) {
-    // ignore: parameter_assignments
-    hash = 0x1fffffff & (hash + ((0x03ffffff & hash) << 3));
-    // ignore: parameter_assignments
-    hash = hash ^ (hash >> 11);
-    return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
-  }
-}
-
-/// See also [dailySummary].
-@ProviderFor(dailySummary)
-const dailySummaryProvider = DailySummaryFamily();
-
-/// See also [dailySummary].
-class DailySummaryFamily extends Family<AsyncValue<Map<String, double>>> {
-  /// See also [dailySummary].
-  const DailySummaryFamily();
-
-  /// See also [dailySummary].
-  DailySummaryProvider call(DateTime date) {
-    return DailySummaryProvider(date);
-  }
-
-  @override
-  DailySummaryProvider getProviderOverride(
-    covariant DailySummaryProvider provider,
-  ) {
-    return call(provider.date);
-  }
-
-  static const Iterable<ProviderOrFamily>? _dependencies = null;
-
-  @override
-  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
-
-  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
-
-  @override
-  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
-      _allTransitiveDependencies;
-
-  @override
-  String? get name => r'dailySummaryProvider';
-}
-
-/// See also [dailySummary].
-class DailySummaryProvider
-    extends AutoDisposeFutureProvider<Map<String, double>> {
-  /// See also [dailySummary].
-  DailySummaryProvider(DateTime date)
-    : this._internal(
-        (ref) => dailySummary(ref as DailySummaryRef, date),
-        from: dailySummaryProvider,
-        name: r'dailySummaryProvider',
-        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-            ? null
-            : _$dailySummaryHash,
-        dependencies: DailySummaryFamily._dependencies,
-        allTransitiveDependencies:
-            DailySummaryFamily._allTransitiveDependencies,
-        date: date,
+final class SyncUpdateProvider
+    extends $FunctionalProvider<AsyncValue<void>, void, Stream<void>>
+    with $FutureModifier<void>, $StreamProvider<void> {
+  SyncUpdateProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'syncUpdateProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
       );
 
-  DailySummaryProvider._internal(
-    super._createNotifier, {
-    required super.name,
-    required super.dependencies,
-    required super.allTransitiveDependencies,
-    required super.debugGetCreateSourceHash,
-    required super.from,
-    required this.date,
-  }) : super.internal();
+  @override
+  String debugGetCreateSourceHash() => _$syncUpdateHash();
 
-  final DateTime date;
+  @$internal
+  @override
+  $StreamProviderElement<void> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
 
   @override
-  Override overrideWith(
-    FutureOr<Map<String, double>> Function(DailySummaryRef provider) create,
-  ) {
-    return ProviderOverride(
-      origin: this,
-      override: DailySummaryProvider._internal(
-        (ref) => create(ref as DailySummaryRef),
-        from: from,
-        name: null,
-        dependencies: null,
-        allTransitiveDependencies: null,
-        debugGetCreateSourceHash: null,
-        date: date,
-      ),
-    );
+  Stream<void> create(Ref ref) {
+    return syncUpdate(ref);
+  }
+}
+
+String _$syncUpdateHash() => r'10a4d54f9d17cc704a6e664d05cc1510e593301c';
+
+@ProviderFor(dailySummary)
+final dailySummaryProvider = DailySummaryFamily._();
+
+final class DailySummaryProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<Map<String, double>>,
+          Map<String, double>,
+          FutureOr<Map<String, double>>
+        >
+    with
+        $FutureModifier<Map<String, double>>,
+        $FutureProvider<Map<String, double>> {
+  DailySummaryProvider._({
+    required DailySummaryFamily super.from,
+    required DateTime super.argument,
+  }) : super(
+         retry: null,
+         name: r'dailySummaryProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$dailySummaryHash();
+
+  @override
+  String toString() {
+    return r'dailySummaryProvider'
+        ''
+        '($argument)';
   }
 
+  @$internal
   @override
-  AutoDisposeFutureProviderElement<Map<String, double>> createElement() {
-    return _DailySummaryProviderElement(this);
+  $FutureProviderElement<Map<String, double>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<Map<String, double>> create(Ref ref) {
+    final argument = this.argument as DateTime;
+    return dailySummary(ref, argument);
   }
 
   @override
   bool operator ==(Object other) {
-    return other is DailySummaryProvider && other.date == date;
+    return other is DailySummaryProvider && other.argument == argument;
   }
 
   @override
   int get hashCode {
-    var hash = _SystemHash.combine(0, runtimeType.hashCode);
-    hash = _SystemHash.combine(hash, date.hashCode);
-
-    return _SystemHash.finish(hash);
+    return argument.hashCode;
   }
 }
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-mixin DailySummaryRef on AutoDisposeFutureProviderRef<Map<String, double>> {
-  /// The parameter `date` of this provider.
-  DateTime get date;
-}
+String _$dailySummaryHash() => r'98c688de6fa15fdb44eba545d188412c167f96a2';
 
-class _DailySummaryProviderElement
-    extends AutoDisposeFutureProviderElement<Map<String, double>>
-    with DailySummaryRef {
-  _DailySummaryProviderElement(super.provider);
+final class DailySummaryFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<Map<String, double>>, DateTime> {
+  DailySummaryFamily._()
+    : super(
+        retry: null,
+        name: r'dailySummaryProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  DailySummaryProvider call(DateTime date) =>
+      DailySummaryProvider._(argument: date, from: this);
 
   @override
-  DateTime get date => (origin as DailySummaryProvider).date;
+  String toString() => r'dailySummaryProvider';
+}
+
+@ProviderFor(dayEntries)
+final dayEntriesProvider = DayEntriesFamily._();
+
+final class DayEntriesProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<DiaryEntry>>,
+          List<DiaryEntry>,
+          FutureOr<List<DiaryEntry>>
+        >
+    with $FutureModifier<List<DiaryEntry>>, $FutureProvider<List<DiaryEntry>> {
+  DayEntriesProvider._({
+    required DayEntriesFamily super.from,
+    required DateTime super.argument,
+  }) : super(
+         retry: null,
+         name: r'dayEntriesProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$dayEntriesHash();
+
+  @override
+  String toString() {
+    return r'dayEntriesProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<List<DiaryEntry>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<DiaryEntry>> create(Ref ref) {
+    final argument = this.argument as DateTime;
+    return dayEntries(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is DayEntriesProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
 }
 
 String _$dayEntriesHash() => r'f20e789788925e11cda2318a4938e252977ee4d8';
 
-/// See also [dayEntries].
-@ProviderFor(dayEntries)
-const dayEntriesProvider = DayEntriesFamily();
-
-/// See also [dayEntries].
-class DayEntriesFamily extends Family<AsyncValue<List<DiaryEntry>>> {
-  /// See also [dayEntries].
-  const DayEntriesFamily();
-
-  /// See also [dayEntries].
-  DayEntriesProvider call(DateTime date) {
-    return DayEntriesProvider(date);
-  }
-
-  @override
-  DayEntriesProvider getProviderOverride(
-    covariant DayEntriesProvider provider,
-  ) {
-    return call(provider.date);
-  }
-
-  static const Iterable<ProviderOrFamily>? _dependencies = null;
-
-  @override
-  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
-
-  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
-
-  @override
-  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
-      _allTransitiveDependencies;
-
-  @override
-  String? get name => r'dayEntriesProvider';
-}
-
-/// See also [dayEntries].
-class DayEntriesProvider extends AutoDisposeFutureProvider<List<DiaryEntry>> {
-  /// See also [dayEntries].
-  DayEntriesProvider(DateTime date)
-    : this._internal(
-        (ref) => dayEntries(ref as DayEntriesRef, date),
-        from: dayEntriesProvider,
+final class DayEntriesFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<List<DiaryEntry>>, DateTime> {
+  DayEntriesFamily._()
+    : super(
+        retry: null,
         name: r'dayEntriesProvider',
-        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-            ? null
-            : _$dayEntriesHash,
-        dependencies: DayEntriesFamily._dependencies,
-        allTransitiveDependencies: DayEntriesFamily._allTransitiveDependencies,
-        date: date,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
       );
 
-  DayEntriesProvider._internal(
-    super._createNotifier, {
-    required super.name,
-    required super.dependencies,
-    required super.allTransitiveDependencies,
-    required super.debugGetCreateSourceHash,
-    required super.from,
-    required this.date,
-  }) : super.internal();
-
-  final DateTime date;
+  DayEntriesProvider call(DateTime date) =>
+      DayEntriesProvider._(argument: date, from: this);
 
   @override
-  Override overrideWith(
-    FutureOr<List<DiaryEntry>> Function(DayEntriesRef provider) create,
-  ) {
-    return ProviderOverride(
-      origin: this,
-      override: DayEntriesProvider._internal(
-        (ref) => create(ref as DayEntriesRef),
-        from: from,
-        name: null,
-        dependencies: null,
-        allTransitiveDependencies: null,
-        debugGetCreateSourceHash: null,
-        date: date,
-      ),
-    );
-  }
-
-  @override
-  AutoDisposeFutureProviderElement<List<DiaryEntry>> createElement() {
-    return _DayEntriesProviderElement(this);
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return other is DayEntriesProvider && other.date == date;
-  }
-
-  @override
-  int get hashCode {
-    var hash = _SystemHash.combine(0, runtimeType.hashCode);
-    hash = _SystemHash.combine(hash, date.hashCode);
-
-    return _SystemHash.finish(hash);
-  }
+  String toString() => r'dayEntriesProvider';
 }
-
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-mixin DayEntriesRef on AutoDisposeFutureProviderRef<List<DiaryEntry>> {
-  /// The parameter `date` of this provider.
-  DateTime get date;
-}
-
-class _DayEntriesProviderElement
-    extends AutoDisposeFutureProviderElement<List<DiaryEntry>>
-    with DayEntriesRef {
-  _DayEntriesProviderElement(super.provider);
-
-  @override
-  DateTime get date => (origin as DayEntriesProvider).date;
-}
-
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

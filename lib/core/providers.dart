@@ -1,4 +1,3 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nutrinutri/core/db/app_database.dart';
 import 'package:nutrinutri/core/services/ai_service.dart';
 import 'package:nutrinutri/core/services/device_id_service.dart';

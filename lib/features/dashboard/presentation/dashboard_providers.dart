@@ -1,4 +1,3 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nutrinutri/core/providers.dart';
 import 'package:nutrinutri/features/diary/domain/diary_entry.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';

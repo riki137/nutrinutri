@@ -6,141 +6,322 @@ part of 'providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
+
+@ProviderFor(appDatabase)
+final appDatabaseProvider = AppDatabaseProvider._();
+
+final class AppDatabaseProvider
+    extends $FunctionalProvider<AppDatabase, AppDatabase, AppDatabase>
+    with $Provider<AppDatabase> {
+  AppDatabaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'appDatabaseProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$appDatabaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<AppDatabase> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  AppDatabase create(Ref ref) {
+    return appDatabase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AppDatabase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AppDatabase>(value),
+    );
+  }
+}
+
 String _$appDatabaseHash() => r'59cce38d45eeaba199eddd097d8e149d66f9f3e1';
 
-/// See also [appDatabase].
-@ProviderFor(appDatabase)
-final appDatabaseProvider = Provider<AppDatabase>.internal(
-  appDatabase,
-  name: r'appDatabaseProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$appDatabaseHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+@ProviderFor(deviceIdService)
+final deviceIdServiceProvider = DeviceIdServiceProvider._();
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef AppDatabaseRef = ProviderRef<AppDatabase>;
+final class DeviceIdServiceProvider
+    extends
+        $FunctionalProvider<DeviceIdService, DeviceIdService, DeviceIdService>
+    with $Provider<DeviceIdService> {
+  DeviceIdServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'deviceIdServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$deviceIdServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<DeviceIdService> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  DeviceIdService create(Ref ref) {
+    return deviceIdService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(DeviceIdService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<DeviceIdService>(value),
+    );
+  }
+}
+
 String _$deviceIdServiceHash() => r'8b4b4342cad2aef5471ea8ef7d5d4b046c02f601';
 
-/// See also [deviceIdService].
-@ProviderFor(deviceIdService)
-final deviceIdServiceProvider = Provider<DeviceIdService>.internal(
-  deviceIdService,
-  name: r'deviceIdServiceProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$deviceIdServiceHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+@ProviderFor(settingsService)
+final settingsServiceProvider = SettingsServiceProvider._();
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef DeviceIdServiceRef = ProviderRef<DeviceIdService>;
+final class SettingsServiceProvider
+    extends
+        $FunctionalProvider<SettingsService, SettingsService, SettingsService>
+    with $Provider<SettingsService> {
+  SettingsServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'settingsServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$settingsServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<SettingsService> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  SettingsService create(Ref ref) {
+    return settingsService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(SettingsService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<SettingsService>(value),
+    );
+  }
+}
+
 String _$settingsServiceHash() => r'3a244e957496328dc9b67abf4413d6d6a2bb13fc';
 
-/// See also [settingsService].
-@ProviderFor(settingsService)
-final settingsServiceProvider = Provider<SettingsService>.internal(
-  settingsService,
-  name: r'settingsServiceProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$settingsServiceHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+@ProviderFor(apiKey)
+final apiKeyProvider = ApiKeyProvider._();
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef SettingsServiceRef = ProviderRef<SettingsService>;
+final class ApiKeyProvider
+    extends $FunctionalProvider<AsyncValue<String?>, String?, FutureOr<String?>>
+    with $FutureModifier<String?>, $FutureProvider<String?> {
+  ApiKeyProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'apiKeyProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$apiKeyHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<String?> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<String?> create(Ref ref) {
+    return apiKey(ref);
+  }
+}
+
 String _$apiKeyHash() => r'924832eaef3085a68ee2a4785acc71d4f23887b0';
 
-/// See also [apiKey].
-@ProviderFor(apiKey)
-final apiKeyProvider = FutureProvider<String?>.internal(
-  apiKey,
-  name: r'apiKeyProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$apiKeyHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+@ProviderFor(aiService)
+final aiServiceProvider = AiServiceProvider._();
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef ApiKeyRef = FutureProviderRef<String?>;
+final class AiServiceProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<AIService>,
+          AIService,
+          FutureOr<AIService>
+        >
+    with $FutureModifier<AIService>, $FutureProvider<AIService> {
+  AiServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'aiServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$aiServiceHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<AIService> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<AIService> create(Ref ref) {
+    return aiService(ref);
+  }
+}
+
 String _$aiServiceHash() => r'b5d640fa6d61a0435966283e3d0eb4cc8ed2fc6c';
 
-/// See also [aiService].
-@ProviderFor(aiService)
-final aiServiceProvider = FutureProvider<AIService>.internal(
-  aiService,
-  name: r'aiServiceProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$aiServiceHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+@ProviderFor(diaryService)
+final diaryServiceProvider = DiaryServiceProvider._();
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef AiServiceRef = FutureProviderRef<AIService>;
+final class DiaryServiceProvider
+    extends $FunctionalProvider<DiaryService, DiaryService, DiaryService>
+    with $Provider<DiaryService> {
+  DiaryServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'diaryServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$diaryServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<DiaryService> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  DiaryService create(Ref ref) {
+    return diaryService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(DiaryService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<DiaryService>(value),
+    );
+  }
+}
+
 String _$diaryServiceHash() => r'716d71e447b58f3ef2ff161b9ee3417af4dc9954';
 
-/// See also [diaryService].
-@ProviderFor(diaryService)
-final diaryServiceProvider = Provider<DiaryService>.internal(
-  diaryService,
-  name: r'diaryServiceProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$diaryServiceHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+@ProviderFor(syncService)
+final syncServiceProvider = SyncServiceProvider._();
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef DiaryServiceRef = ProviderRef<DiaryService>;
+final class SyncServiceProvider
+    extends $FunctionalProvider<SyncService, SyncService, SyncService>
+    with $Provider<SyncService> {
+  SyncServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'syncServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$syncServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<SyncService> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  SyncService create(Ref ref) {
+    return syncService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(SyncService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<SyncService>(value),
+    );
+  }
+}
+
 String _$syncServiceHash() => r'6f40bb09a4e10f8a54a0b34a1e49b72ca8060e27';
 
-/// See also [syncService].
-@ProviderFor(syncService)
-final syncServiceProvider = Provider<SyncService>.internal(
-  syncService,
-  name: r'syncServiceProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$syncServiceHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
-
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef SyncServiceRef = ProviderRef<SyncService>;
-String _$currentUserHash() => r'b4e60355b9f6ed5b0be4be4ea8c1f9f0a26b3f31';
-
-/// See also [currentUser].
 @ProviderFor(currentUser)
-final currentUserProvider = StreamProvider<GoogleUserInfo?>.internal(
-  currentUser,
-  name: r'currentUserProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$currentUserHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+final currentUserProvider = CurrentUserProvider._();
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef CurrentUserRef = StreamProviderRef<GoogleUserInfo?>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+final class CurrentUserProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<GoogleUserInfo?>,
+          GoogleUserInfo?,
+          Stream<GoogleUserInfo?>
+        >
+    with $FutureModifier<GoogleUserInfo?>, $StreamProvider<GoogleUserInfo?> {
+  CurrentUserProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'currentUserProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$currentUserHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<GoogleUserInfo?> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<GoogleUserInfo?> create(Ref ref) {
+    return currentUser(ref);
+  }
+}
+
+String _$currentUserHash() => r'b4e60355b9f6ed5b0be4be4ea8c1f9f0a26b3f31';
