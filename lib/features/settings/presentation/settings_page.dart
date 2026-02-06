@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -288,15 +289,23 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         leading: const Icon(Icons.description),
         trailing: const Icon(Icons.chevron_right),
         onTap: () async {
-          const platform = MethodChannel('sk.popelis.nutrinutri/licenses');
-          try {
-            await platform.invokeMethod('showLicenses');
-          } catch (e) {
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Failed to load licenses: '$e'.")),
-              );
+          if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+            const platform = MethodChannel('sk.popelis.nutrinutri/licenses');
+            try {
+              await platform.invokeMethod('showLicenses');
+            } catch (e) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Failed to load licenses: '$e'.")),
+                );
+              }
             }
+          } else {
+            showLicensePage(
+              context: context,
+              applicationName: 'NutriNutri',
+              useRootNavigator: true,
+            );
           }
         },
       ),
