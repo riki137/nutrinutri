@@ -1,5 +1,6 @@
 import java.util.Properties
 import java.io.FileInputStream
+import org.gradle.api.attributes.Attribute
 
 plugins {
     id("com.android.application")
@@ -62,5 +63,17 @@ flutter {
 }
 
 dependencies {
-    implementation("com.google.android.gms:play-services-oss-licenses:17.0.1")
+    implementation("com.google.android.gms:play-services-oss-licenses:17.4.0")
+}
+
+// Workaround for OSS Licenses Plugin variant ambiguity in AGP 8+
+configurations.all {
+    attributes {
+        // If the query doesn't specify an artifact type, we force it to 'android-classes-jar'
+        // to stop the plugin from getting confused by the multiple variants.
+        attribute(
+            Attribute.of("artifactType", String::class.java),
+            "android-classes-jar"
+        )
+    }
 }
