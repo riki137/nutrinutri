@@ -6,6 +6,7 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.android.gms.oss-licenses-plugin")
 }
 
 val keystoreProperties = Properties()
@@ -58,4 +59,8 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    implementation("com.google.android.gms:play-services-oss-licenses:17.0.1")
 }

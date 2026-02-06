@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:nutrinutri/core/providers.dart';
@@ -271,6 +272,31 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           if (v != null) {
             controller.updateActivityLevel(v);
             _formManager.recalculateCalories();
+          }
+        },
+      ),
+      const Gap(32),
+      const Divider(),
+      const Gap(16),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Text('About', style: Theme.of(context).textTheme.titleMedium),
+      ),
+      const Gap(8),
+      ListTile(
+        title: const Text('Open Source Licenses'),
+        leading: const Icon(Icons.description),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () async {
+          const platform = MethodChannel('sk.popelis.nutrinutri/licenses');
+          try {
+            await platform.invokeMethod('showLicenses');
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Failed to load licenses: '$e'.")),
+              );
+            }
           }
         },
       ),
