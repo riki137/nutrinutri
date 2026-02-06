@@ -8,9 +8,17 @@ const downloads = {
         {
             name: "Android",
             icon: "/img/android.svg",
-            link: "https://play.google.com/store/apps",
+            link: "#",
             primary: true,
             sub: "Google Play Store",
+            id: "android-btn",
+        },
+        {
+            name: "iOS",
+            icon: "/img/macos.svg",
+            link: "#",
+            sub: "Not available",
+            id: "ios-btn",
         },
     ],
     desktop: [
@@ -77,6 +85,89 @@ const categories = [
             API key to function.
         </p>
     </div>
+
+    <dialog id="android-modal" class="modal">
+        <div class="modal-box">
+            <form method="dialog">
+                <button class="btn-close">✕</button>
+            </form>
+            <h3 class="modal-title">Get NutriNutri for Android</h3>
+            <p class="modal-text">
+                Passionate about nutrition? Join our beta program!
+            </p>
+
+            <div class="modal-actions">
+                <a
+                    href="https://play.google.com/apps/testing/sk.popelis.nutrinutri"
+                    target="_blank"
+                    class="btn-primary-modal"
+                >
+                    Become a Beta Tester on Google Play
+                </a>
+
+                <div class="divider">OR</div>
+
+                <div class="secondary-actions">
+                    <a
+                        href="https://github.com/riki137/nutrinutri/releases"
+                        target="_blank"
+                        class="btn-secondary-modal"
+                    >
+                        Download from GitHub
+                    </a>
+                    <a
+                        href="https://f-droid.org/"
+                        target="_blank"
+                        class="btn-secondary-modal disabled"
+                    >
+                        F-Droid (Coming Soon)
+                    </a>
+                </div>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop">
+            <button>close</button>
+        </form>
+    </dialog>
+
+    <script>
+        const iosBtn = document.getElementById("ios-btn");
+        const androidBtn = document.getElementById("android-btn");
+        const modal = document.getElementById("android-modal");
+
+        if (iosBtn) {
+            iosBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                alert(
+                    "I would have to pay 99$ yearly to publish this app on iOS... so no iOS app for now! 🍎💸\n\nUse the Web App instead!",
+                );
+            });
+        }
+
+        if (androidBtn && modal) {
+            androidBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                // @ts-ignore
+                modal.showModal();
+            });
+        }
+
+        // Close when clicking backdrop
+        if (modal) {
+            modal.addEventListener("click", (e) => {
+                const dialogDimensions = modal.getBoundingClientRect();
+                if (
+                    e.clientX < dialogDimensions.left ||
+                    e.clientX > dialogDimensions.right ||
+                    e.clientY < dialogDimensions.top ||
+                    e.clientY > dialogDimensions.bottom
+                ) {
+                    // @ts-ignore
+                    modal.close();
+                }
+            });
+        }
+    </script>
 </section>
 
 <style>
@@ -134,5 +225,142 @@ const categories = [
             grid-template-columns: 1fr;
             gap: 2rem;
         }
+    }
+
+    /* Modal Styles */
+    dialog.modal {
+        padding: 0;
+        border: none;
+        border-radius: 1rem;
+        background: transparent;
+        max-width: 90vw;
+        width: 480px;
+        margin: auto;
+    }
+
+    dialog::backdrop {
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(2px);
+    }
+
+    .modal-box {
+        background: white;
+        padding: 2rem;
+        border-radius: 1rem;
+        position: relative;
+        box-shadow:
+            0 20px 25px -5px rgba(0, 0, 0, 0.1),
+            0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        text-align: left;
+    }
+
+    .btn-close {
+        position: absolute;
+        right: 1rem;
+        top: 1rem;
+        background: none;
+        border: none;
+        font-size: 1.25rem;
+        cursor: pointer;
+        color: var(--color-text-muted);
+        padding: 0.5rem;
+        line-height: 1;
+        border-radius: 0.5rem;
+        transition: background 0.2s;
+    }
+
+    .btn-close:hover {
+        background: #f1f5f9;
+        color: var(--color-text);
+    }
+
+    .modal-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: var(--color-text);
+        margin-top: 0;
+    }
+
+    .modal-text {
+        color: var(--color-text-muted);
+        margin-bottom: 2rem;
+    }
+
+    .modal-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .btn-primary-modal {
+        display: block;
+        width: 100%;
+        padding: 0.75rem 1rem;
+        background: var(--color-primary);
+        color: white;
+        text-align: center;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: background 0.2s;
+        box-sizing: border-box;
+    }
+
+    .btn-primary-modal:hover {
+        background: var(--color-primary-dark);
+    }
+
+    .divider {
+        display: flex;
+        align-items: center;
+        text-align: center;
+        color: var(--color-text-muted);
+        font-size: 0.875rem;
+        margin: 0.5rem 0;
+        font-weight: 500;
+    }
+
+    .divider::before,
+    .divider::after {
+        content: "";
+        flex: 1;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .divider::not(:empty)::before {
+        margin-right: 0.5em;
+    }
+
+    .divider::not(:empty)::after {
+        margin-left: 0.5em;
+    }
+
+    .secondary-actions {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .btn-secondary-modal {
+        flex: 1;
+        padding: 0.75rem;
+        background: #f1f5f9;
+        color: var(--color-text);
+        text-align: center;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        text-decoration: none;
+        font-size: 0.875rem;
+        transition: background 0.2s;
+    }
+
+    .btn-secondary-modal:hover {
+        background: #e2e8f0;
+    }
+
+    .btn-secondary-modal.disabled {
+        opacity: 0.5;
+        pointer-events: none;
+        cursor: not-allowed;
     }
 </style>
