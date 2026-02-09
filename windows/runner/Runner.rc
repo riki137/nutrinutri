@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "nutrinutri" "\0"
+            VALUE "CompanyName", "sk.popelis" "\0"
+            VALUE "FileDescription", "NutriNutri" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "nutrinutri" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
+            VALUE "InternalName", "NutriNutri" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 sk.popelis. All rights reserved." "\0"
             VALUE "OriginalFilename", "nutrinutri.exe" "\0"
-            VALUE "ProductName", "nutrinutri" "\0"
+            VALUE "ProductName", "NutriNutri" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
