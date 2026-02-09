@@ -53,8 +53,18 @@ class AIConfigurationSection extends StatelessWidget {
             child: OutlinedButton.icon(
               onPressed: () async {
                 final url = Uri.parse('https://openrouter.ai/settings/keys');
-                if (await canLaunchUrl(url)) {
-                  await launchUrl(url);
+                final launched = await launchUrl(
+                  url,
+                  mode: LaunchMode.externalApplication,
+                );
+                if (!launched && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Could not open browser. Visit openrouter.ai/settings/keys',
+                      ),
+                    ),
+                  );
                 }
               },
               icon: const Icon(Icons.open_in_new),

@@ -94,6 +94,7 @@ class MyApp extends ConsumerWidget {
         textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme),
       ),
       routerConfig: router,
+      debugShowCheckedModeBanner: false,
     );
   }
 }

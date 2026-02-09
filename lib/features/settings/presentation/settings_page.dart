@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:nutrinutri/core/providers.dart';
+import 'package:nutrinutri/core/services/google_user_info.dart';
 import 'package:nutrinutri/core/utils/platform_helper.dart';
 import 'package:nutrinutri/core/widgets/responsive_center.dart';
 import 'package:nutrinutri/features/settings/presentation/managers/settings_form_manager.dart';
@@ -158,7 +159,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     BuildContext context,
     ThemeData theme,
     SettingsState state,
-    dynamic currentUser,
+    GoogleUserInfo? currentUser,
     SettingsController controller,
   ) {
     return Padding(
@@ -205,7 +206,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   Widget _buildMobileLayout(
     SettingsState state,
-    dynamic currentUser,
+    GoogleUserInfo? currentUser,
     SettingsController controller,
   ) {
     return ResponsiveCenter(
@@ -227,7 +228,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   List<Widget> _buildSettingsSections(
     SettingsState state,
-    dynamic currentUser,
+    GoogleUserInfo? currentUser,
     SettingsController controller,
   ) {
     return [
@@ -295,11 +296,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             try {
               await platform.invokeMethod('showLicenses');
             } catch (e) {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text("Failed to load licenses: '$e'.")),
-                );
-              }
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Failed to load licenses: '$e'.")),
+              );
             }
           } else {
             showLicensePage(
