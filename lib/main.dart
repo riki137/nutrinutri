@@ -54,7 +54,9 @@ class _NutriNutriAppWrapperState extends State<NutriNutriAppWrapper> {
 
   Future<void> _onResume() async {
     final container = ProviderScope.containerOf(context, listen: false);
-    await container.read(syncServiceProvider).syncIfNeeded();
+    final syncService = container.read(syncServiceProvider);
+    await syncService.restoreSession();
+    await syncService.syncIfNeeded();
   }
 
   Future<void> _onInactive() async {

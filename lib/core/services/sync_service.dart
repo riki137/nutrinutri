@@ -51,6 +51,7 @@ class SyncService {
   Stream<void> get onSyncCompleted => _syncCompleteController.stream;
 
   bool _isListeningToAuthState = false;
+  Future<void>? _restoreSessionFuture;
 
   void _setCredentials(GoogleSignInCredentials? credentials) {
     _currentCredentials = credentials;
@@ -80,13 +81,43 @@ class SyncService {
     _setCredentials(credentials);
   }
 
-  Future<void> restoreSession() async {
+  Future<void> restoreSession() {
+    final pending = _restoreSessionFuture;
+    if (pending != null) return pending;
+
+    final future = _restoreSessionInternal();
+    _restoreSessionFuture = future;
+    return future.whenComplete(() {
+      if (identical(_restoreSessionFuture, future)) {
+        _restoreSessionFuture = null;
+      }
+    });
+  }
+
+  Future<void> _restoreSessionInternal() async {
+    _listenToAuthState();
+
     try {
-      _listenToAuthState();
+      final lightweightCredentials = await _googleSignIn.lightweightSignIn();
+      _setCredentials(lightweightCredentials);
+      if (lightweightCredentials != null) return;
+    } catch (e) {
+      debugPrint('Lightweight restore failed: $e');
+    }
+
+    final isMobile =
+        !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS);
+    if (isMobile) {
+      return;
+    }
+
+    try {
       final credentials = await _googleSignIn.silentSignIn();
       _setCredentials(credentials);
     } catch (e) {
-      debugPrint('Restore session failed: $e');
+      debugPrint('Silent restore failed: $e');
     }
   }
 
