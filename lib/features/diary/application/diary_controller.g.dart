@@ -33,7 +33,7 @@ final class DiaryControllerProvider
   DiaryController create() => DiaryController();
 }
 
-String _$diaryControllerHash() => r'1ae4605bf43a1d8f0011b377f388baba1343db70';
+String _$diaryControllerHash() => r'2ff873a6054ae69bf2dd375ae86206cbc5de9772';
 
 abstract class _$DiaryController extends $AsyncNotifier<void> {
   FutureOr<void> build();

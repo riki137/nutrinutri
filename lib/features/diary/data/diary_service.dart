@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:nutrinutri/core/db/app_database.dart';
+import 'package:nutrinutri/core/domain/nutrition_metric.dart';
 import 'package:nutrinutri/core/services/device_id_service.dart';
 import 'package:nutrinutri/features/diary/domain/diary_entry.dart';
 
@@ -28,10 +29,6 @@ class DiaryService {
       id: includeId ? Value(entry.id) : const Value.absent(),
       name: Value(entry.name),
       type: Value(entry.type.index),
-      calories: Value(entry.calories),
-      protein: Value(entry.protein),
-      carbs: Value(entry.carbs),
-      fats: Value(entry.fats),
       timestamp: Value(entry.timestamp.millisecondsSinceEpoch),
       normalizedName: Value(normalizedName),
       imagePath: Value(entry.imagePath),
@@ -56,6 +53,69 @@ class DiaryService {
     );
   }
 
+  Future<Map<String, Map<NutritionMetricType, double>>> _loadMetricsByEntryId(
+    List<String> entryIds,
+  ) async {
+    if (entryIds.isEmpty) return const {};
+
+    final rows = await (_db.select(
+      _db.entryMetrics,
+    )..where((t) => t.entryId.isIn(entryIds))).get();
+
+    final metricsByEntryId = <String, Map<NutritionMetricType, double>>{};
+    for (final row in rows) {
+      if (row.type < 0 || row.type >= NutritionMetricType.values.length) {
+        continue;
+      }
+
+      final metricType = NutritionMetricType.values[row.type];
+      metricsByEntryId.putIfAbsent(
+        row.entryId,
+        () => <NutritionMetricType, double>{},
+      )[metricType] = _roundMetricValue(
+        row.value,
+      );
+    }
+    return metricsByEntryId;
+  }
+
+  Future<void> _replaceMetrics(
+    String entryId,
+    Map<NutritionMetricType, double> metrics,
+  ) async {
+    final nextMetrics = <NutritionMetricType, double>{};
+    for (final metric in NutritionMetricType.values) {
+      final raw = metrics[metric] ?? 0;
+      final value = _roundMetricValue(raw);
+      if (!value.isFinite) continue;
+      if (metric != NutritionMetricType.calories && value == 0) {
+        continue;
+      }
+      nextMetrics[metric] = value;
+    }
+    nextMetrics.putIfAbsent(NutritionMetricType.calories, () => 0);
+
+    await (_db.delete(
+      _db.entryMetrics,
+    )..where((t) => t.entryId.equals(entryId))).go();
+
+    if (nextMetrics.isEmpty) return;
+
+    final companions = nextMetrics.entries
+        .map(
+          (entry) => EntryMetricsCompanion.insert(
+            entryId: entryId,
+            type: entry.key.index,
+            value: entry.value,
+          ),
+        )
+        .toList(growable: false);
+
+    await _db.batch((batch) {
+      batch.insertAll(_db.entryMetrics, companions);
+    });
+  }
+
   Future<List<DiaryEntry>> getEntriesForDate(DateTime date) async {
     final bounds = _dayBounds(date);
 
@@ -72,30 +132,52 @@ class DiaryService {
               ..orderBy([(t) => OrderingTerm.asc(t.timestamp)]))
             .get();
 
-    return rows.map(_toDomain).toList();
+    final metricsByEntryId = await _loadMetricsByEntryId(
+      rows.map((row) => row.id).toList(growable: false),
+    );
+
+    return rows
+        .map(
+          (row) => _toDomain(
+            row,
+            metricsByEntryId[row.id] ?? const <NutritionMetricType, double>{},
+          ),
+        )
+        .toList(growable: false);
   }
 
   Future<void> addEntry(DiaryEntry entry) async {
     final deviceId = await _deviceId.getOrCreate();
     final now = DateTime.now().millisecondsSinceEpoch;
 
-    await _db
-        .into(_db.diaryEntries)
-        .insert(
-          _entryCompanion(entry, deviceId: deviceId, now: now, includeId: true),
-          mode: InsertMode.insertOrReplace,
-        );
+    await _db.transaction(() async {
+      await _db
+          .into(_db.diaryEntries)
+          .insert(
+            _entryCompanion(
+              entry,
+              deviceId: deviceId,
+              now: now,
+              includeId: true,
+            ),
+            mode: InsertMode.insertOrReplace,
+          );
+      await _replaceMetrics(entry.id, entry.metrics);
+    });
   }
 
   Future<void> updateEntry(DiaryEntry entry) async {
     final deviceId = await _deviceId.getOrCreate();
     final now = DateTime.now().millisecondsSinceEpoch;
 
-    await (_db.update(
-      _db.diaryEntries,
-    )..where((t) => t.id.equals(entry.id))).write(
-      _entryCompanion(entry, deviceId: deviceId, now: now, includeId: false),
-    );
+    await _db.transaction(() async {
+      await (_db.update(
+        _db.diaryEntries,
+      )..where((t) => t.id.equals(entry.id))).write(
+        _entryCompanion(entry, deviceId: deviceId, now: now, includeId: false),
+      );
+      await _replaceMetrics(entry.id, entry.metrics);
+    });
   }
 
   Future<void> deleteEntry(DiaryEntry entry) async {
@@ -120,30 +202,33 @@ class DiaryService {
             ))
             .get();
 
-    double caloriesConsumed = 0;
-    double caloriesBurned = 0;
-    double protein = 0;
-    double carbs = 0;
-    double fats = 0;
+    final metricsByEntryId = await _loadMetricsByEntryId(
+      rows.map((row) => row.id).toList(growable: false),
+    );
+
+    final summary = <String, double>{
+      for (final metric in NutritionMetricType.values) metric.key: 0,
+      'caloriesBurned': 0,
+    };
 
     for (final row in rows) {
+      final metrics =
+          metricsByEntryId[row.id] ?? const <NutritionMetricType, double>{};
+
       if (row.type == EntryType.exercise.index) {
-        caloriesBurned += row.calories.toDouble();
-      } else {
-        caloriesConsumed += row.calories.toDouble();
-        protein += row.protein;
-        carbs += row.carbs;
-        fats += row.fats;
+        summary['caloriesBurned'] =
+            (summary['caloriesBurned'] ?? 0) +
+            (metrics[NutritionMetricType.calories] ?? 0);
+        continue;
+      }
+
+      for (final metric in NutritionMetricType.values) {
+        summary[metric.key] =
+            (summary[metric.key] ?? 0) + (metrics[metric] ?? 0);
       }
     }
 
-    return {
-      'calories': caloriesConsumed,
-      'caloriesBurned': caloriesBurned,
-      'protein': protein,
-      'carbs': carbs,
-      'fats': fats,
-    };
+    return summary;
   }
 
   Future<List<DiaryEntry>> searchEntrySuggestions(
@@ -155,11 +240,8 @@ class DiaryService {
 
     final t = _db.diaryEntries;
     final table = t.actualTableName;
+    final idCol = t.id.$name;
     final nameCol = t.name.$name;
-    final caloriesCol = t.calories.$name;
-    final proteinCol = t.protein.$name;
-    final carbsCol = t.carbs.$name;
-    final fatsCol = t.fats.$name;
     final iconCol = t.icon.$name;
     final descriptionCol = t.description.$name;
     final normalizedNameCol = t.normalizedName.$name;
@@ -172,12 +254,9 @@ class DiaryService {
         .customSelect(
           '''
 SELECT
+  $idCol AS id,
   $nameCol AS name,
   $descriptionCol AS description,
-  $caloriesCol AS calories,
-  $proteinCol AS protein,
-  $carbsCol AS carbs,
-  $fatsCol AS fats,
   $iconCol AS icon,
   $normalizedNameCol AS normalizedName
 FROM $table
@@ -201,14 +280,21 @@ LIMIT 200
         )
         .get();
 
+    final entryIds = rows
+        .map((row) => row.read<String>('id'))
+        .toList(growable: false);
+    final metricsByEntryId = await _loadMetricsByEntryId(entryIds);
+
     final seen = <String>{};
     final results = <DiaryEntry>[];
     for (final row in rows) {
+      final id = row.read<String>('id');
       final name = row.read<String>('name');
       final description = row.readNullable<String>('description');
 
-      final suggestionText =
-          (description?.trim().isNotEmpty == true) ? description!.trim() : name;
+      final suggestionText = (description?.trim().isNotEmpty == true)
+          ? description!.trim()
+          : name;
       final suggestionKey = _normalize(suggestionText);
 
       if (seen.add(suggestionKey)) {
@@ -216,10 +302,8 @@ LIMIT 200
           DiaryEntry(
             id: '',
             name: name,
-            calories: row.read<int>('calories'),
-            protein: row.read<double>('protein'),
-            carbs: row.read<double>('carbs'),
-            fats: row.read<double>('fats'),
+            metrics:
+                metricsByEntryId[id] ?? const {NutritionMetricType.calories: 0},
             timestamp: DateTime.now(),
             type: type,
             icon: row.readNullable<String>('icon'),
@@ -234,15 +318,15 @@ LIMIT 200
     return results;
   }
 
-  DiaryEntry _toDomain(DiaryEntryRow row) {
+  DiaryEntry _toDomain(
+    DiaryEntryRow row,
+    Map<NutritionMetricType, double> metrics,
+  ) {
     return DiaryEntry(
       id: row.id,
       name: row.name,
       type: EntryType.values[row.type],
-      calories: row.calories,
-      protein: row.protein,
-      carbs: row.carbs,
-      fats: row.fats,
+      metrics: metrics,
       timestamp: DateTime.fromMillisecondsSinceEpoch(row.timestamp),
       imagePath: row.imagePath,
       icon: row.icon,
@@ -250,6 +334,10 @@ LIMIT 200
       description: row.description,
       durationMinutes: row.durationMinutes,
     );
+  }
+
+  double _roundMetricValue(double value) {
+    return (value * 10).roundToDouble() / 10;
   }
 
   String _normalize(String value) => value.trim().toLowerCase();

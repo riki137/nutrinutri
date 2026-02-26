@@ -71,49 +71,6 @@ class $DiaryEntriesTable extends DiaryEntries
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _caloriesMeta = const VerificationMeta(
-    'calories',
-  );
-  @override
-  late final GeneratedColumn<int> calories = GeneratedColumn<int>(
-    'calories',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _proteinMeta = const VerificationMeta(
-    'protein',
-  );
-  @override
-  late final GeneratedColumn<double> protein = GeneratedColumn<double>(
-    'protein',
-    aliasedName,
-    false,
-    type: DriftSqlType.double,
-    requiredDuringInsert: false,
-    defaultValue: const Constant(0),
-  );
-  static const VerificationMeta _carbsMeta = const VerificationMeta('carbs');
-  @override
-  late final GeneratedColumn<double> carbs = GeneratedColumn<double>(
-    'carbs',
-    aliasedName,
-    false,
-    type: DriftSqlType.double,
-    requiredDuringInsert: false,
-    defaultValue: const Constant(0),
-  );
-  static const VerificationMeta _fatsMeta = const VerificationMeta('fats');
-  @override
-  late final GeneratedColumn<double> fats = GeneratedColumn<double>(
-    'fats',
-    aliasedName,
-    false,
-    type: DriftSqlType.double,
-    requiredDuringInsert: false,
-    defaultValue: const Constant(0),
-  );
   static const VerificationMeta _timestampMeta = const VerificationMeta(
     'timestamp',
   );
@@ -196,10 +153,6 @@ class $DiaryEntriesTable extends DiaryEntries
     id,
     name,
     type,
-    calories,
-    protein,
-    carbs,
-    fats,
     timestamp,
     normalizedName,
     imagePath,
@@ -258,32 +211,6 @@ class $DiaryEntriesTable extends DiaryEntries
       );
     } else if (isInserting) {
       context.missing(_typeMeta);
-    }
-    if (data.containsKey('calories')) {
-      context.handle(
-        _caloriesMeta,
-        calories.isAcceptableOrUnknown(data['calories']!, _caloriesMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_caloriesMeta);
-    }
-    if (data.containsKey('protein')) {
-      context.handle(
-        _proteinMeta,
-        protein.isAcceptableOrUnknown(data['protein']!, _proteinMeta),
-      );
-    }
-    if (data.containsKey('carbs')) {
-      context.handle(
-        _carbsMeta,
-        carbs.isAcceptableOrUnknown(data['carbs']!, _carbsMeta),
-      );
-    }
-    if (data.containsKey('fats')) {
-      context.handle(
-        _fatsMeta,
-        fats.isAcceptableOrUnknown(data['fats']!, _fatsMeta),
-      );
     }
     if (data.containsKey('timestamp')) {
       context.handle(
@@ -373,22 +300,6 @@ class $DiaryEntriesTable extends DiaryEntries
         DriftSqlType.int,
         data['${effectivePrefix}type'],
       )!,
-      calories: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}calories'],
-      )!,
-      protein: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}protein'],
-      )!,
-      carbs: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}carbs'],
-      )!,
-      fats: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}fats'],
-      )!,
       timestamp: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}timestamp'],
@@ -433,10 +344,6 @@ class DiaryEntryRow extends DataClass implements Insertable<DiaryEntryRow> {
   final String id;
   final String name;
   final int type;
-  final int calories;
-  final double protein;
-  final double carbs;
-  final double fats;
   final int timestamp;
   final String normalizedName;
   final String? imagePath;
@@ -451,10 +358,6 @@ class DiaryEntryRow extends DataClass implements Insertable<DiaryEntryRow> {
     required this.id,
     required this.name,
     required this.type,
-    required this.calories,
-    required this.protein,
-    required this.carbs,
-    required this.fats,
     required this.timestamp,
     required this.normalizedName,
     this.imagePath,
@@ -474,10 +377,6 @@ class DiaryEntryRow extends DataClass implements Insertable<DiaryEntryRow> {
     map['id'] = Variable<String>(id);
     map['name'] = Variable<String>(name);
     map['type'] = Variable<int>(type);
-    map['calories'] = Variable<int>(calories);
-    map['protein'] = Variable<double>(protein);
-    map['carbs'] = Variable<double>(carbs);
-    map['fats'] = Variable<double>(fats);
     map['timestamp'] = Variable<int>(timestamp);
     map['normalized_name'] = Variable<String>(normalizedName);
     if (!nullToAbsent || imagePath != null) {
@@ -506,10 +405,6 @@ class DiaryEntryRow extends DataClass implements Insertable<DiaryEntryRow> {
       id: Value(id),
       name: Value(name),
       type: Value(type),
-      calories: Value(calories),
-      protein: Value(protein),
-      carbs: Value(carbs),
-      fats: Value(fats),
       timestamp: Value(timestamp),
       normalizedName: Value(normalizedName),
       imagePath: imagePath == null && nullToAbsent
@@ -538,10 +433,6 @@ class DiaryEntryRow extends DataClass implements Insertable<DiaryEntryRow> {
       id: serializer.fromJson<String>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       type: serializer.fromJson<int>(json['type']),
-      calories: serializer.fromJson<int>(json['calories']),
-      protein: serializer.fromJson<double>(json['protein']),
-      carbs: serializer.fromJson<double>(json['carbs']),
-      fats: serializer.fromJson<double>(json['fats']),
       timestamp: serializer.fromJson<int>(json['timestamp']),
       normalizedName: serializer.fromJson<String>(json['normalizedName']),
       imagePath: serializer.fromJson<String?>(json['imagePath']),
@@ -561,10 +452,6 @@ class DiaryEntryRow extends DataClass implements Insertable<DiaryEntryRow> {
       'id': serializer.toJson<String>(id),
       'name': serializer.toJson<String>(name),
       'type': serializer.toJson<int>(type),
-      'calories': serializer.toJson<int>(calories),
-      'protein': serializer.toJson<double>(protein),
-      'carbs': serializer.toJson<double>(carbs),
-      'fats': serializer.toJson<double>(fats),
       'timestamp': serializer.toJson<int>(timestamp),
       'normalizedName': serializer.toJson<String>(normalizedName),
       'imagePath': serializer.toJson<String?>(imagePath),
@@ -582,10 +469,6 @@ class DiaryEntryRow extends DataClass implements Insertable<DiaryEntryRow> {
     String? id,
     String? name,
     int? type,
-    int? calories,
-    double? protein,
-    double? carbs,
-    double? fats,
     int? timestamp,
     String? normalizedName,
     Value<String?> imagePath = const Value.absent(),
@@ -600,10 +483,6 @@ class DiaryEntryRow extends DataClass implements Insertable<DiaryEntryRow> {
     id: id ?? this.id,
     name: name ?? this.name,
     type: type ?? this.type,
-    calories: calories ?? this.calories,
-    protein: protein ?? this.protein,
-    carbs: carbs ?? this.carbs,
-    fats: fats ?? this.fats,
     timestamp: timestamp ?? this.timestamp,
     normalizedName: normalizedName ?? this.normalizedName,
     imagePath: imagePath.present ? imagePath.value : this.imagePath,
@@ -622,10 +501,6 @@ class DiaryEntryRow extends DataClass implements Insertable<DiaryEntryRow> {
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
       type: data.type.present ? data.type.value : this.type,
-      calories: data.calories.present ? data.calories.value : this.calories,
-      protein: data.protein.present ? data.protein.value : this.protein,
-      carbs: data.carbs.present ? data.carbs.value : this.carbs,
-      fats: data.fats.present ? data.fats.value : this.fats,
       timestamp: data.timestamp.present ? data.timestamp.value : this.timestamp,
       normalizedName: data.normalizedName.present
           ? data.normalizedName.value
@@ -651,10 +526,6 @@ class DiaryEntryRow extends DataClass implements Insertable<DiaryEntryRow> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('type: $type, ')
-          ..write('calories: $calories, ')
-          ..write('protein: $protein, ')
-          ..write('carbs: $carbs, ')
-          ..write('fats: $fats, ')
           ..write('timestamp: $timestamp, ')
           ..write('normalizedName: $normalizedName, ')
           ..write('imagePath: $imagePath, ')
@@ -674,10 +545,6 @@ class DiaryEntryRow extends DataClass implements Insertable<DiaryEntryRow> {
     id,
     name,
     type,
-    calories,
-    protein,
-    carbs,
-    fats,
     timestamp,
     normalizedName,
     imagePath,
@@ -696,10 +563,6 @@ class DiaryEntryRow extends DataClass implements Insertable<DiaryEntryRow> {
           other.id == this.id &&
           other.name == this.name &&
           other.type == this.type &&
-          other.calories == this.calories &&
-          other.protein == this.protein &&
-          other.carbs == this.carbs &&
-          other.fats == this.fats &&
           other.timestamp == this.timestamp &&
           other.normalizedName == this.normalizedName &&
           other.imagePath == this.imagePath &&
@@ -716,10 +579,6 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntryRow> {
   final Value<String> id;
   final Value<String> name;
   final Value<int> type;
-  final Value<int> calories;
-  final Value<double> protein;
-  final Value<double> carbs;
-  final Value<double> fats;
   final Value<int> timestamp;
   final Value<String> normalizedName;
   final Value<String?> imagePath;
@@ -735,10 +594,6 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntryRow> {
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.type = const Value.absent(),
-    this.calories = const Value.absent(),
-    this.protein = const Value.absent(),
-    this.carbs = const Value.absent(),
-    this.fats = const Value.absent(),
     this.timestamp = const Value.absent(),
     this.normalizedName = const Value.absent(),
     this.imagePath = const Value.absent(),
@@ -755,10 +610,6 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntryRow> {
     required String id,
     required String name,
     required int type,
-    required int calories,
-    this.protein = const Value.absent(),
-    this.carbs = const Value.absent(),
-    this.fats = const Value.absent(),
     required int timestamp,
     required String normalizedName,
     this.imagePath = const Value.absent(),
@@ -770,7 +621,6 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntryRow> {
   }) : id = Value(id),
        name = Value(name),
        type = Value(type),
-       calories = Value(calories),
        timestamp = Value(timestamp),
        normalizedName = Value(normalizedName);
   static Insertable<DiaryEntryRow> custom({
@@ -780,10 +630,6 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntryRow> {
     Expression<String>? id,
     Expression<String>? name,
     Expression<int>? type,
-    Expression<int>? calories,
-    Expression<double>? protein,
-    Expression<double>? carbs,
-    Expression<double>? fats,
     Expression<int>? timestamp,
     Expression<String>? normalizedName,
     Expression<String>? imagePath,
@@ -800,10 +646,6 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntryRow> {
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (type != null) 'type': type,
-      if (calories != null) 'calories': calories,
-      if (protein != null) 'protein': protein,
-      if (carbs != null) 'carbs': carbs,
-      if (fats != null) 'fats': fats,
       if (timestamp != null) 'timestamp': timestamp,
       if (normalizedName != null) 'normalized_name': normalizedName,
       if (imagePath != null) 'image_path': imagePath,
@@ -822,10 +664,6 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntryRow> {
     Value<String>? id,
     Value<String>? name,
     Value<int>? type,
-    Value<int>? calories,
-    Value<double>? protein,
-    Value<double>? carbs,
-    Value<double>? fats,
     Value<int>? timestamp,
     Value<String>? normalizedName,
     Value<String?>? imagePath,
@@ -842,10 +680,6 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntryRow> {
       id: id ?? this.id,
       name: name ?? this.name,
       type: type ?? this.type,
-      calories: calories ?? this.calories,
-      protein: protein ?? this.protein,
-      carbs: carbs ?? this.carbs,
-      fats: fats ?? this.fats,
       timestamp: timestamp ?? this.timestamp,
       normalizedName: normalizedName ?? this.normalizedName,
       imagePath: imagePath ?? this.imagePath,
@@ -877,18 +711,6 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntryRow> {
     }
     if (type.present) {
       map['type'] = Variable<int>(type.value);
-    }
-    if (calories.present) {
-      map['calories'] = Variable<int>(calories.value);
-    }
-    if (protein.present) {
-      map['protein'] = Variable<double>(protein.value);
-    }
-    if (carbs.present) {
-      map['carbs'] = Variable<double>(carbs.value);
-    }
-    if (fats.present) {
-      map['fats'] = Variable<double>(fats.value);
     }
     if (timestamp.present) {
       map['timestamp'] = Variable<int>(timestamp.value);
@@ -926,10 +748,6 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntryRow> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('type: $type, ')
-          ..write('calories: $calories, ')
-          ..write('protein: $protein, ')
-          ..write('carbs: $carbs, ')
-          ..write('fats: $fats, ')
           ..write('timestamp: $timestamp, ')
           ..write('normalizedName: $normalizedName, ')
           ..write('imagePath: $imagePath, ')
@@ -937,6 +755,268 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntryRow> {
           ..write('status: $status, ')
           ..write('description: $description, ')
           ..write('durationMinutes: $durationMinutes, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $EntryMetricsTable extends EntryMetrics
+    with TableInfo<$EntryMetricsTable, EntryMetricRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $EntryMetricsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _entryIdMeta = const VerificationMeta(
+    'entryId',
+  );
+  @override
+  late final GeneratedColumn<String> entryId = GeneratedColumn<String>(
+    'entry_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<int> type = GeneratedColumn<int>(
+    'type',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _valueMeta = const VerificationMeta('value');
+  @override
+  late final GeneratedColumn<double> value = GeneratedColumn<double>(
+    'value',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [entryId, type, value];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'entry_metrics';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<EntryMetricRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('entry_id')) {
+      context.handle(
+        _entryIdMeta,
+        entryId.isAcceptableOrUnknown(data['entry_id']!, _entryIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_entryIdMeta);
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+        _typeMeta,
+        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
+    if (data.containsKey('value')) {
+      context.handle(
+        _valueMeta,
+        value.isAcceptableOrUnknown(data['value']!, _valueMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_valueMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {entryId, type};
+  @override
+  EntryMetricRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return EntryMetricRow(
+      entryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entry_id'],
+      )!,
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}type'],
+      )!,
+      value: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}value'],
+      )!,
+    );
+  }
+
+  @override
+  $EntryMetricsTable createAlias(String alias) {
+    return $EntryMetricsTable(attachedDatabase, alias);
+  }
+}
+
+class EntryMetricRow extends DataClass implements Insertable<EntryMetricRow> {
+  final String entryId;
+  final int type;
+  final double value;
+  const EntryMetricRow({
+    required this.entryId,
+    required this.type,
+    required this.value,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['entry_id'] = Variable<String>(entryId);
+    map['type'] = Variable<int>(type);
+    map['value'] = Variable<double>(value);
+    return map;
+  }
+
+  EntryMetricsCompanion toCompanion(bool nullToAbsent) {
+    return EntryMetricsCompanion(
+      entryId: Value(entryId),
+      type: Value(type),
+      value: Value(value),
+    );
+  }
+
+  factory EntryMetricRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return EntryMetricRow(
+      entryId: serializer.fromJson<String>(json['entryId']),
+      type: serializer.fromJson<int>(json['type']),
+      value: serializer.fromJson<double>(json['value']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'entryId': serializer.toJson<String>(entryId),
+      'type': serializer.toJson<int>(type),
+      'value': serializer.toJson<double>(value),
+    };
+  }
+
+  EntryMetricRow copyWith({String? entryId, int? type, double? value}) =>
+      EntryMetricRow(
+        entryId: entryId ?? this.entryId,
+        type: type ?? this.type,
+        value: value ?? this.value,
+      );
+  EntryMetricRow copyWithCompanion(EntryMetricsCompanion data) {
+    return EntryMetricRow(
+      entryId: data.entryId.present ? data.entryId.value : this.entryId,
+      type: data.type.present ? data.type.value : this.type,
+      value: data.value.present ? data.value.value : this.value,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EntryMetricRow(')
+          ..write('entryId: $entryId, ')
+          ..write('type: $type, ')
+          ..write('value: $value')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(entryId, type, value);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is EntryMetricRow &&
+          other.entryId == this.entryId &&
+          other.type == this.type &&
+          other.value == this.value);
+}
+
+class EntryMetricsCompanion extends UpdateCompanion<EntryMetricRow> {
+  final Value<String> entryId;
+  final Value<int> type;
+  final Value<double> value;
+  final Value<int> rowid;
+  const EntryMetricsCompanion({
+    this.entryId = const Value.absent(),
+    this.type = const Value.absent(),
+    this.value = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  EntryMetricsCompanion.insert({
+    required String entryId,
+    required int type,
+    required double value,
+    this.rowid = const Value.absent(),
+  }) : entryId = Value(entryId),
+       type = Value(type),
+       value = Value(value);
+  static Insertable<EntryMetricRow> custom({
+    Expression<String>? entryId,
+    Expression<int>? type,
+    Expression<double>? value,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (entryId != null) 'entry_id': entryId,
+      if (type != null) 'type': type,
+      if (value != null) 'value': value,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  EntryMetricsCompanion copyWith({
+    Value<String>? entryId,
+    Value<int>? type,
+    Value<double>? value,
+    Value<int>? rowid,
+  }) {
+    return EntryMetricsCompanion(
+      entryId: entryId ?? this.entryId,
+      type: type ?? this.type,
+      value: value ?? this.value,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (entryId.present) {
+      map['entry_id'] = Variable<String>(entryId.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<int>(type.value);
+    }
+    if (value.present) {
+      map['value'] = Variable<double>(value.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EntryMetricsCompanion(')
+          ..write('entryId: $entryId, ')
+          ..write('type: $type, ')
+          ..write('value: $value, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1044,49 +1124,17 @@ class $UserProfilesTable extends UserProfiles
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _goalCaloriesMeta = const VerificationMeta(
-    'goalCalories',
+  static const VerificationMeta _homeMetricTypesMeta = const VerificationMeta(
+    'homeMetricTypes',
   );
   @override
-  late final GeneratedColumn<int> goalCalories = GeneratedColumn<int>(
-    'goal_calories',
+  late final GeneratedColumn<String> homeMetricTypes = GeneratedColumn<String>(
+    'home_metric_types',
     aliasedName,
     false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _goalProteinMeta = const VerificationMeta(
-    'goalProtein',
-  );
-  @override
-  late final GeneratedColumn<int> goalProtein = GeneratedColumn<int>(
-    'goal_protein',
-    aliasedName,
-    true,
-    type: DriftSqlType.int,
+    type: DriftSqlType.string,
     requiredDuringInsert: false,
-  );
-  static const VerificationMeta _goalCarbsMeta = const VerificationMeta(
-    'goalCarbs',
-  );
-  @override
-  late final GeneratedColumn<int> goalCarbs = GeneratedColumn<int>(
-    'goal_carbs',
-    aliasedName,
-    true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _goalFatMeta = const VerificationMeta(
-    'goalFat',
-  );
-  @override
-  late final GeneratedColumn<int> goalFat = GeneratedColumn<int>(
-    'goal_fat',
-    aliasedName,
-    true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
+    defaultValue: const Constant(_defaultHomeMetricTypes),
   );
   static const VerificationMeta _isConfiguredMeta = const VerificationMeta(
     'isConfigured',
@@ -1114,10 +1162,7 @@ class $UserProfilesTable extends UserProfiles
     heightCm,
     gender,
     activityLevel,
-    goalCalories,
-    goalProtein,
-    goalCarbs,
-    goalFat,
+    homeMetricTypes,
     isConfigured,
   ];
   @override
@@ -1196,36 +1241,13 @@ class $UserProfilesTable extends UserProfiles
     } else if (isInserting) {
       context.missing(_activityLevelMeta);
     }
-    if (data.containsKey('goal_calories')) {
+    if (data.containsKey('home_metric_types')) {
       context.handle(
-        _goalCaloriesMeta,
-        goalCalories.isAcceptableOrUnknown(
-          data['goal_calories']!,
-          _goalCaloriesMeta,
+        _homeMetricTypesMeta,
+        homeMetricTypes.isAcceptableOrUnknown(
+          data['home_metric_types']!,
+          _homeMetricTypesMeta,
         ),
-      );
-    } else if (isInserting) {
-      context.missing(_goalCaloriesMeta);
-    }
-    if (data.containsKey('goal_protein')) {
-      context.handle(
-        _goalProteinMeta,
-        goalProtein.isAcceptableOrUnknown(
-          data['goal_protein']!,
-          _goalProteinMeta,
-        ),
-      );
-    }
-    if (data.containsKey('goal_carbs')) {
-      context.handle(
-        _goalCarbsMeta,
-        goalCarbs.isAcceptableOrUnknown(data['goal_carbs']!, _goalCarbsMeta),
-      );
-    }
-    if (data.containsKey('goal_fat')) {
-      context.handle(
-        _goalFatMeta,
-        goalFat.isAcceptableOrUnknown(data['goal_fat']!, _goalFatMeta),
       );
     }
     if (data.containsKey('is_configured')) {
@@ -1282,22 +1304,10 @@ class $UserProfilesTable extends UserProfiles
         DriftSqlType.string,
         data['${effectivePrefix}activity_level'],
       )!,
-      goalCalories: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}goal_calories'],
+      homeMetricTypes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}home_metric_types'],
       )!,
-      goalProtein: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}goal_protein'],
-      ),
-      goalCarbs: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}goal_carbs'],
-      ),
-      goalFat: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}goal_fat'],
-      ),
       isConfigured: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_configured'],
@@ -1321,10 +1331,7 @@ class UserProfileRow extends DataClass implements Insertable<UserProfileRow> {
   final double heightCm;
   final String gender;
   final String activityLevel;
-  final int goalCalories;
-  final int? goalProtein;
-  final int? goalCarbs;
-  final int? goalFat;
+  final String homeMetricTypes;
   final bool isConfigured;
   const UserProfileRow({
     required this.updatedAt,
@@ -1336,10 +1343,7 @@ class UserProfileRow extends DataClass implements Insertable<UserProfileRow> {
     required this.heightCm,
     required this.gender,
     required this.activityLevel,
-    required this.goalCalories,
-    this.goalProtein,
-    this.goalCarbs,
-    this.goalFat,
+    required this.homeMetricTypes,
     required this.isConfigured,
   });
   @override
@@ -1356,16 +1360,7 @@ class UserProfileRow extends DataClass implements Insertable<UserProfileRow> {
     map['height_cm'] = Variable<double>(heightCm);
     map['gender'] = Variable<String>(gender);
     map['activity_level'] = Variable<String>(activityLevel);
-    map['goal_calories'] = Variable<int>(goalCalories);
-    if (!nullToAbsent || goalProtein != null) {
-      map['goal_protein'] = Variable<int>(goalProtein);
-    }
-    if (!nullToAbsent || goalCarbs != null) {
-      map['goal_carbs'] = Variable<int>(goalCarbs);
-    }
-    if (!nullToAbsent || goalFat != null) {
-      map['goal_fat'] = Variable<int>(goalFat);
-    }
+    map['home_metric_types'] = Variable<String>(homeMetricTypes);
     map['is_configured'] = Variable<bool>(isConfigured);
     return map;
   }
@@ -1383,16 +1378,7 @@ class UserProfileRow extends DataClass implements Insertable<UserProfileRow> {
       heightCm: Value(heightCm),
       gender: Value(gender),
       activityLevel: Value(activityLevel),
-      goalCalories: Value(goalCalories),
-      goalProtein: goalProtein == null && nullToAbsent
-          ? const Value.absent()
-          : Value(goalProtein),
-      goalCarbs: goalCarbs == null && nullToAbsent
-          ? const Value.absent()
-          : Value(goalCarbs),
-      goalFat: goalFat == null && nullToAbsent
-          ? const Value.absent()
-          : Value(goalFat),
+      homeMetricTypes: Value(homeMetricTypes),
       isConfigured: Value(isConfigured),
     );
   }
@@ -1412,10 +1398,7 @@ class UserProfileRow extends DataClass implements Insertable<UserProfileRow> {
       heightCm: serializer.fromJson<double>(json['heightCm']),
       gender: serializer.fromJson<String>(json['gender']),
       activityLevel: serializer.fromJson<String>(json['activityLevel']),
-      goalCalories: serializer.fromJson<int>(json['goalCalories']),
-      goalProtein: serializer.fromJson<int?>(json['goalProtein']),
-      goalCarbs: serializer.fromJson<int?>(json['goalCarbs']),
-      goalFat: serializer.fromJson<int?>(json['goalFat']),
+      homeMetricTypes: serializer.fromJson<String>(json['homeMetricTypes']),
       isConfigured: serializer.fromJson<bool>(json['isConfigured']),
     );
   }
@@ -1432,10 +1415,7 @@ class UserProfileRow extends DataClass implements Insertable<UserProfileRow> {
       'heightCm': serializer.toJson<double>(heightCm),
       'gender': serializer.toJson<String>(gender),
       'activityLevel': serializer.toJson<String>(activityLevel),
-      'goalCalories': serializer.toJson<int>(goalCalories),
-      'goalProtein': serializer.toJson<int?>(goalProtein),
-      'goalCarbs': serializer.toJson<int?>(goalCarbs),
-      'goalFat': serializer.toJson<int?>(goalFat),
+      'homeMetricTypes': serializer.toJson<String>(homeMetricTypes),
       'isConfigured': serializer.toJson<bool>(isConfigured),
     };
   }
@@ -1450,10 +1430,7 @@ class UserProfileRow extends DataClass implements Insertable<UserProfileRow> {
     double? heightCm,
     String? gender,
     String? activityLevel,
-    int? goalCalories,
-    Value<int?> goalProtein = const Value.absent(),
-    Value<int?> goalCarbs = const Value.absent(),
-    Value<int?> goalFat = const Value.absent(),
+    String? homeMetricTypes,
     bool? isConfigured,
   }) => UserProfileRow(
     updatedAt: updatedAt ?? this.updatedAt,
@@ -1465,10 +1442,7 @@ class UserProfileRow extends DataClass implements Insertable<UserProfileRow> {
     heightCm: heightCm ?? this.heightCm,
     gender: gender ?? this.gender,
     activityLevel: activityLevel ?? this.activityLevel,
-    goalCalories: goalCalories ?? this.goalCalories,
-    goalProtein: goalProtein.present ? goalProtein.value : this.goalProtein,
-    goalCarbs: goalCarbs.present ? goalCarbs.value : this.goalCarbs,
-    goalFat: goalFat.present ? goalFat.value : this.goalFat,
+    homeMetricTypes: homeMetricTypes ?? this.homeMetricTypes,
     isConfigured: isConfigured ?? this.isConfigured,
   );
   UserProfileRow copyWithCompanion(UserProfilesCompanion data) {
@@ -1484,14 +1458,9 @@ class UserProfileRow extends DataClass implements Insertable<UserProfileRow> {
       activityLevel: data.activityLevel.present
           ? data.activityLevel.value
           : this.activityLevel,
-      goalCalories: data.goalCalories.present
-          ? data.goalCalories.value
-          : this.goalCalories,
-      goalProtein: data.goalProtein.present
-          ? data.goalProtein.value
-          : this.goalProtein,
-      goalCarbs: data.goalCarbs.present ? data.goalCarbs.value : this.goalCarbs,
-      goalFat: data.goalFat.present ? data.goalFat.value : this.goalFat,
+      homeMetricTypes: data.homeMetricTypes.present
+          ? data.homeMetricTypes.value
+          : this.homeMetricTypes,
       isConfigured: data.isConfigured.present
           ? data.isConfigured.value
           : this.isConfigured,
@@ -1510,10 +1479,7 @@ class UserProfileRow extends DataClass implements Insertable<UserProfileRow> {
           ..write('heightCm: $heightCm, ')
           ..write('gender: $gender, ')
           ..write('activityLevel: $activityLevel, ')
-          ..write('goalCalories: $goalCalories, ')
-          ..write('goalProtein: $goalProtein, ')
-          ..write('goalCarbs: $goalCarbs, ')
-          ..write('goalFat: $goalFat, ')
+          ..write('homeMetricTypes: $homeMetricTypes, ')
           ..write('isConfigured: $isConfigured')
           ..write(')'))
         .toString();
@@ -1530,10 +1496,7 @@ class UserProfileRow extends DataClass implements Insertable<UserProfileRow> {
     heightCm,
     gender,
     activityLevel,
-    goalCalories,
-    goalProtein,
-    goalCarbs,
-    goalFat,
+    homeMetricTypes,
     isConfigured,
   );
   @override
@@ -1549,10 +1512,7 @@ class UserProfileRow extends DataClass implements Insertable<UserProfileRow> {
           other.heightCm == this.heightCm &&
           other.gender == this.gender &&
           other.activityLevel == this.activityLevel &&
-          other.goalCalories == this.goalCalories &&
-          other.goalProtein == this.goalProtein &&
-          other.goalCarbs == this.goalCarbs &&
-          other.goalFat == this.goalFat &&
+          other.homeMetricTypes == this.homeMetricTypes &&
           other.isConfigured == this.isConfigured);
 }
 
@@ -1566,10 +1526,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileRow> {
   final Value<double> heightCm;
   final Value<String> gender;
   final Value<String> activityLevel;
-  final Value<int> goalCalories;
-  final Value<int?> goalProtein;
-  final Value<int?> goalCarbs;
-  final Value<int?> goalFat;
+  final Value<String> homeMetricTypes;
   final Value<bool> isConfigured;
   const UserProfilesCompanion({
     this.updatedAt = const Value.absent(),
@@ -1581,10 +1538,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileRow> {
     this.heightCm = const Value.absent(),
     this.gender = const Value.absent(),
     this.activityLevel = const Value.absent(),
-    this.goalCalories = const Value.absent(),
-    this.goalProtein = const Value.absent(),
-    this.goalCarbs = const Value.absent(),
-    this.goalFat = const Value.absent(),
+    this.homeMetricTypes = const Value.absent(),
     this.isConfigured = const Value.absent(),
   });
   UserProfilesCompanion.insert({
@@ -1597,17 +1551,13 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileRow> {
     required double heightCm,
     required String gender,
     required String activityLevel,
-    required int goalCalories,
-    this.goalProtein = const Value.absent(),
-    this.goalCarbs = const Value.absent(),
-    this.goalFat = const Value.absent(),
+    this.homeMetricTypes = const Value.absent(),
     this.isConfigured = const Value.absent(),
   }) : age = Value(age),
        weightKg = Value(weightKg),
        heightCm = Value(heightCm),
        gender = Value(gender),
-       activityLevel = Value(activityLevel),
-       goalCalories = Value(goalCalories);
+       activityLevel = Value(activityLevel);
   static Insertable<UserProfileRow> custom({
     Expression<int>? updatedAt,
     Expression<String>? updatedBy,
@@ -1618,10 +1568,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileRow> {
     Expression<double>? heightCm,
     Expression<String>? gender,
     Expression<String>? activityLevel,
-    Expression<int>? goalCalories,
-    Expression<int>? goalProtein,
-    Expression<int>? goalCarbs,
-    Expression<int>? goalFat,
+    Expression<String>? homeMetricTypes,
     Expression<bool>? isConfigured,
   }) {
     return RawValuesInsertable({
@@ -1634,10 +1581,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileRow> {
       if (heightCm != null) 'height_cm': heightCm,
       if (gender != null) 'gender': gender,
       if (activityLevel != null) 'activity_level': activityLevel,
-      if (goalCalories != null) 'goal_calories': goalCalories,
-      if (goalProtein != null) 'goal_protein': goalProtein,
-      if (goalCarbs != null) 'goal_carbs': goalCarbs,
-      if (goalFat != null) 'goal_fat': goalFat,
+      if (homeMetricTypes != null) 'home_metric_types': homeMetricTypes,
       if (isConfigured != null) 'is_configured': isConfigured,
     });
   }
@@ -1652,10 +1596,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileRow> {
     Value<double>? heightCm,
     Value<String>? gender,
     Value<String>? activityLevel,
-    Value<int>? goalCalories,
-    Value<int?>? goalProtein,
-    Value<int?>? goalCarbs,
-    Value<int?>? goalFat,
+    Value<String>? homeMetricTypes,
     Value<bool>? isConfigured,
   }) {
     return UserProfilesCompanion(
@@ -1668,10 +1609,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileRow> {
       heightCm: heightCm ?? this.heightCm,
       gender: gender ?? this.gender,
       activityLevel: activityLevel ?? this.activityLevel,
-      goalCalories: goalCalories ?? this.goalCalories,
-      goalProtein: goalProtein ?? this.goalProtein,
-      goalCarbs: goalCarbs ?? this.goalCarbs,
-      goalFat: goalFat ?? this.goalFat,
+      homeMetricTypes: homeMetricTypes ?? this.homeMetricTypes,
       isConfigured: isConfigured ?? this.isConfigured,
     );
   }
@@ -1706,17 +1644,8 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileRow> {
     if (activityLevel.present) {
       map['activity_level'] = Variable<String>(activityLevel.value);
     }
-    if (goalCalories.present) {
-      map['goal_calories'] = Variable<int>(goalCalories.value);
-    }
-    if (goalProtein.present) {
-      map['goal_protein'] = Variable<int>(goalProtein.value);
-    }
-    if (goalCarbs.present) {
-      map['goal_carbs'] = Variable<int>(goalCarbs.value);
-    }
-    if (goalFat.present) {
-      map['goal_fat'] = Variable<int>(goalFat.value);
+    if (homeMetricTypes.present) {
+      map['home_metric_types'] = Variable<String>(homeMetricTypes.value);
     }
     if (isConfigured.present) {
       map['is_configured'] = Variable<bool>(isConfigured.value);
@@ -1736,11 +1665,270 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileRow> {
           ..write('heightCm: $heightCm, ')
           ..write('gender: $gender, ')
           ..write('activityLevel: $activityLevel, ')
-          ..write('goalCalories: $goalCalories, ')
-          ..write('goalProtein: $goalProtein, ')
-          ..write('goalCarbs: $goalCarbs, ')
-          ..write('goalFat: $goalFat, ')
+          ..write('homeMetricTypes: $homeMetricTypes, ')
           ..write('isConfigured: $isConfigured')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $MetricGoalsTable extends MetricGoals
+    with TableInfo<$MetricGoalsTable, MetricGoalRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MetricGoalsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _profileIdMeta = const VerificationMeta(
+    'profileId',
+  );
+  @override
+  late final GeneratedColumn<int> profileId = GeneratedColumn<int>(
+    'profile_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<int> type = GeneratedColumn<int>(
+    'type',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _valueMeta = const VerificationMeta('value');
+  @override
+  late final GeneratedColumn<double> value = GeneratedColumn<double>(
+    'value',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [profileId, type, value];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'metric_goals';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MetricGoalRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('profile_id')) {
+      context.handle(
+        _profileIdMeta,
+        profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_profileIdMeta);
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+        _typeMeta,
+        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
+    if (data.containsKey('value')) {
+      context.handle(
+        _valueMeta,
+        value.isAcceptableOrUnknown(data['value']!, _valueMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_valueMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {profileId, type};
+  @override
+  MetricGoalRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MetricGoalRow(
+      profileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}profile_id'],
+      )!,
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}type'],
+      )!,
+      value: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}value'],
+      )!,
+    );
+  }
+
+  @override
+  $MetricGoalsTable createAlias(String alias) {
+    return $MetricGoalsTable(attachedDatabase, alias);
+  }
+}
+
+class MetricGoalRow extends DataClass implements Insertable<MetricGoalRow> {
+  final int profileId;
+  final int type;
+  final double value;
+  const MetricGoalRow({
+    required this.profileId,
+    required this.type,
+    required this.value,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['profile_id'] = Variable<int>(profileId);
+    map['type'] = Variable<int>(type);
+    map['value'] = Variable<double>(value);
+    return map;
+  }
+
+  MetricGoalsCompanion toCompanion(bool nullToAbsent) {
+    return MetricGoalsCompanion(
+      profileId: Value(profileId),
+      type: Value(type),
+      value: Value(value),
+    );
+  }
+
+  factory MetricGoalRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MetricGoalRow(
+      profileId: serializer.fromJson<int>(json['profileId']),
+      type: serializer.fromJson<int>(json['type']),
+      value: serializer.fromJson<double>(json['value']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'profileId': serializer.toJson<int>(profileId),
+      'type': serializer.toJson<int>(type),
+      'value': serializer.toJson<double>(value),
+    };
+  }
+
+  MetricGoalRow copyWith({int? profileId, int? type, double? value}) =>
+      MetricGoalRow(
+        profileId: profileId ?? this.profileId,
+        type: type ?? this.type,
+        value: value ?? this.value,
+      );
+  MetricGoalRow copyWithCompanion(MetricGoalsCompanion data) {
+    return MetricGoalRow(
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
+      type: data.type.present ? data.type.value : this.type,
+      value: data.value.present ? data.value.value : this.value,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MetricGoalRow(')
+          ..write('profileId: $profileId, ')
+          ..write('type: $type, ')
+          ..write('value: $value')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(profileId, type, value);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MetricGoalRow &&
+          other.profileId == this.profileId &&
+          other.type == this.type &&
+          other.value == this.value);
+}
+
+class MetricGoalsCompanion extends UpdateCompanion<MetricGoalRow> {
+  final Value<int> profileId;
+  final Value<int> type;
+  final Value<double> value;
+  final Value<int> rowid;
+  const MetricGoalsCompanion({
+    this.profileId = const Value.absent(),
+    this.type = const Value.absent(),
+    this.value = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MetricGoalsCompanion.insert({
+    required int profileId,
+    required int type,
+    required double value,
+    this.rowid = const Value.absent(),
+  }) : profileId = Value(profileId),
+       type = Value(type),
+       value = Value(value);
+  static Insertable<MetricGoalRow> custom({
+    Expression<int>? profileId,
+    Expression<int>? type,
+    Expression<double>? value,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (profileId != null) 'profile_id': profileId,
+      if (type != null) 'type': type,
+      if (value != null) 'value': value,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MetricGoalsCompanion copyWith({
+    Value<int>? profileId,
+    Value<int>? type,
+    Value<double>? value,
+    Value<int>? rowid,
+  }) {
+    return MetricGoalsCompanion(
+      profileId: profileId ?? this.profileId,
+      type: type ?? this.type,
+      value: value ?? this.value,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (profileId.present) {
+      map['profile_id'] = Variable<int>(profileId.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<int>(type.value);
+    }
+    if (value.present) {
+      map['value'] = Variable<double>(value.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MetricGoalsCompanion(')
+          ..write('profileId: $profileId, ')
+          ..write('type: $type, ')
+          ..write('value: $value, ')
+          ..write('rowid: $rowid')
           ..write(')'))
         .toString();
   }
@@ -2411,7 +2599,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $DiaryEntriesTable diaryEntries = $DiaryEntriesTable(this);
+  late final $EntryMetricsTable entryMetrics = $EntryMetricsTable(this);
   late final $UserProfilesTable userProfiles = $UserProfilesTable(this);
+  late final $MetricGoalsTable metricGoals = $MetricGoalsTable(this);
   late final $AppSettingsTable appSettings = $AppSettingsTable(this);
   late final $LocalPrefsTable localPrefs = $LocalPrefsTable(this);
   @override
@@ -2420,7 +2610,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     diaryEntries,
+    entryMetrics,
     userProfiles,
+    metricGoals,
     appSettings,
     localPrefs,
   ];
@@ -2434,10 +2626,6 @@ typedef $$DiaryEntriesTableCreateCompanionBuilder =
       required String id,
       required String name,
       required int type,
-      required int calories,
-      Value<double> protein,
-      Value<double> carbs,
-      Value<double> fats,
       required int timestamp,
       required String normalizedName,
       Value<String?> imagePath,
@@ -2455,10 +2643,6 @@ typedef $$DiaryEntriesTableUpdateCompanionBuilder =
       Value<String> id,
       Value<String> name,
       Value<int> type,
-      Value<int> calories,
-      Value<double> protein,
-      Value<double> carbs,
-      Value<double> fats,
       Value<int> timestamp,
       Value<String> normalizedName,
       Value<String?> imagePath,
@@ -2505,26 +2689,6 @@ class $$DiaryEntriesTableFilterComposer
 
   ColumnFilters<int> get type => $composableBuilder(
     column: $table.type,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get calories => $composableBuilder(
-    column: $table.calories,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<double> get protein => $composableBuilder(
-    column: $table.protein,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<double> get carbs => $composableBuilder(
-    column: $table.carbs,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<double> get fats => $composableBuilder(
-    column: $table.fats,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2603,26 +2767,6 @@ class $$DiaryEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get calories => $composableBuilder(
-    column: $table.calories,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<double> get protein => $composableBuilder(
-    column: $table.protein,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<double> get carbs => $composableBuilder(
-    column: $table.carbs,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<double> get fats => $composableBuilder(
-    column: $table.fats,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<int> get timestamp => $composableBuilder(
     column: $table.timestamp,
     builder: (column) => ColumnOrderings(column),
@@ -2685,18 +2829,6 @@ class $$DiaryEntriesTableAnnotationComposer
 
   GeneratedColumn<int> get type =>
       $composableBuilder(column: $table.type, builder: (column) => column);
-
-  GeneratedColumn<int> get calories =>
-      $composableBuilder(column: $table.calories, builder: (column) => column);
-
-  GeneratedColumn<double> get protein =>
-      $composableBuilder(column: $table.protein, builder: (column) => column);
-
-  GeneratedColumn<double> get carbs =>
-      $composableBuilder(column: $table.carbs, builder: (column) => column);
-
-  GeneratedColumn<double> get fats =>
-      $composableBuilder(column: $table.fats, builder: (column) => column);
 
   GeneratedColumn<int> get timestamp =>
       $composableBuilder(column: $table.timestamp, builder: (column) => column);
@@ -2763,10 +2895,6 @@ class $$DiaryEntriesTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<int> type = const Value.absent(),
-                Value<int> calories = const Value.absent(),
-                Value<double> protein = const Value.absent(),
-                Value<double> carbs = const Value.absent(),
-                Value<double> fats = const Value.absent(),
                 Value<int> timestamp = const Value.absent(),
                 Value<String> normalizedName = const Value.absent(),
                 Value<String?> imagePath = const Value.absent(),
@@ -2782,10 +2910,6 @@ class $$DiaryEntriesTableTableManager
                 id: id,
                 name: name,
                 type: type,
-                calories: calories,
-                protein: protein,
-                carbs: carbs,
-                fats: fats,
                 timestamp: timestamp,
                 normalizedName: normalizedName,
                 imagePath: imagePath,
@@ -2803,10 +2927,6 @@ class $$DiaryEntriesTableTableManager
                 required String id,
                 required String name,
                 required int type,
-                required int calories,
-                Value<double> protein = const Value.absent(),
-                Value<double> carbs = const Value.absent(),
-                Value<double> fats = const Value.absent(),
                 required int timestamp,
                 required String normalizedName,
                 Value<String?> imagePath = const Value.absent(),
@@ -2822,10 +2942,6 @@ class $$DiaryEntriesTableTableManager
                 id: id,
                 name: name,
                 type: type,
-                calories: calories,
-                protein: protein,
-                carbs: carbs,
-                fats: fats,
                 timestamp: timestamp,
                 normalizedName: normalizedName,
                 imagePath: imagePath,
@@ -2860,6 +2976,168 @@ typedef $$DiaryEntriesTableProcessedTableManager =
       DiaryEntryRow,
       PrefetchHooks Function()
     >;
+typedef $$EntryMetricsTableCreateCompanionBuilder =
+    EntryMetricsCompanion Function({
+      required String entryId,
+      required int type,
+      required double value,
+      Value<int> rowid,
+    });
+typedef $$EntryMetricsTableUpdateCompanionBuilder =
+    EntryMetricsCompanion Function({
+      Value<String> entryId,
+      Value<int> type,
+      Value<double> value,
+      Value<int> rowid,
+    });
+
+class $$EntryMetricsTableFilterComposer
+    extends Composer<_$AppDatabase, $EntryMetricsTable> {
+  $$EntryMetricsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get entryId => $composableBuilder(
+    column: $table.entryId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$EntryMetricsTableOrderingComposer
+    extends Composer<_$AppDatabase, $EntryMetricsTable> {
+  $$EntryMetricsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get entryId => $composableBuilder(
+    column: $table.entryId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$EntryMetricsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $EntryMetricsTable> {
+  $$EntryMetricsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get entryId =>
+      $composableBuilder(column: $table.entryId, builder: (column) => column);
+
+  GeneratedColumn<int> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<double> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => column);
+}
+
+class $$EntryMetricsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $EntryMetricsTable,
+          EntryMetricRow,
+          $$EntryMetricsTableFilterComposer,
+          $$EntryMetricsTableOrderingComposer,
+          $$EntryMetricsTableAnnotationComposer,
+          $$EntryMetricsTableCreateCompanionBuilder,
+          $$EntryMetricsTableUpdateCompanionBuilder,
+          (
+            EntryMetricRow,
+            BaseReferences<_$AppDatabase, $EntryMetricsTable, EntryMetricRow>,
+          ),
+          EntryMetricRow,
+          PrefetchHooks Function()
+        > {
+  $$EntryMetricsTableTableManager(_$AppDatabase db, $EntryMetricsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$EntryMetricsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$EntryMetricsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$EntryMetricsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> entryId = const Value.absent(),
+                Value<int> type = const Value.absent(),
+                Value<double> value = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => EntryMetricsCompanion(
+                entryId: entryId,
+                type: type,
+                value: value,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String entryId,
+                required int type,
+                required double value,
+                Value<int> rowid = const Value.absent(),
+              }) => EntryMetricsCompanion.insert(
+                entryId: entryId,
+                type: type,
+                value: value,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$EntryMetricsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $EntryMetricsTable,
+      EntryMetricRow,
+      $$EntryMetricsTableFilterComposer,
+      $$EntryMetricsTableOrderingComposer,
+      $$EntryMetricsTableAnnotationComposer,
+      $$EntryMetricsTableCreateCompanionBuilder,
+      $$EntryMetricsTableUpdateCompanionBuilder,
+      (
+        EntryMetricRow,
+        BaseReferences<_$AppDatabase, $EntryMetricsTable, EntryMetricRow>,
+      ),
+      EntryMetricRow,
+      PrefetchHooks Function()
+    >;
 typedef $$UserProfilesTableCreateCompanionBuilder =
     UserProfilesCompanion Function({
       Value<int> updatedAt,
@@ -2871,10 +3149,7 @@ typedef $$UserProfilesTableCreateCompanionBuilder =
       required double heightCm,
       required String gender,
       required String activityLevel,
-      required int goalCalories,
-      Value<int?> goalProtein,
-      Value<int?> goalCarbs,
-      Value<int?> goalFat,
+      Value<String> homeMetricTypes,
       Value<bool> isConfigured,
     });
 typedef $$UserProfilesTableUpdateCompanionBuilder =
@@ -2888,10 +3163,7 @@ typedef $$UserProfilesTableUpdateCompanionBuilder =
       Value<double> heightCm,
       Value<String> gender,
       Value<String> activityLevel,
-      Value<int> goalCalories,
-      Value<int?> goalProtein,
-      Value<int?> goalCarbs,
-      Value<int?> goalFat,
+      Value<String> homeMetricTypes,
       Value<bool> isConfigured,
     });
 
@@ -2949,23 +3221,8 @@ class $$UserProfilesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<int> get goalCalories => $composableBuilder(
-    column: $table.goalCalories,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get goalProtein => $composableBuilder(
-    column: $table.goalProtein,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get goalCarbs => $composableBuilder(
-    column: $table.goalCarbs,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get goalFat => $composableBuilder(
-    column: $table.goalFat,
+  ColumnFilters<String> get homeMetricTypes => $composableBuilder(
+    column: $table.homeMetricTypes,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3029,23 +3286,8 @@ class $$UserProfilesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get goalCalories => $composableBuilder(
-    column: $table.goalCalories,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get goalProtein => $composableBuilder(
-    column: $table.goalProtein,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get goalCarbs => $composableBuilder(
-    column: $table.goalCarbs,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get goalFat => $composableBuilder(
-    column: $table.goalFat,
+  ColumnOrderings<String> get homeMetricTypes => $composableBuilder(
+    column: $table.homeMetricTypes,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -3093,21 +3335,10 @@ class $$UserProfilesTableAnnotationComposer
     builder: (column) => column,
   );
 
-  GeneratedColumn<int> get goalCalories => $composableBuilder(
-    column: $table.goalCalories,
+  GeneratedColumn<String> get homeMetricTypes => $composableBuilder(
+    column: $table.homeMetricTypes,
     builder: (column) => column,
   );
-
-  GeneratedColumn<int> get goalProtein => $composableBuilder(
-    column: $table.goalProtein,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<int> get goalCarbs =>
-      $composableBuilder(column: $table.goalCarbs, builder: (column) => column);
-
-  GeneratedColumn<int> get goalFat =>
-      $composableBuilder(column: $table.goalFat, builder: (column) => column);
 
   GeneratedColumn<bool> get isConfigured => $composableBuilder(
     column: $table.isConfigured,
@@ -3155,10 +3386,7 @@ class $$UserProfilesTableTableManager
                 Value<double> heightCm = const Value.absent(),
                 Value<String> gender = const Value.absent(),
                 Value<String> activityLevel = const Value.absent(),
-                Value<int> goalCalories = const Value.absent(),
-                Value<int?> goalProtein = const Value.absent(),
-                Value<int?> goalCarbs = const Value.absent(),
-                Value<int?> goalFat = const Value.absent(),
+                Value<String> homeMetricTypes = const Value.absent(),
                 Value<bool> isConfigured = const Value.absent(),
               }) => UserProfilesCompanion(
                 updatedAt: updatedAt,
@@ -3170,10 +3398,7 @@ class $$UserProfilesTableTableManager
                 heightCm: heightCm,
                 gender: gender,
                 activityLevel: activityLevel,
-                goalCalories: goalCalories,
-                goalProtein: goalProtein,
-                goalCarbs: goalCarbs,
-                goalFat: goalFat,
+                homeMetricTypes: homeMetricTypes,
                 isConfigured: isConfigured,
               ),
           createCompanionCallback:
@@ -3187,10 +3412,7 @@ class $$UserProfilesTableTableManager
                 required double heightCm,
                 required String gender,
                 required String activityLevel,
-                required int goalCalories,
-                Value<int?> goalProtein = const Value.absent(),
-                Value<int?> goalCarbs = const Value.absent(),
-                Value<int?> goalFat = const Value.absent(),
+                Value<String> homeMetricTypes = const Value.absent(),
                 Value<bool> isConfigured = const Value.absent(),
               }) => UserProfilesCompanion.insert(
                 updatedAt: updatedAt,
@@ -3202,10 +3424,7 @@ class $$UserProfilesTableTableManager
                 heightCm: heightCm,
                 gender: gender,
                 activityLevel: activityLevel,
-                goalCalories: goalCalories,
-                goalProtein: goalProtein,
-                goalCarbs: goalCarbs,
-                goalFat: goalFat,
+                homeMetricTypes: homeMetricTypes,
                 isConfigured: isConfigured,
               ),
           withReferenceMapper: (p0) => p0
@@ -3231,6 +3450,168 @@ typedef $$UserProfilesTableProcessedTableManager =
         BaseReferences<_$AppDatabase, $UserProfilesTable, UserProfileRow>,
       ),
       UserProfileRow,
+      PrefetchHooks Function()
+    >;
+typedef $$MetricGoalsTableCreateCompanionBuilder =
+    MetricGoalsCompanion Function({
+      required int profileId,
+      required int type,
+      required double value,
+      Value<int> rowid,
+    });
+typedef $$MetricGoalsTableUpdateCompanionBuilder =
+    MetricGoalsCompanion Function({
+      Value<int> profileId,
+      Value<int> type,
+      Value<double> value,
+      Value<int> rowid,
+    });
+
+class $$MetricGoalsTableFilterComposer
+    extends Composer<_$AppDatabase, $MetricGoalsTable> {
+  $$MetricGoalsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get profileId => $composableBuilder(
+    column: $table.profileId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MetricGoalsTableOrderingComposer
+    extends Composer<_$AppDatabase, $MetricGoalsTable> {
+  $$MetricGoalsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get profileId => $composableBuilder(
+    column: $table.profileId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MetricGoalsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MetricGoalsTable> {
+  $$MetricGoalsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get profileId =>
+      $composableBuilder(column: $table.profileId, builder: (column) => column);
+
+  GeneratedColumn<int> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<double> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => column);
+}
+
+class $$MetricGoalsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MetricGoalsTable,
+          MetricGoalRow,
+          $$MetricGoalsTableFilterComposer,
+          $$MetricGoalsTableOrderingComposer,
+          $$MetricGoalsTableAnnotationComposer,
+          $$MetricGoalsTableCreateCompanionBuilder,
+          $$MetricGoalsTableUpdateCompanionBuilder,
+          (
+            MetricGoalRow,
+            BaseReferences<_$AppDatabase, $MetricGoalsTable, MetricGoalRow>,
+          ),
+          MetricGoalRow,
+          PrefetchHooks Function()
+        > {
+  $$MetricGoalsTableTableManager(_$AppDatabase db, $MetricGoalsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MetricGoalsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MetricGoalsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MetricGoalsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> profileId = const Value.absent(),
+                Value<int> type = const Value.absent(),
+                Value<double> value = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MetricGoalsCompanion(
+                profileId: profileId,
+                type: type,
+                value: value,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required int profileId,
+                required int type,
+                required double value,
+                Value<int> rowid = const Value.absent(),
+              }) => MetricGoalsCompanion.insert(
+                profileId: profileId,
+                type: type,
+                value: value,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MetricGoalsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MetricGoalsTable,
+      MetricGoalRow,
+      $$MetricGoalsTableFilterComposer,
+      $$MetricGoalsTableOrderingComposer,
+      $$MetricGoalsTableAnnotationComposer,
+      $$MetricGoalsTableCreateCompanionBuilder,
+      $$MetricGoalsTableUpdateCompanionBuilder,
+      (
+        MetricGoalRow,
+        BaseReferences<_$AppDatabase, $MetricGoalsTable, MetricGoalRow>,
+      ),
+      MetricGoalRow,
       PrefetchHooks Function()
     >;
 typedef $$AppSettingsTableCreateCompanionBuilder =
@@ -3612,8 +3993,12 @@ class $AppDatabaseManager {
   $AppDatabaseManager(this._db);
   $$DiaryEntriesTableTableManager get diaryEntries =>
       $$DiaryEntriesTableTableManager(_db, _db.diaryEntries);
+  $$EntryMetricsTableTableManager get entryMetrics =>
+      $$EntryMetricsTableTableManager(_db, _db.entryMetrics);
   $$UserProfilesTableTableManager get userProfiles =>
       $$UserProfilesTableTableManager(_db, _db.userProfiles);
+  $$MetricGoalsTableTableManager get metricGoals =>
+      $$MetricGoalsTableTableManager(_db, _db.metricGoals);
   $$AppSettingsTableTableManager get appSettings =>
       $$AppSettingsTableTableManager(_db, _db.appSettings);
   $$LocalPrefsTableTableManager get localPrefs =>

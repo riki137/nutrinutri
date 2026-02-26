@@ -97,9 +97,15 @@ class AIEntryWizard extends StatelessWidget {
                               option.name.trim().isNotEmpty &&
                               option.name.trim() != title;
                           final subtitleParts = <String>[];
-                          if (showNameAsSubtitle) subtitleParts.add(option.name);
+                          if (showNameAsSubtitle) {
+                            subtitleParts.add(option.name);
+                          }
+                          final calories =
+                              option.calories == option.calories.roundToDouble()
+                              ? option.calories.round().toString()
+                              : option.calories.toStringAsFixed(1);
                           subtitleParts.add(
-                            '${option.calories} cal | P:${option.protein} C:${option.carbs} F:${option.fats}',
+                            '$calories cal | P:${option.protein.toStringAsFixed(1)} C:${option.carbs.toStringAsFixed(1)} F:${option.fats.toStringAsFixed(1)}',
                           );
 
                           final iconName = option.icon?.trim();

@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:nutrinutri/core/db/app_database.dart';
+import 'package:nutrinutri/core/domain/nutrition_metric.dart';
 import 'package:nutrinutri/core/domain/user_profile.dart';
 import 'package:nutrinutri/core/services/device_id_service.dart';
 
@@ -10,6 +11,7 @@ class SettingsService {
 
   static const _settingsId = 1;
   static const _profileId = 1;
+  static const _homeMetricSlots = 6;
 
   Future<({String deviceId, int now})> _audit() async {
     final deviceId = await _deviceId.getOrCreate();
@@ -53,34 +55,59 @@ class SettingsService {
     required double height, // cm
     required String gender,
     required String activityLevel,
-    required int goalCalories,
-    int? goalProtein,
-    int? goalCarbs,
-    int? goalFat,
+    required double calorieGoal,
+    required Map<NutritionMetricType, double> metricGoals,
+    required List<NutritionMetricType> homeMetricTypes,
   }) async {
     final audit = await _audit();
 
-    await _db
-        .into(_db.userProfiles)
-        .insert(
-          UserProfilesCompanion.insert(
-            id: Value(_profileId),
-            age: age,
-            weightKg: weight,
-            heightCm: height,
-            gender: gender,
-            activityLevel: activityLevel,
-            goalCalories: goalCalories,
-            goalProtein: Value(goalProtein),
-            goalCarbs: Value(goalCarbs),
-            goalFat: Value(goalFat),
-            isConfigured: const Value(true),
-            updatedAt: Value(audit.now),
-            updatedBy: Value(audit.deviceId),
-            deletedAt: Value<int?>(null),
+    final goals = <NutritionMetricType, double>{
+      ...metricGoals,
+      NutritionMetricType.calories: calorieGoal,
+    };
+
+    await _db.transaction(() async {
+      await _db
+          .into(_db.userProfiles)
+          .insert(
+            UserProfilesCompanion.insert(
+              id: Value(_profileId),
+              age: age,
+              weightKg: weight,
+              heightCm: height,
+              gender: gender,
+              activityLevel: activityLevel,
+              homeMetricTypes: Value(_encodeHomeMetricTypes(homeMetricTypes)),
+              isConfigured: const Value(true),
+              updatedAt: Value(audit.now),
+              updatedBy: Value(audit.deviceId),
+              deletedAt: Value<int?>(null),
+            ),
+            mode: InsertMode.insertOrReplace,
+          );
+
+      await (_db.delete(
+        _db.metricGoals,
+      )..where((t) => t.profileId.equals(_profileId))).go();
+
+      final goalRows = <MetricGoalsCompanion>[];
+      for (final entry in goals.entries) {
+        final rounded = _roundMetricValue(entry.value);
+        if (rounded <= 0) continue;
+        goalRows.add(
+          MetricGoalsCompanion.insert(
+            profileId: _profileId,
+            type: entry.key.index,
+            value: rounded,
           ),
-          mode: InsertMode.insertOrReplace,
         );
+      }
+
+      if (goalRows.isEmpty) return;
+      await _db.batch((batch) {
+        batch.insertAll(_db.metricGoals, goalRows);
+      });
+    });
   }
 
   Future<UserProfile?> getUserProfile() async {
@@ -91,16 +118,29 @@ class SettingsService {
 
     if (row == null || !row.isConfigured) return null;
 
+    final goalRows = await (_db.select(
+      _db.metricGoals,
+    )..where((t) => t.profileId.equals(_profileId))).get();
+
+    final goals = <NutritionMetricType, double>{};
+    for (final goalRow in goalRows) {
+      if (goalRow.type < 0 ||
+          goalRow.type >= NutritionMetricType.values.length) {
+        continue;
+      }
+      goals[NutritionMetricType.values[goalRow.type]] = _roundMetricValue(
+        goalRow.value,
+      );
+    }
+
     return UserProfile(
       age: row.age,
       weightKg: row.weightKg,
       heightCm: row.heightCm,
       gender: row.gender,
       activityLevel: row.activityLevel,
-      goalCalories: row.goalCalories,
-      goalProtein: row.goalProtein,
-      goalCarbs: row.goalCarbs,
-      goalFat: row.goalFat,
+      metricGoals: Map.unmodifiable(goals),
+      homeMetricTypes: _decodeHomeMetricTypes(row.homeMetricTypes),
       isConfigured: row.isConfigured,
     );
   }
@@ -146,5 +186,51 @@ class SettingsService {
           ),
           mode: InsertMode.insertOrReplace,
         );
+  }
+
+  List<NutritionMetricType> _decodeHomeMetricTypes(String raw) {
+    final parsed = <NutritionMetricType>[];
+    for (final part in raw.split(',')) {
+      final metric = NutritionMetricTypeX.fromKey(part.trim());
+      if (metric == null || metric == NutritionMetricType.calories) {
+        continue;
+      }
+      if (!parsed.contains(metric)) {
+        parsed.add(metric);
+      }
+    }
+
+    for (final metric in defaultHomeMetricTypes) {
+      if (!parsed.contains(metric)) {
+        parsed.add(metric);
+      }
+    }
+
+    return parsed.take(_homeMetricSlots).toList(growable: false);
+  }
+
+  String _encodeHomeMetricTypes(List<NutritionMetricType> values) {
+    final normalized = <NutritionMetricType>[];
+    for (final value in values) {
+      if (value == NutritionMetricType.calories || normalized.contains(value)) {
+        continue;
+      }
+      normalized.add(value);
+    }
+
+    for (final fallback in defaultHomeMetricTypes) {
+      if (!normalized.contains(fallback)) {
+        normalized.add(fallback);
+      }
+    }
+
+    return normalized
+        .take(_homeMetricSlots)
+        .map((metric) => metric.key)
+        .join(',');
+  }
+
+  double _roundMetricValue(double value) {
+    return (value * 10).roundToDouble() / 10;
   }
 }

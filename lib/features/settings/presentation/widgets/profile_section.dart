@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gap/gap.dart';
+import 'package:nutrinutri/core/domain/nutrition_metric.dart';
 
 class ProfileSection extends StatelessWidget {
   const ProfileSection({
@@ -8,29 +9,44 @@ class ProfileSection extends StatelessWidget {
     required this.ageController,
     required this.weightController,
     required this.heightController,
-    required this.goalController,
-    required this.proteinController,
-    required this.carbsController,
-    required this.fatsController,
+    required this.metricGoalControllers,
+    required this.homeMetricTypes,
     required this.gender,
     required this.activityLevel,
     required this.onGenderChanged,
     required this.onActivityLevelChanged,
+    required this.onHomeMetricChanged,
   });
   final TextEditingController ageController;
   final TextEditingController weightController;
   final TextEditingController heightController;
-  final TextEditingController goalController;
-  final TextEditingController proteinController;
-  final TextEditingController carbsController;
-  final TextEditingController fatsController;
+  final Map<NutritionMetricType, TextEditingController> metricGoalControllers;
+  final List<NutritionMetricType> homeMetricTypes;
   final String gender;
   final String activityLevel;
   final ValueChanged<String?> onGenderChanged;
   final ValueChanged<String?> onActivityLevelChanged;
+  final void Function(int slot, NutritionMetricType? metric)
+  onHomeMetricChanged;
+
+  TextEditingController _controllerFor(NutritionMetricType metric) {
+    return metricGoalControllers[metric]!;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final nonCalorieMetrics = NutritionMetricType.values
+        .where((metric) => metric != NutritionMetricType.calories)
+        .toList(growable: false);
+
+    final selectedHomeMetrics = List<NutritionMetricType>.from(homeMetricTypes);
+    while (selectedHomeMetrics.length < 6) {
+      selectedHomeMetrics.add(
+        defaultHomeMetricTypes[selectedHomeMetrics.length %
+            defaultHomeMetricTypes.length],
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -144,9 +160,11 @@ class ProfileSection extends StatelessWidget {
         ),
         const Gap(16),
         TextField(
-          controller: goalController,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          controller: _controllerFor(NutritionMetricType.calories),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+          ],
           decoration: const InputDecoration(
             labelText: 'Daily Calorie Goal',
             border: OutlineInputBorder(),
@@ -155,48 +173,69 @@ class ProfileSection extends StatelessWidget {
         ),
         const Gap(16),
         const Text(
-          'Macro Goals (Optional)',
+          'Metric Goals (Optional)',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const Gap(8),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: proteinController,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: const InputDecoration(
-                  labelText: 'Protein (g)',
-                  border: OutlineInputBorder(),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: nonCalorieMetrics
+              .map((metric) {
+                return SizedBox(
+                  width: 190,
+                  child: TextField(
+                    controller: _controllerFor(metric),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                    ],
+                    decoration: InputDecoration(
+                      labelText: '${metric.label} (${metric.unit})',
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                );
+              })
+              .toList(growable: false),
+        ),
+        const Gap(24),
+        const Text(
+          'Homepage Metrics',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const Gap(8),
+        const Text('Choose 6 metric rings shown on the dashboard.'),
+        const Gap(12),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: List.generate(6, (index) {
+            return SizedBox(
+              width: 220,
+              child: DropdownButtonFormField<NutritionMetricType>(
+                key: ValueKey(
+                  'home_metric_${index}_${selectedHomeMetrics[index].key}',
                 ),
-              ),
-            ),
-            const Gap(8),
-            Expanded(
-              child: TextField(
-                controller: carbsController,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: const InputDecoration(
-                  labelText: 'Carbs (g)',
-                  border: OutlineInputBorder(),
+                initialValue: selectedHomeMetrics[index],
+                decoration: InputDecoration(
+                  labelText: 'Slot ${index + 1}',
+                  border: const OutlineInputBorder(),
                 ),
+                items: nonCalorieMetrics
+                    .map(
+                      (metric) => DropdownMenuItem(
+                        value: metric,
+                        child: Text(metric.label),
+                      ),
+                    )
+                    .toList(growable: false),
+                onChanged: (metric) => onHomeMetricChanged(index, metric),
               ),
-            ),
-            const Gap(8),
-            Expanded(
-              child: TextField(
-                controller: fatsController,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: const InputDecoration(
-                  labelText: 'Fats (g)',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ),
-          ],
+            );
+          }),
         ),
       ],
     );

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import 'package:image_picker/image_picker.dart';
+import 'package:nutrinutri/core/domain/nutrition_metric.dart';
 import 'package:nutrinutri/core/providers.dart';
 import 'package:nutrinutri/core/utils/met_values.dart';
 import 'package:nutrinutri/features/diary/application/diary_controller.dart';
@@ -133,10 +134,7 @@ class AddEntryController extends _$AddEntryController {
   Future<void> saveEntry({
     required DiaryEntry? existingEntry,
     required String name,
-    required String calories,
-    required String protein,
-    required String carbs,
-    required String fats,
+    required Map<NutritionMetricType, String> metricValues,
     String? durationMinutes,
   }) async {
     final diaryService = ref.read(diaryServiceProvider);
@@ -146,10 +144,18 @@ class AddEntryController extends _$AddEntryController {
               ? 'Unknown Exercise'
               : 'Unknown Food')
         : name.trim();
-    final finalCalories = int.tryParse(calories) ?? 0;
-    final finalProtein = double.tryParse(protein) ?? 0.0;
-    final finalCarbs = double.tryParse(carbs) ?? 0.0;
-    final finalFats = double.tryParse(fats) ?? 0.0;
+    final parsedMetrics = <NutritionMetricType, double>{};
+    for (final entry in metricValues.entries) {
+      final parsed = _parseMetric(entry.value);
+      if (parsed == null || parsed <= 0) continue;
+      parsedMetrics[entry.key] = parsed;
+    }
+
+    final calories = parsedMetrics[NutritionMetricType.calories] ?? 0;
+    final finalMetrics = state.type == EntryType.exercise
+        ? {NutritionMetricType.calories: calories}
+        : {...parsedMetrics, NutritionMetricType.calories: calories};
+
     final finalDuration = durationMinutes != null
         ? int.tryParse(durationMinutes)
         : null;
@@ -167,10 +173,7 @@ class AddEntryController extends _$AddEntryController {
         id: existingEntry.id,
         name: finalName,
         type: state.type,
-        calories: finalCalories,
-        protein: finalProtein,
-        carbs: finalCarbs,
-        fats: finalFats,
+        metrics: finalMetrics,
         timestamp: timestamp,
         imagePath: state.image?.path ?? existingEntry.imagePath,
         icon: state.selectedIcon,
@@ -184,10 +187,7 @@ class AddEntryController extends _$AddEntryController {
         id: const Uuid().v4(),
         name: finalName,
         type: state.type,
-        calories: finalCalories,
-        protein: finalProtein,
-        carbs: finalCarbs,
-        fats: finalFats,
+        metrics: finalMetrics,
         timestamp: timestamp,
         imagePath: state.image?.path,
         icon: state.selectedIcon,
@@ -223,5 +223,11 @@ class AddEntryController extends _$AddEntryController {
     return ref
         .read(diaryServiceProvider)
         .searchEntrySuggestions(query, type: state.type);
+  }
+
+  double? _parseMetric(String raw) {
+    final normalized = raw.trim().replaceAll(',', '.');
+    if (normalized.isEmpty) return null;
+    return double.tryParse(normalized);
   }
 }

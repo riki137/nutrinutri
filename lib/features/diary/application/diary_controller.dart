@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:nutrinutri/core/domain/nutrition_metric.dart';
 import 'package:nutrinutri/core/providers.dart';
 import 'package:nutrinutri/core/utils/icon_utils.dart';
 import 'package:nutrinutri/features/dashboard/presentation/dashboard_providers.dart';
@@ -41,7 +42,7 @@ class DiaryController extends _$DiaryController {
       id: const Uuid().v4(),
       name: 'Analyzing...',
       type: type,
-      calories: 0,
+      metrics: const {NutritionMetricType.calories: 0},
       timestamp: timestamp,
       imagePath: imagePath,
       description: description,
@@ -71,10 +72,7 @@ class DiaryController extends _$DiaryController {
     final cancelledEntry = DiaryEntry(
       id: entry.id,
       name: 'Analysis Cancelled',
-      calories: 0,
-      protein: 0,
-      carbs: 0,
-      fats: 0,
+      metrics: const {NutritionMetricType.calories: 0},
       timestamp: entry.timestamp,
       imagePath: entry.imagePath,
       description: entry.description,
@@ -99,10 +97,7 @@ class DiaryController extends _$DiaryController {
     final processingEntry = DiaryEntry(
       id: entry.id,
       name: 'Analyzing...',
-      calories: 0,
-      protein: 0,
-      carbs: 0,
-      fats: 0,
+      metrics: const {NutritionMetricType.calories: 0},
       timestamp: entry.timestamp,
       imagePath: entry.imagePath,
       description: entry.description,
@@ -199,10 +194,7 @@ class DiaryController extends _$DiaryController {
         id: entry.id,
         name: 'Analysis Failed',
         type: entry.type,
-        calories: 0,
-        protein: 0,
-        carbs: 0,
-        fats: 0,
+        metrics: const {NutritionMetricType.calories: 0},
         timestamp: entry.timestamp,
         imagePath: entry.imagePath,
         description: entry.description,
@@ -227,6 +219,15 @@ class DiaryController extends _$DiaryController {
     DiaryEntry entry,
     Map<String, dynamic> result,
   ) async {
+    final metrics = entry.type == EntryType.exercise
+        ? {
+            NutritionMetricType.calories: _metricValue(
+              result,
+              NutritionMetricType.calories,
+            ),
+          }
+        : _extractFoodMetrics(result);
+
     final updatedEntry = DiaryEntry(
       id: entry.id,
       name:
@@ -235,10 +236,7 @@ class DiaryController extends _$DiaryController {
               ? 'Unknown Exercise'
               : 'Unknown Food'),
       type: entry.type,
-      calories: _toInt(result['calories']),
-      protein: _toDouble(result['protein']),
-      carbs: _toDouble(result['carbs']),
-      fats: _toDouble(result['fats']),
+      metrics: metrics,
       timestamp: entry.timestamp,
       imagePath: entry.imagePath,
       description: entry.description,
@@ -275,6 +273,46 @@ class DiaryController extends _$DiaryController {
     if (val is int) return val.toDouble();
     if (val is String) return double.tryParse(val) ?? 0.0;
     return 0.0;
+  }
+
+  Map<NutritionMetricType, double> _extractFoodMetrics(
+    Map<String, dynamic> result,
+  ) {
+    final metrics = <NutritionMetricType, double>{};
+    for (final type in NutritionMetricType.values) {
+      final value = _metricValue(result, type);
+      if (value > 0 || type == NutritionMetricType.calories) {
+        metrics[type] = value;
+      }
+    }
+    return metrics;
+  }
+
+  double _metricValue(Map<String, dynamic> result, NutritionMetricType type) {
+    final metrics = result['metrics'];
+    final source = metrics is Map<String, dynamic>
+        ? metrics
+        : metrics is Map
+        ? Map<String, dynamic>.from(metrics)
+        : result;
+
+    final value = switch (type) {
+      NutritionMetricType.calories => source['calories'] ?? source['kcal'],
+      NutritionMetricType.carbs => source['carbs'] ?? source['carb'],
+      NutritionMetricType.sugars => source['sugars'] ?? source['sugar'],
+      NutritionMetricType.fats => source['fats'] ?? source['fat'],
+      NutritionMetricType.saturatedFats =>
+        source['saturated_fats'] ??
+            source['saturatedFats'] ??
+            source['saturated_fat'] ??
+            source['sat_fat'],
+      NutritionMetricType.protein => source['protein'],
+      NutritionMetricType.fiber => source['fiber'] ?? source['fibre'],
+      NutritionMetricType.sodium => source['sodium'],
+      NutritionMetricType.caffeine => source['caffeine'],
+      NutritionMetricType.water => source['water'],
+    };
+    return _toDouble(value);
   }
 
   String _validateIcon(dynamic icon) {

@@ -38,6 +38,10 @@ class EntriesList extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final entry = entries[index];
                 final iconData = IconUtils.getIcon(entry.icon);
+                final caloriesText =
+                    entry.calories == entry.calories.roundToDouble()
+                    ? entry.calories.round().toString()
+                    : entry.calories.toStringAsFixed(1);
 
                 // Determine if we should show loading or error
                 final isProcessing = entry.status == FoodEntryStatus.processing;
@@ -86,7 +90,7 @@ class EntriesList extends ConsumerWidget {
                         ? 'AI Analysis Failed. Tap to edit/retry.'
                         : isCancelled
                         ? 'Analysis Cancelled. Tap to edit/retry.'
-                        : '${DateFormat('HH:mm').format(entry.timestamp)} • ${entry.calories} kcal',
+                        : '${DateFormat('HH:mm').format(entry.timestamp)} • $caloriesText kcal',
                     style: TextStyle(color: Colors.grey[600]),
                   ),
                   trailing: Row(

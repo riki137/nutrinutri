@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
+import 'package:nutrinutri/core/domain/nutrition_metric.dart';
 import 'package:nutrinutri/core/providers.dart';
 import 'package:nutrinutri/core/services/google_user_info.dart';
 import 'package:nutrinutri/features/settings/presentation/managers/settings_form_manager.dart';
@@ -141,30 +142,34 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       return 'Please enter a valid height.';
     }
 
-    final goal = int.tryParse(_formManager.goalController.text.trim());
+    final goalText = _formManager.goalController.text.trim().replaceAll(
+      ',',
+      '.',
+    );
+    final goal = double.tryParse(goalText);
     if (goal == null || goal <= 0) {
       return 'Please enter a valid daily calorie goal.';
     }
 
-    final proteinText = _formManager.proteinController.text.trim();
-    if (proteinText.isNotEmpty && int.tryParse(proteinText) == null) {
-      return 'Please enter a valid protein goal.';
-    }
-
-    final carbsText = _formManager.carbsController.text.trim();
-    if (carbsText.isNotEmpty && int.tryParse(carbsText) == null) {
-      return 'Please enter a valid carbs goal.';
-    }
-
-    final fatsText = _formManager.fatsController.text.trim();
-    if (fatsText.isNotEmpty && int.tryParse(fatsText) == null) {
-      return 'Please enter a valid fats goal.';
+    for (final metric in NutritionMetricType.values) {
+      if (metric == NutritionMetricType.calories) continue;
+      final controller = _formManager.metricGoalControllers[metric]!;
+      final raw = controller.text.trim();
+      if (raw.isEmpty) continue;
+      final normalized = raw.replaceAll(',', '.');
+      final parsed = double.tryParse(normalized);
+      if (parsed == null) {
+        return 'Please enter a valid ${metric.label.toLowerCase()} goal.';
+      }
+      controller.text = normalized;
     }
 
     _formManager.ageController.text = age.toString();
     _formManager.weightController.text = weightText;
     _formManager.heightController.text = heightText;
-    _formManager.goalController.text = goal.toString();
+    _formManager.goalController.text = goal == goal.roundToDouble()
+        ? goal.round().toString()
+        : goalText;
 
     return null;
   }
@@ -257,9 +262,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         );
       case 1:
         return const _OnboardingStep(
-          title: 'Set Your Macros',
+          title: 'Set Your Goals',
           description:
-              'Add your body stats and goals. We will auto-calculate calories.',
+              'Add your body stats and nutrition goals. Calories are auto-calculated.',
         );
       case 2:
       default:
@@ -291,10 +296,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           ageController: _formManager.ageController,
           weightController: _formManager.weightController,
           heightController: _formManager.heightController,
-          goalController: _formManager.goalController,
-          proteinController: _formManager.proteinController,
-          carbsController: _formManager.carbsController,
-          fatsController: _formManager.fatsController,
+          metricGoalControllers: _formManager.metricGoalControllers,
+          homeMetricTypes: state.homeMetricTypes,
           gender: state.gender,
           activityLevel: state.activityLevel,
           onGenderChanged: (value) {
@@ -307,6 +310,11 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             if (value != null) {
               controller.updateActivityLevel(value);
               _formManager.recalculateCalories();
+            }
+          },
+          onHomeMetricChanged: (slot, metric) {
+            if (metric != null) {
+              controller.updateHomeMetric(slot, metric);
             }
           },
         );

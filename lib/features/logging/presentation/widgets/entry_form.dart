@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
+import 'package:nutrinutri/core/domain/nutrition_metric.dart';
 import 'package:nutrinutri/core/utils/icon_utils.dart';
 import 'package:nutrinutri/core/utils/met_values.dart';
 import 'package:nutrinutri/features/logging/presentation/widgets/icon_picker_button.dart';
@@ -9,10 +10,7 @@ class EntryForm extends StatelessWidget {
   const EntryForm({
     super.key,
     required this.nameController,
-    required this.caloriesController,
-    required this.proteinController,
-    required this.carbsController,
-    required this.fatsController,
+    required this.metricControllers,
     this.durationController,
     required this.selectedIcon,
     required this.selectedDate,
@@ -23,10 +21,7 @@ class EntryForm extends StatelessWidget {
     this.isExercise = false,
   });
   final TextEditingController nameController;
-  final TextEditingController caloriesController;
-  final TextEditingController proteinController;
-  final TextEditingController carbsController;
-  final TextEditingController fatsController;
+  final Map<NutritionMetricType, TextEditingController> metricControllers;
   final TextEditingController? durationController;
   final String selectedIcon;
   final DateTime selectedDate;
@@ -36,8 +31,16 @@ class EntryForm extends StatelessWidget {
   final VoidCallback onPickTime;
   final bool isExercise;
 
+  TextEditingController _controllerFor(NutritionMetricType metric) {
+    return metricControllers[metric]!;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final nonCalorieMetrics = NutritionMetricType.values
+        .where((metric) => metric != NutritionMetricType.calories)
+        .toList(growable: false);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -119,8 +122,10 @@ class EntryForm extends StatelessWidget {
           children: [
             Expanded(
               child: TextField(
-                controller: caloriesController,
-                keyboardType: TextInputType.number,
+                controller: _controllerFor(NutritionMetricType.calories),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 decoration: InputDecoration(
                   labelText: isExercise ? 'Calories Burned' : 'Calories',
                   border: const OutlineInputBorder(),
@@ -144,47 +149,26 @@ class EntryForm extends StatelessWidget {
         ),
         if (!isExercise) ...[
           const Gap(16),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: proteinController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: const InputDecoration(
-                    labelText: 'Protein (g)',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ),
-              const Gap(16),
-              Expanded(
-                child: TextField(
-                  controller: carbsController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: const InputDecoration(
-                    labelText: 'Carbs (g)',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ),
-              const Gap(16),
-              Expanded(
-                child: TextField(
-                  controller: fatsController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: const InputDecoration(
-                    labelText: 'Fats (g)',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ),
-            ],
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: nonCalorieMetrics
+                .map((metric) {
+                  return SizedBox(
+                    width: 190,
+                    child: TextField(
+                      controller: _controllerFor(metric),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: '${metric.label} (${metric.unit})',
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                  );
+                })
+                .toList(growable: false),
           ),
         ],
       ],

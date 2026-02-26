@@ -259,10 +259,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         ageController: _formManager.ageController,
         weightController: _formManager.weightController,
         heightController: _formManager.heightController,
-        goalController: _formManager.goalController,
-        proteinController: _formManager.proteinController,
-        carbsController: _formManager.carbsController,
-        fatsController: _formManager.fatsController,
+        metricGoalControllers: _formManager.metricGoalControllers,
+        homeMetricTypes: state.homeMetricTypes,
         gender: state.gender,
         activityLevel: state.activityLevel,
         onGenderChanged: (v) {
@@ -275,6 +273,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           if (v != null) {
             controller.updateActivityLevel(v);
             _formManager.recalculateCalories();
+          }
+        },
+        onHomeMetricChanged: (slot, metric) {
+          if (metric != null) {
+            controller.updateHomeMetric(slot, metric);
           }
         },
       ),

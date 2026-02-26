@@ -36,13 +36,23 @@ Select the most appropriate icon from this list:
 Structure:
 {
   "food_name": "Short descriptive name",
-  "calories": 100,
-  "protein": 10,
-  "carbs": 20,
-  "fats": 5,
+  "metrics": {
+    "calories": 100.0,
+    "carbs": 20.0,
+    "sugars": 6.0,
+    "fats": 5.0,
+    "saturated_fats": 1.5,
+    "protein": 10.0,
+    "fiber": 3.0,
+    "sodium": 300.0,
+    "caffeine": 0.0,
+    "water": 50.0
+  },
   "icon": "fastfood",
   "confidence": 0.9
 }
+Use one decimal place for every metric value.
+Always include all metric keys shown above.
 If unclear, provide best guess with lower confidence.
 ''',
       },
@@ -95,7 +105,9 @@ Select the most appropriate icon from this list:
 Structure:
 {
   "food_name": "Short descriptive exercise name",
-  "calories": 150,
+  "metrics": {
+    "calories": 150.0
+  },
   "durationMinutes": 30,
   "icon": "directions_run",
   "confidence": 0.9

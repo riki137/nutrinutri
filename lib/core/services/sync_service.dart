@@ -153,19 +153,41 @@ class SyncService {
     final remote = DriveSnapshot.decode(remoteRaw);
 
     final localDiaryRows = await _db.select(_db.diaryEntries).get();
-    final localDiary = <String, DiaryEntryRow>{
-      for (final row in localDiaryRows) row.id: row,
+    final localMetricRows = await _db.select(_db.entryMetrics).get();
+
+    final localMetricsByEntryId = <String, List<EntryMetricRow>>{};
+    for (final metric in localMetricRows) {
+      localMetricsByEntryId
+          .putIfAbsent(metric.entryId, () => <EntryMetricRow>[])
+          .add(metric);
+    }
+
+    final localDiary = <String, SyncedDiaryEntry>{
+      for (final row in localDiaryRows)
+        row.id: SyncedDiaryEntry(
+          row: row,
+          metrics: localMetricsByEntryId[row.id] ?? const <EntryMetricRow>[],
+        ),
     };
 
-    final localProfile = await (_db.select(
+    final localProfileRow = await (_db.select(
       _db.userProfiles,
     )..where((t) => t.id.equals(1))).getSingleOrNull();
+
+    final localGoals = await (_db.select(
+      _db.metricGoals,
+    )..where((t) => t.profileId.equals(1))).get();
+
+    final localProfile = localProfileRow == null
+        ? null
+        : SyncedUserProfile(row: localProfileRow, goals: localGoals);
+
     final localSettings = await (_db.select(
       _db.appSettings,
     )..where((t) => t.id.equals(1))).getSingleOrNull();
 
-    final nextDiary = Map<String, DiaryEntryRow>.from(remote.diaryEntries);
-    UserProfileRow? nextProfile = remote.userProfile;
+    final nextDiary = Map<String, SyncedDiaryEntry>.from(remote.diaryEntries);
+    SyncedUserProfile? nextProfile = remote.userProfile;
     AppSettingsRow? nextSettings = remote.appSettings;
 
     var remoteNeedsUpdate = false;
@@ -193,10 +215,10 @@ class SyncService {
         if (local == null || remoteEntry == null) continue;
 
         final cmp = _compareRevision(
-          local.updatedAt,
-          local.updatedBy,
-          remoteEntry.updatedAt,
-          remoteEntry.updatedBy,
+          local.row.updatedAt,
+          local.row.updatedBy,
+          remoteEntry.row.updatedAt,
+          remoteEntry.row.updatedBy,
         );
         if (cmp > 0) {
           nextDiary[id] = local;
@@ -211,7 +233,7 @@ class SyncService {
         local: localProfile,
         remote: remote.userProfile,
         revisionOf: (p) =>
-            _Revision(updatedAt: p.updatedAt, updatedBy: p.updatedBy),
+            _Revision(updatedAt: p.row.updatedAt, updatedBy: p.row.updatedBy),
         applyRemote: (remote) => _applyRemoteUserProfile(remote),
       );
       localUpdates += profileResult.localUpdates;
@@ -258,16 +280,52 @@ class SyncService {
     return localUpdates;
   }
 
-  Future<void> _applyRemoteDiaryEntry(DiaryEntryRow remote) async {
-    await _db
-        .into(_db.diaryEntries)
-        .insert(remote.toCompanion(false), mode: InsertMode.insertOrReplace);
+  Future<void> _applyRemoteDiaryEntry(SyncedDiaryEntry remote) async {
+    await _db.transaction(() async {
+      await _db
+          .into(_db.diaryEntries)
+          .insert(
+            remote.row.toCompanion(false),
+            mode: InsertMode.insertOrReplace,
+          );
+
+      await (_db.delete(
+        _db.entryMetrics,
+      )..where((t) => t.entryId.equals(remote.row.id))).go();
+
+      if (remote.metrics.isEmpty) return;
+      await _db.batch((batch) {
+        batch.insertAll(
+          _db.entryMetrics,
+          remote.metrics.map((row) => row.toCompanion(false)).toList(),
+          mode: InsertMode.insertOrReplace,
+        );
+      });
+    });
   }
 
-  Future<void> _applyRemoteUserProfile(UserProfileRow remote) async {
-    await _db
-        .into(_db.userProfiles)
-        .insert(remote.toCompanion(false), mode: InsertMode.insertOrReplace);
+  Future<void> _applyRemoteUserProfile(SyncedUserProfile remote) async {
+    await _db.transaction(() async {
+      await _db
+          .into(_db.userProfiles)
+          .insert(
+            remote.row.toCompanion(false),
+            mode: InsertMode.insertOrReplace,
+          );
+
+      await (_db.delete(
+        _db.metricGoals,
+      )..where((t) => t.profileId.equals(remote.row.id))).go();
+
+      if (remote.goals.isEmpty) return;
+      await _db.batch((batch) {
+        batch.insertAll(
+          _db.metricGoals,
+          remote.goals.map((row) => row.toCompanion(false)).toList(),
+          mode: InsertMode.insertOrReplace,
+        );
+      });
+    });
   }
 
   Future<void> _applyRemoteAppSettings(AppSettingsRow remote) async {

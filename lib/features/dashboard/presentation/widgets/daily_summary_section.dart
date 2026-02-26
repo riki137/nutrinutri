@@ -2,9 +2,9 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
+import 'package:nutrinutri/core/domain/nutrition_metric.dart';
 import 'package:nutrinutri/core/domain/user_profile.dart';
 import 'package:nutrinutri/core/providers.dart';
-import 'package:nutrinutri/core/utils/calorie_calculator.dart';
 import 'package:nutrinutri/features/dashboard/presentation/dashboard_providers.dart';
 
 class DailySummarySection extends ConsumerWidget {
@@ -40,38 +40,23 @@ class DailySummarySection extends ConsumerWidget {
     UserProfile profile,
     Map<String, double> summary,
   ) {
-    final goal = profile.goalCalories;
-    final consumed = summary['calories']!;
+    final consumed = summary[NutritionMetricType.calories.key] ?? 0;
     final burned = summary['caloriesBurned'] ?? 0.0;
+    final goal = profile.goalFor(NutritionMetricType.calories);
     final effectiveGoal = goal + burned;
     final remaining = effectiveGoal - consumed;
     final isOver = remaining < 0;
 
-    // Visual progress clamps at 1.0 (full circle)
-    final progress = (consumed / effectiveGoal).clamp(0.0, 1.0);
+    final progress = effectiveGoal <= 0
+        ? 0.0
+        : (consumed / effectiveGoal).clamp(0.0, 1.0);
 
     final statusColor = isOver ? Colors.redAccent : Colors.green;
     final secondaryColor = isOver
         ? Colors.red.withValues(alpha: 0.1)
         : Colors.grey[200]!;
 
-    // Macro Goals Calculation (Default split: 30% P, 40% C, 30% F)
-    // Macro Goals Calculation
-    final defaults = CalorieCalculator.calculateMacroGoals(goal);
-
-    final double proteinGoal =
-        (profile.goalProtein != null && profile.goalProtein! > 0)
-        ? profile.goalProtein!.toDouble()
-        : defaults.protein;
-
-    final double carbsGoal =
-        (profile.goalCarbs != null && profile.goalCarbs! > 0)
-        ? profile.goalCarbs!.toDouble()
-        : defaults.carbs;
-
-    final double fatsGoal = (profile.goalFat != null && profile.goalFat! > 0)
-        ? profile.goalFat!.toDouble()
-        : defaults.fats;
+    final homeMetrics = profile.dashboardMetricTypes;
 
     return Card(
       elevation: 4,
@@ -91,7 +76,7 @@ class DailySummarySection extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      'Goal: ${effectiveGoal.round()}',
+                      'Goal: ${effectiveGoal.round()} kcal',
                       style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                     ),
                     if (burned > 0)
@@ -164,63 +149,74 @@ class DailySummarySection extends ConsumerWidget {
               ),
             ),
             const Gap(24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _MacroRing(
-                  label: 'Protein',
-                  value: summary['protein']!,
-                  goal: proteinGoal,
-                  color: Colors.blue,
-                ),
-                _MacroRing(
-                  label: 'Carbs',
-                  value: summary['carbs']!,
-                  goal: carbsGoal,
-                  color: Colors.orange,
-                ),
-                _MacroRing(
-                  label: 'Fats',
-                  value: summary['fats']!,
-                  goal: fatsGoal,
-                  color: Colors.red,
-                ),
-              ],
+            Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              alignment: WrapAlignment.center,
+              children: homeMetrics
+                  .map((metric) {
+                    return _MetricRing(
+                      label: metric.label,
+                      value: summary[metric.key] ?? 0,
+                      goal: profile.goalFor(metric),
+                      unit: metric.unit,
+                      color: _metricColor(metric),
+                    );
+                  })
+                  .toList(growable: false),
             ),
           ],
         ),
       ),
     );
   }
+
+  Color _metricColor(NutritionMetricType metric) {
+    switch (metric) {
+      case NutritionMetricType.protein:
+        return Colors.blue;
+      case NutritionMetricType.carbs:
+        return Colors.orange;
+      case NutritionMetricType.sugars:
+        return Colors.amber;
+      case NutritionMetricType.fats:
+        return Colors.red;
+      case NutritionMetricType.saturatedFats:
+        return Colors.redAccent;
+      case NutritionMetricType.fiber:
+        return Colors.green;
+      case NutritionMetricType.sodium:
+        return Colors.teal;
+      case NutritionMetricType.caffeine:
+        return Colors.brown;
+      case NutritionMetricType.water:
+        return Colors.lightBlue;
+      case NutritionMetricType.calories:
+        return Colors.deepOrange;
+    }
+  }
 }
 
-class _MacroRing extends StatelessWidget {
-  const _MacroRing({
+class _MetricRing extends StatelessWidget {
+  const _MetricRing({
     required this.label,
     required this.value,
     required this.goal,
+    required this.unit,
     required this.color,
   });
   final String label;
   final double value;
   final double goal;
+  final String unit;
   final Color color;
 
   @override
   Widget build(BuildContext context) {
-    // Determine if we are over the goal
-    final isOver = value > goal;
-
-    // Visual progress for the chart (clamped to 100%)
-    final chartProgress = (value / goal).clamp(0.0, 1.0);
-
-    // Actual percentage for display (can exceed 100%)
-    final percentage = ((value / goal) * 100).round();
-
-    // Status color (dim/mix with grey if not full, full color if full)
-    // Actually, we want to keep the distinct macro colors.
-    // If over, we might want to alert, but the user asked primarily for the number fix.
-    // Let's keep the base color but maybe bold the text if over.
+    final hasGoal = goal > 0;
+    final isOver = hasGoal && value > goal;
+    final chartProgress = hasGoal ? (value / goal).clamp(0.0, 1.0) : 0.0;
+    final percentage = hasGoal ? ((value / goal) * 100).round() : 0;
 
     return Column(
       children: [
@@ -252,7 +248,7 @@ class _MacroRing extends StatelessWidget {
               ),
               Center(
                 child: Text(
-                  '$percentage%',
+                  hasGoal ? '$percentage%' : '--',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
@@ -271,7 +267,9 @@ class _MacroRing extends StatelessWidget {
           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
         ),
         Text(
-          '${value.round()}/${goal.round()}g',
+          hasGoal
+              ? '${_formatValue(value)}/${_formatValue(goal)} $unit'
+              : 'No goal',
           style: TextStyle(
             fontSize: 10,
             color: isOver ? color : Colors.grey[600],
@@ -280,5 +278,12 @@ class _MacroRing extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  String _formatValue(double value) {
+    if (value == value.roundToDouble()) {
+      return value.round().toString();
+    }
+    return value.toStringAsFixed(1);
   }
 }
