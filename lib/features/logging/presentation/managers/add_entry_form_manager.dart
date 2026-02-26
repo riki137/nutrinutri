@@ -19,11 +19,13 @@ class AddEntryFormManager {
       metric: TextEditingController(),
   };
   final durationController = TextEditingController();
+  int _calorieRequestToken = 0;
 
   TextEditingController get caloriesController =>
       metricControllers[NutritionMetricType.calories]!;
 
   void _updateCalories() async {
+    final token = ++_calorieRequestToken;
     final state = ref.read(addEntryControllerProvider);
     if (state.type != EntryType.exercise) return;
 
@@ -34,7 +36,7 @@ class AddEntryFormManager {
       final calories = await ref
           .read(addEntryControllerProvider.notifier)
           .calculateExerciseCalories(name, duration);
-      if (calories != null) {
+      if (token == _calorieRequestToken && calories != null) {
         caloriesController.text = calories.toString();
       }
     }
@@ -52,13 +54,7 @@ class AddEntryFormManager {
   void initializeWithEntry(DiaryEntry entry) {
     ref.read(addEntryControllerProvider.notifier).initializeWithEntry(entry);
     nameController.text = entry.name;
-    for (final metric in NutritionMetricType.values) {
-      final value = entry.metricValue(metric);
-      metricControllers[metric]!.text =
-          (metric == NutritionMetricType.calories || value > 0)
-          ? _formatMetric(value)
-          : '';
-    }
+    _applyMetrics(entry);
     durationController.text = entry.durationMinutes?.toString() ?? '';
     onStateChanged();
   }
@@ -70,15 +66,20 @@ class AddEntryFormManager {
 
   void autofill(DiaryEntry entry) {
     nameController.text = entry.name;
+    _applyMetrics(entry);
+    durationController.text = entry.durationMinutes?.toString() ?? '';
+    if (entry.icon != null) {
+      ref.read(addEntryControllerProvider.notifier).updateIcon(entry.icon!);
+    }
+  }
+
+  void _applyMetrics(DiaryEntry entry) {
     for (final metric in NutritionMetricType.values) {
       final value = entry.metricValue(metric);
       metricControllers[metric]!.text =
           (metric == NutritionMetricType.calories || value > 0)
           ? _formatMetric(value)
           : '';
-    }
-    if (entry.icon != null) {
-      ref.read(addEntryControllerProvider.notifier).updateIcon(entry.icon!);
     }
   }
 

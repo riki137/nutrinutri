@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:gap/gap.dart';
 import 'package:nutrinutri/core/domain/nutrition_metric.dart';
 
+final FilteringTextInputFormatter _decimalMetricFormatter =
+    FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'));
+
 class ProfileSection extends StatelessWidget {
   const ProfileSection({
     super.key,
@@ -33,19 +36,49 @@ class ProfileSection extends StatelessWidget {
     return metricGoalControllers[metric]!;
   }
 
+  Widget _buildMetricGoalField(NutritionMetricType metric) {
+    return SizedBox(
+      width: 190,
+      child: _NumericField(
+        controller: _controllerFor(metric),
+        labelText: '${metric.label} (${metric.unit})',
+        allowDecimal: true,
+      ),
+    );
+  }
+
+  Widget _buildHomeMetricField({
+    required int index,
+    required NutritionMetricType selected,
+    required List<NutritionMetricType> options,
+  }) {
+    return SizedBox(
+      width: 220,
+      child: DropdownButtonFormField<NutritionMetricType>(
+        key: ValueKey('home_metric_${index}_${selected.key}'),
+        initialValue: selected,
+        decoration: InputDecoration(
+          labelText: 'Slot ${index + 1}',
+          border: const OutlineInputBorder(),
+        ),
+        items: options
+            .map(
+              (metric) =>
+                  DropdownMenuItem(value: metric, child: Text(metric.label)),
+            )
+            .toList(growable: false),
+        onChanged: (metric) => onHomeMetricChanged(index, metric),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final nonCalorieMetrics = NutritionMetricType.values
         .where((metric) => metric != NutritionMetricType.calories)
         .toList(growable: false);
 
-    final selectedHomeMetrics = List<NutritionMetricType>.from(homeMetricTypes);
-    while (selectedHomeMetrics.length < 6) {
-      selectedHomeMetrics.add(
-        defaultHomeMetricTypes[selectedHomeMetrics.length %
-            defaultHomeMetricTypes.length],
-      );
-    }
+    final selectedHomeMetrics = normalizeHomeMetricTypes(homeMetricTypes);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -58,37 +91,18 @@ class ProfileSection extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: TextField(
-                controller: ageController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Age',
-                  border: OutlineInputBorder(),
-                ),
-              ),
+              child: _NumericField(controller: ageController, labelText: 'Age'),
             ),
             const Gap(16),
             Expanded(
-              child: InputDecorator(
-                decoration: const InputDecoration(
-                  labelText: 'Biological Sex',
-                  border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: gender,
-                    isExpanded: true,
-                    items: const [
-                      DropdownMenuItem(value: 'male', child: Text('Male')),
-                      DropdownMenuItem(value: 'female', child: Text('Female')),
-                    ],
-                    onChanged: onGenderChanged,
-                  ),
-                ),
+              child: _DropdownField<String>(
+                labelText: 'Biological Sex',
+                value: gender,
+                items: const [
+                  DropdownMenuItem(value: 'male', child: Text('Male')),
+                  DropdownMenuItem(value: 'female', child: Text('Female')),
+                ],
+                onChanged: onGenderChanged,
               ),
             ),
           ],
@@ -97,79 +111,56 @@ class ProfileSection extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: TextField(
+              child: _NumericField(
                 controller: weightController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Weight (kg)',
-                  border: OutlineInputBorder(),
-                  suffixText: 'kg',
-                ),
+                labelText: 'Weight (kg)',
+                suffixText: 'kg',
               ),
             ),
             const Gap(16),
             Expanded(
-              child: TextField(
+              child: _NumericField(
                 controller: heightController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Height (cm)',
-                  border: OutlineInputBorder(),
-                  suffixText: 'cm',
-                ),
+                labelText: 'Height (cm)',
+                suffixText: 'cm',
               ),
             ),
           ],
         ),
         const Gap(16),
-        InputDecorator(
-          decoration: const InputDecoration(
-            labelText: 'Activity Level',
-            border: OutlineInputBorder(),
-            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: activityLevel,
-              isExpanded: true,
-              items: const [
-                DropdownMenuItem(
-                  value: 'sedentary',
-                  child: Text('Sedentary (Office job)'),
-                ),
-                DropdownMenuItem(
-                  value: 'light',
-                  child: Text('Light (Exercise 1-3x/week)'),
-                ),
-                DropdownMenuItem(
-                  value: 'moderate',
-                  child: Text('Moderate (Exercise 3-5x/week)'),
-                ),
-                DropdownMenuItem(
-                  value: 'very_active',
-                  child: Text('Active (Exercise 6-7x/week)'),
-                ),
-                DropdownMenuItem(
-                  value: 'super_active',
-                  child: Text('Super Active (Physical job)'),
-                ),
-              ],
-              onChanged: onActivityLevelChanged,
+        _DropdownField<String>(
+          labelText: 'Activity Level',
+          value: activityLevel,
+          items: const [
+            DropdownMenuItem(
+              value: 'sedentary',
+              child: Text('Sedentary (Office job)'),
             ),
-          ),
+            DropdownMenuItem(
+              value: 'light',
+              child: Text('Light (Exercise 1-3x/week)'),
+            ),
+            DropdownMenuItem(
+              value: 'moderate',
+              child: Text('Moderate (Exercise 3-5x/week)'),
+            ),
+            DropdownMenuItem(
+              value: 'very_active',
+              child: Text('Active (Exercise 6-7x/week)'),
+            ),
+            DropdownMenuItem(
+              value: 'super_active',
+              child: Text('Super Active (Physical job)'),
+            ),
+          ],
+          onChanged: onActivityLevelChanged,
         ),
         const Gap(16),
-        TextField(
+        _NumericField(
           controller: _controllerFor(NutritionMetricType.calories),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-          ],
-          decoration: const InputDecoration(
-            labelText: 'Daily Calorie Goal',
-            border: OutlineInputBorder(),
-            helperText: 'Auto-calculated (Maintenance - 250)',
-          ),
+          labelText: 'Daily Calorie Goal',
+          helperText: 'Auto-calculated (Maintenance - 250)',
+          allowDecimal: true,
         ),
         const Gap(16),
         const Text(
@@ -181,24 +172,7 @@ class ProfileSection extends StatelessWidget {
           spacing: 12,
           runSpacing: 12,
           children: nonCalorieMetrics
-              .map((metric) {
-                return SizedBox(
-                  width: 190,
-                  child: TextField(
-                    controller: _controllerFor(metric),
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-                    ],
-                    decoration: InputDecoration(
-                      labelText: '${metric.label} (${metric.unit})',
-                      border: const OutlineInputBorder(),
-                    ),
-                  ),
-                );
-              })
+              .map(_buildMetricGoalField)
               .toList(growable: false),
         ),
         const Gap(24),
@@ -212,32 +186,82 @@ class ProfileSection extends StatelessWidget {
         Wrap(
           spacing: 12,
           runSpacing: 12,
-          children: List.generate(6, (index) {
-            return SizedBox(
-              width: 220,
-              child: DropdownButtonFormField<NutritionMetricType>(
-                key: ValueKey(
-                  'home_metric_${index}_${selectedHomeMetrics[index].key}',
-                ),
-                initialValue: selectedHomeMetrics[index],
-                decoration: InputDecoration(
-                  labelText: 'Slot ${index + 1}',
-                  border: const OutlineInputBorder(),
-                ),
-                items: nonCalorieMetrics
-                    .map(
-                      (metric) => DropdownMenuItem(
-                        value: metric,
-                        child: Text(metric.label),
-                      ),
-                    )
-                    .toList(growable: false),
-                onChanged: (metric) => onHomeMetricChanged(index, metric),
-              ),
-            );
-          }),
+          children: List.generate(
+            homeMetricSlotCount,
+            (index) => _buildHomeMetricField(
+              index: index,
+              selected: selectedHomeMetrics[index],
+              options: nonCalorieMetrics,
+            ),
+          ),
         ),
       ],
+    );
+  }
+}
+
+class _DropdownField<T> extends StatelessWidget {
+  const _DropdownField({
+    required this.labelText,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+  });
+
+  final String labelText;
+  final T value;
+  final List<DropdownMenuItem<T>> items;
+  final ValueChanged<T?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return InputDecorator(
+      decoration: InputDecoration(
+        labelText: labelText,
+        border: const OutlineInputBorder(),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<T>(
+          value: value,
+          isExpanded: true,
+          items: items,
+          onChanged: onChanged,
+        ),
+      ),
+    );
+  }
+}
+
+class _NumericField extends StatelessWidget {
+  const _NumericField({
+    required this.controller,
+    required this.labelText,
+    this.helperText,
+    this.suffixText,
+    this.allowDecimal = false,
+  });
+
+  final TextEditingController controller;
+  final String labelText;
+  final String? helperText;
+  final String? suffixText;
+  final bool allowDecimal;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      keyboardType: allowDecimal
+          ? const TextInputType.numberWithOptions(decimal: true)
+          : TextInputType.number,
+      inputFormatters: allowDecimal ? [_decimalMetricFormatter] : null,
+      decoration: InputDecoration(
+        labelText: labelText,
+        border: const OutlineInputBorder(),
+        helperText: helperText,
+        suffixText: suffixText,
+      ),
     );
   }
 }

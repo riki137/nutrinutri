@@ -22,6 +22,143 @@ class AIConfigurationSection extends StatelessWidget {
   final ValueChanged<String?> onModelChanged;
   final ValueChanged<String?> onFallbackModelChanged;
 
+  Future<void> _openApiKeysPage(BuildContext context) async {
+    final url = Uri.parse('https://openrouter.ai/settings/keys');
+    final launched = await launchUrl(url, mode: LaunchMode.externalApplication);
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Could not open browser. Visit openrouter.ai/settings/keys',
+          ),
+        ),
+      );
+    }
+  }
+
+  Widget _buildModelTile(BuildContext context, AIModelInfo model) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Text(
+                model.name,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  model.price,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colorScheme.onPrimaryContainer,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const Gap(4),
+          Text(
+            model.description,
+            style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<DropdownMenuItem<String>> _buildModelItems(
+    BuildContext context, {
+    required bool includeNone,
+  }) {
+    final items = <DropdownMenuItem<String>>[];
+
+    if (includeNone) {
+      items.add(
+        const DropdownMenuItem<String>(value: null, child: Text('None')),
+      );
+    }
+
+    items.addAll(
+      availableModels.map(
+        (model) => DropdownMenuItem<String>(
+          value: model.id,
+          child: _buildModelTile(context, model),
+        ),
+      ),
+    );
+    return items;
+  }
+
+  List<Widget> _buildSelectedItems({required bool includeNone}) {
+    final items = <Widget>[];
+
+    if (includeNone) {
+      items.add(
+        const Align(alignment: Alignment.centerLeft, child: Text('None')),
+      );
+    }
+
+    items.addAll(
+      availableModels.map(
+        (model) => Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            model.name,
+            style: const TextStyle(fontWeight: FontWeight.normal),
+          ),
+        ),
+      ),
+    );
+    return items;
+  }
+
+  Widget _buildModelDropdown({
+    required BuildContext context,
+    required String label,
+    required String? value,
+    required ValueChanged<String?> onChanged,
+    String? helperText,
+    String? hintText,
+    bool includeNone = false,
+  }) {
+    return InputDecorator(
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        helperText: helperText,
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: value,
+          isExpanded: true,
+          itemHeight: null,
+          hint: hintText != null ? Text(hintText) : null,
+          items: _buildModelItems(context, includeNone: includeNone),
+          selectedItemBuilder: (_) {
+            return _buildSelectedItems(includeNone: includeNone);
+          },
+          onChanged: onChanged,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -51,109 +188,18 @@ class AIConfigurationSection extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
-              onPressed: () async {
-                final url = Uri.parse('https://openrouter.ai/settings/keys');
-                final launched = await launchUrl(
-                  url,
-                  mode: LaunchMode.externalApplication,
-                );
-                if (!launched && context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Could not open browser. Visit openrouter.ai/settings/keys',
-                      ),
-                    ),
-                  );
-                }
-              },
+              onPressed: () => _openApiKeysPage(context),
               icon: const Icon(Icons.open_in_new),
               label: const Text('Get API Key'),
             ),
           ),
         ] else ...[
           const Gap(16),
-          InputDecorator(
-            decoration: const InputDecoration(
-              labelText: 'AI Model',
-              border: OutlineInputBorder(),
-              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: selectedModel,
-                isExpanded: true,
-                itemHeight: null,
-                items: availableModels.map((model) {
-                  return DropdownMenuItem(
-                    value: model.id,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                model.name,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              const Spacer(),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.primaryContainer,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  model.price,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onPrimaryContainer,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const Gap(4),
-                          Text(
-                            model.description,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }).toList(),
-                selectedItemBuilder: (context) {
-                  return availableModels.map((model) {
-                    return Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        model.name,
-                        style: const TextStyle(fontWeight: FontWeight.normal),
-                      ),
-                    );
-                  }).toList();
-                },
-                onChanged: onModelChanged,
-              ),
-            ),
+          _buildModelDropdown(
+            context: context,
+            label: 'AI Model',
+            value: selectedModel,
+            onChanged: onModelChanged,
           ),
           if (selectedModel == 'custom') ...[
             const Gap(8),
@@ -167,101 +213,14 @@ class AIConfigurationSection extends StatelessWidget {
             ),
           ],
           const Gap(16),
-          InputDecorator(
-            decoration: const InputDecoration(
-              labelText: 'Fallback Model (Optional)',
-              border: OutlineInputBorder(),
-              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              helperText: 'Used if the primary model fails',
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: fallbackModel,
-                isExpanded: true,
-                itemHeight: null,
-                hint: const Text('None'),
-                items: [
-                  const DropdownMenuItem<String>(
-                    value: null,
-                    child: Text('None'),
-                  ),
-                  ...availableModels.map((model) {
-                    return DropdownMenuItem(
-                      value: model.id,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  model.name,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                const Spacer(),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primaryContainer,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    model.price,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onPrimaryContainer,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const Gap(4),
-                            Text(
-                              model.description,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }),
-                ],
-                selectedItemBuilder: (context) {
-                  return [
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text('None'),
-                    ),
-                    ...availableModels.map((model) {
-                      return Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          model.name,
-                          style: const TextStyle(fontWeight: FontWeight.normal),
-                        ),
-                      );
-                    }),
-                  ];
-                },
-                onChanged: onFallbackModelChanged,
-              ),
-            ),
+          _buildModelDropdown(
+            context: context,
+            label: 'Fallback Model (Optional)',
+            helperText: 'Used if the primary model fails',
+            hintText: 'None',
+            value: fallbackModel,
+            includeNone: true,
+            onChanged: onFallbackModelChanged,
           ),
         ],
       ],

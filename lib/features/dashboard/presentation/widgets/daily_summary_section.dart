@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:nutrinutri/core/domain/nutrition_metric.dart';
 import 'package:nutrinutri/core/domain/user_profile.dart';
-import 'package:nutrinutri/core/providers.dart';
 import 'package:nutrinutri/features/dashboard/presentation/dashboard_providers.dart';
 
 class DailySummarySection extends ConsumerWidget {
@@ -13,25 +12,15 @@ class DailySummarySection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profileAsync = ref.watch(settingsServiceProvider).getUserProfile();
-    final summaryAsync = ref.watch(dailySummaryProvider(today));
+    final summaryDataAsync = ref.watch(dailySummaryDataProvider(today));
 
-    return FutureBuilder(
-      future: profileAsync,
-      builder: (context, profileSnapshot) {
-        if (!profileSnapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final profile = profileSnapshot.data;
-        if (profile == null) return const Text('Profile not found');
-
-        return summaryAsync.when(
-          data: (summary) => _buildContent(context, profile, summary),
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, stack) => Text('Error: $err'),
-        );
+    return summaryDataAsync.when(
+      data: (summaryData) {
+        if (summaryData == null) return const Text('Profile not found');
+        return _buildContent(context, summaryData.profile, summaryData.summary);
       },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, stack) => Text('Error: $err'),
     );
   }
 

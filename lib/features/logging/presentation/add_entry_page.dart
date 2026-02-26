@@ -183,11 +183,13 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
                   onBackToWizard: () => ref
                       .read(addEntryControllerProvider.notifier)
                       .toggleForm(false),
-                  onIconChanged: (v) => v != null
-                      ? ref
-                            .read(addEntryControllerProvider.notifier)
-                            .updateIcon(v)
-                      : null,
+                  onIconChanged: (v) {
+                    if (v != null) {
+                      ref
+                          .read(addEntryControllerProvider.notifier)
+                          .updateIcon(v);
+                    }
+                  },
                   onPickDate: _pickDate,
                   onPickTime: _pickTime,
                   onSave: _saveEntry,

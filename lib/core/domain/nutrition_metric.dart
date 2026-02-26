@@ -20,6 +20,52 @@ const defaultHomeMetricTypes = <NutritionMetricType>[
   NutritionMetricType.water,
 ];
 
+const homeMetricSlotCount = 6;
+
+List<NutritionMetricType> normalizeHomeMetricTypes(
+  Iterable<NutritionMetricType> values, {
+  int slotCount = homeMetricSlotCount,
+}) {
+  final normalized = <NutritionMetricType>[];
+  for (final value in values) {
+    if (value == NutritionMetricType.calories || normalized.contains(value)) {
+      continue;
+    }
+    normalized.add(value);
+  }
+
+  for (final fallback in defaultHomeMetricTypes) {
+    if (!normalized.contains(fallback)) {
+      normalized.add(fallback);
+    }
+  }
+
+  return normalized.take(slotCount).toList(growable: false);
+}
+
+List<NutritionMetricType> parseHomeMetricTypes(
+  String raw, {
+  int slotCount = homeMetricSlotCount,
+}) {
+  return normalizeHomeMetricTypes(
+    raw
+        .split(',')
+        .map((part) => NutritionMetricTypeX.fromKey(part.trim()))
+        .whereType<NutritionMetricType>(),
+    slotCount: slotCount,
+  );
+}
+
+String serializeHomeMetricTypes(
+  Iterable<NutritionMetricType> values, {
+  int slotCount = homeMetricSlotCount,
+}) {
+  return normalizeHomeMetricTypes(
+    values,
+    slotCount: slotCount,
+  ).map((metric) => metric.key).join(',');
+}
+
 extension NutritionMetricTypeX on NutritionMetricType {
   String get key {
     switch (this) {

@@ -119,6 +119,83 @@ final class DailySummaryFamily extends $Family
   String toString() => r'dailySummaryProvider';
 }
 
+@ProviderFor(dailySummaryData)
+final dailySummaryDataProvider = DailySummaryDataFamily._();
+
+final class DailySummaryDataProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<DailySummaryData?>,
+          DailySummaryData?,
+          FutureOr<DailySummaryData?>
+        >
+    with
+        $FutureModifier<DailySummaryData?>,
+        $FutureProvider<DailySummaryData?> {
+  DailySummaryDataProvider._({
+    required DailySummaryDataFamily super.from,
+    required DateTime super.argument,
+  }) : super(
+         retry: null,
+         name: r'dailySummaryDataProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$dailySummaryDataHash();
+
+  @override
+  String toString() {
+    return r'dailySummaryDataProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<DailySummaryData?> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<DailySummaryData?> create(Ref ref) {
+    final argument = this.argument as DateTime;
+    return dailySummaryData(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is DailySummaryDataProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$dailySummaryDataHash() => r'3d11d5c99f2beebade7000deab20c7a0fd86ee70';
+
+final class DailySummaryDataFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<DailySummaryData?>, DateTime> {
+  DailySummaryDataFamily._()
+    : super(
+        retry: null,
+        name: r'dailySummaryDataProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  DailySummaryDataProvider call(DateTime date) =>
+      DailySummaryDataProvider._(argument: date, from: this);
+
+  @override
+  String toString() => r'dailySummaryDataProvider';
+}
+
 @ProviderFor(dayEntries)
 final dayEntriesProvider = DayEntriesFamily._();
 

@@ -15,6 +15,27 @@ class EntriesList extends ConsumerWidget {
   final DateTime today;
   final VoidCallback onRefresh;
 
+  bool _isErrorStatus(FoodEntryStatus status) {
+    return status == FoodEntryStatus.failed ||
+        status == FoodEntryStatus.cancelled;
+  }
+
+  String _subtitleFor(DiaryEntry entry, String caloriesText) {
+    return switch (entry.status) {
+      FoodEntryStatus.processing => 'Analyzing with AI...',
+      FoodEntryStatus.failed => 'AI Analysis Failed. Tap to edit/retry.',
+      FoodEntryStatus.cancelled => 'Analysis Cancelled. Tap to edit/retry.',
+      FoodEntryStatus.synced =>
+        '${DateFormat('HH:mm').format(entry.timestamp)} • $caloriesText kcal',
+    };
+  }
+
+  void _refreshDay(WidgetRef ref) {
+    ref.invalidate(dayEntriesProvider(today));
+    ref.invalidate(dailySummaryProvider(today));
+    onRefresh();
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final entriesAsync = ref.watch(dayEntriesProvider(today));
@@ -42,24 +63,18 @@ class EntriesList extends ConsumerWidget {
                     entry.calories == entry.calories.roundToDouble()
                     ? entry.calories.round().toString()
                     : entry.calories.toStringAsFixed(1);
-
-                // Determine if we should show loading or error
                 final isProcessing = entry.status == FoodEntryStatus.processing;
-                final isFailed = entry.status == FoodEntryStatus.failed;
-                final isCancelled = entry.status == FoodEntryStatus.cancelled;
+                final isError = _isErrorStatus(entry.status);
 
                 return ListTile(
                   onTap: () async {
-                    if (isProcessing) return; // Ignore taps while processing
+                    if (isProcessing) return;
 
                     await context.push('/add-entry', extra: entry);
-                    // Invalidating the provider to refresh data
-                    ref.invalidate(dayEntriesProvider(today));
-                    ref.invalidate(dailySummaryProvider(today));
-                    onRefresh();
+                    _refreshDay(ref);
                   },
                   leading: CircleAvatar(
-                    backgroundColor: isFailed || isCancelled
+                    backgroundColor: isError
                         ? Theme.of(context).colorScheme.errorContainer
                         : null,
                     child: isProcessing
@@ -67,7 +82,7 @@ class EntriesList extends ConsumerWidget {
                             padding: EdgeInsets.all(8.0),
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : (isFailed || isCancelled)
+                        : isError
                         ? Icon(
                             Icons.priority_high,
                             color: Theme.of(context).colorScheme.error,
@@ -78,19 +93,13 @@ class EntriesList extends ConsumerWidget {
                     entry.name,
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: isFailed || isCancelled
+                      color: isError
                           ? Theme.of(context).colorScheme.error
                           : null,
                     ),
                   ),
                   subtitle: Text(
-                    isProcessing
-                        ? 'Analyzing with AI...'
-                        : isFailed
-                        ? 'AI Analysis Failed. Tap to edit/retry.'
-                        : isCancelled
-                        ? 'Analysis Cancelled. Tap to edit/retry.'
-                        : '${DateFormat('HH:mm').format(entry.timestamp)} • $caloriesText kcal',
+                    _subtitleFor(entry, caloriesText),
                     style: TextStyle(color: Colors.grey[600]),
                   ),
                   trailing: Row(
@@ -105,7 +114,7 @@ class EntriesList extends ConsumerWidget {
                                 .cancelAnalysis(entry);
                           },
                         ),
-                      if (isFailed || isCancelled)
+                      if (isError)
                         IconButton(
                           icon: const Icon(Icons.refresh),
                           onPressed: () {
@@ -131,9 +140,7 @@ class EntriesList extends ConsumerWidget {
                               await ref
                                   .read(diaryServiceProvider)
                                   .deleteEntry(entry);
-                              ref.invalidate(dayEntriesProvider(today));
-                              ref.invalidate(dailySummaryProvider(today));
-                              onRefresh();
+                              _refreshDay(ref);
                             }
                           },
                         ),

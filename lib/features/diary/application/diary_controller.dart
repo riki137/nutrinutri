@@ -4,7 +4,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:nutrinutri/core/domain/nutrition_metric.dart';
+import 'package:nutrinutri/core/domain/user_profile.dart';
 import 'package:nutrinutri/core/providers.dart';
+import 'package:nutrinutri/core/services/ai_service.dart';
 import 'package:nutrinutri/core/utils/icon_utils.dart';
 import 'package:nutrinutri/features/dashboard/presentation/dashboard_providers.dart';
 import 'package:nutrinutri/features/diary/domain/diary_entry.dart';
@@ -28,8 +30,6 @@ class DiaryController extends _$DiaryController {
     EntryType type = EntryType.food,
   }) async {
     final diaryService = ref.read(diaryServiceProvider);
-
-    // Create optimistic entry
     final timestamp = DateTime(
       date.year,
       date.month,
@@ -47,19 +47,11 @@ class DiaryController extends _$DiaryController {
       imagePath: imagePath,
       description: description,
       status: FoodEntryStatus.processing,
-      icon: type == EntryType.exercise ? 'directions_run' : 'restaurant',
+      icon: _defaultIconForType(type),
     );
 
-    // 1. Add to local store immediately
     await diaryService.addEntry(entry);
-
-    // 2. Refresh lists (so it shows up in UI)
-    // We normalize the date to match DashboardPage's key
-    final normalizedDate = DateTime(date.year, date.month, date.day);
-    ref.invalidate(dayEntriesProvider(normalizedDate));
-    ref.invalidate(dailySummaryProvider(normalizedDate));
-
-    // 3. Start background processing (fire and forget from UI perspective)
+    _invalidateDay(timestamp);
     unawaited(_analyzeAndFill(entry));
   }
 
@@ -67,152 +59,69 @@ class DiaryController extends _$DiaryController {
     final aiService = await ref.read(aiServiceProvider.future);
     aiService.cancelRequest(entry.id);
 
-    // Update status to cancelled
-    final diaryService = ref.read(diaryServiceProvider);
-    final cancelledEntry = DiaryEntry(
-      id: entry.id,
+    final cancelledEntry = _entryWithStatus(
+      entry,
       name: 'Analysis Cancelled',
-      metrics: const {NutritionMetricType.calories: 0},
-      timestamp: entry.timestamp,
-      imagePath: entry.imagePath,
-      description: entry.description,
       status: FoodEntryStatus.cancelled,
       icon: 'warning',
     );
-    await diaryService.updateEntry(cancelledEntry);
-
-    // Invalidate UI
-    final normalizedDate = DateTime(
-      entry.timestamp.year,
-      entry.timestamp.month,
-      entry.timestamp.day,
-    );
-    ref.invalidate(dayEntriesProvider(normalizedDate));
-    ref.invalidate(dailySummaryProvider(normalizedDate));
+    await ref.read(diaryServiceProvider).updateEntry(cancelledEntry);
+    _invalidateDay(entry.timestamp);
   }
 
   Future<void> retryAnalysis(DiaryEntry entry) async {
-    // Reset to processing state
-    final diaryService = ref.read(diaryServiceProvider);
-    final processingEntry = DiaryEntry(
-      id: entry.id,
+    final processingEntry = _entryWithStatus(
+      entry,
       name: 'Analyzing...',
-      metrics: const {NutritionMetricType.calories: 0},
-      timestamp: entry.timestamp,
-      imagePath: entry.imagePath,
-      description: entry.description,
       status: FoodEntryStatus.processing,
-      icon: 'restaurant',
+      icon: _defaultIconForType(entry.type),
     );
-    await diaryService.updateEntry(processingEntry);
-
-    // Invalidate UI
-    final normalizedDate = DateTime(
-      entry.timestamp.year,
-      entry.timestamp.month,
-      entry.timestamp.day,
-    );
-    ref.invalidate(dayEntriesProvider(normalizedDate));
-    ref.invalidate(dailySummaryProvider(normalizedDate));
-
-    // Start analysis
+    await ref.read(diaryServiceProvider).updateEntry(processingEntry);
+    _invalidateDay(entry.timestamp);
     unawaited(_analyzeAndFill(processingEntry));
   }
 
   Future<void> _analyzeAndFill(DiaryEntry entry) async {
     final aiService = await ref.read(aiServiceProvider.future);
     final settingsService = ref.read(settingsServiceProvider);
-
-    // Get fallback model info
     final fallbackModel = await settingsService.getFallbackModel();
-    // Get user profile for exercise calculation
     final userProfile = await settingsService.getUserProfile();
-
-    String? base64Image;
-
-    if (entry.imagePath != null) {
-      final file = File(entry.imagePath!);
-      if (await file.exists()) {
-        final bytes = await file.readAsBytes();
-        base64Image = base64Encode(bytes);
-      }
-    }
+    final base64Image = await _imageToBase64(entry.imagePath);
 
     try {
-      final Map<String, dynamic> result;
-      if (entry.type == EntryType.exercise) {
-        result = await aiService.analyzeExercise(
-          textDescription: entry.description ?? 'Unspecified exercise',
-          userProfile: userProfile,
-          requestId: entry.id,
-        );
-      } else {
-        result = await aiService.analyzeFood(
-          textDescription: entry.description,
-          base64Image: base64Image,
-          requestId: entry.id,
-        );
-      }
-
+      final result = await _analyzeEntry(
+        aiService: aiService,
+        entry: entry,
+        userProfile: userProfile,
+        base64Image: base64Image,
+      );
       await _updateSuccess(entry, result);
-    } catch (e) {
-      if (e.toString().contains('Request cancelled')) {
-        return; // UI already updated in cancelAnalysis
+      return;
+    } catch (error) {
+      if (_isCancellationError(error)) {
+        return;
       }
+    }
 
-      // Try fallback if available
-      if (fallbackModel != null && fallbackModel.isNotEmpty) {
-        try {
-          final Map<String, dynamic> result;
-          if (entry.type == EntryType.exercise) {
-            result = await aiService.analyzeExercise(
-              textDescription: entry.description ?? 'Unspecified exercise',
-              userProfile: userProfile,
-              requestId: entry.id,
-              modelOverride: fallbackModel,
-            );
-          } else {
-            result = await aiService.analyzeFood(
-              textDescription: entry.description,
-              base64Image: base64Image,
-              requestId: entry.id,
-              modelOverride: fallbackModel,
-            );
-          }
-          await _updateSuccess(entry, result);
+    if (fallbackModel != null && fallbackModel.isNotEmpty) {
+      try {
+        final result = await _analyzeEntry(
+          aiService: aiService,
+          entry: entry,
+          userProfile: userProfile,
+          base64Image: base64Image,
+          modelOverride: fallbackModel,
+        );
+        await _updateSuccess(entry, result);
+        return;
+      } catch (error) {
+        if (_isCancellationError(error)) {
           return;
-        } catch (e2) {
-          if (e2.toString().contains('Request cancelled')) {
-            return;
-          }
         }
       }
-
-      // Update as failed
-      final diaryService = ref.read(diaryServiceProvider);
-      final failedEntry = DiaryEntry(
-        id: entry.id,
-        name: 'Analysis Failed',
-        type: entry.type,
-        metrics: const {NutritionMetricType.calories: 0},
-        timestamp: entry.timestamp,
-        imagePath: entry.imagePath,
-        description: entry.description,
-        status: FoodEntryStatus.failed,
-        icon: 'warning',
-        durationMinutes: entry.durationMinutes,
-      );
-      await diaryService.updateEntry(failedEntry);
-
-      // Invalidate to show failed state
-      final normalizedDate = DateTime(
-        entry.timestamp.year,
-        entry.timestamp.month,
-        entry.timestamp.day,
-      );
-      ref.invalidate(dayEntriesProvider(normalizedDate));
-      ref.invalidate(dailySummaryProvider(normalizedDate));
     }
+
+    await _updateFailed(entry);
   }
 
   Future<void> _updateSuccess(
@@ -230,35 +139,102 @@ class DiaryController extends _$DiaryController {
 
     final updatedEntry = DiaryEntry(
       id: entry.id,
-      name:
-          result['food_name'] ??
-          (entry.type == EntryType.exercise
-              ? 'Unknown Exercise'
-              : 'Unknown Food'),
+      name: result['food_name'] ?? _fallbackName(entry.type),
       type: entry.type,
       metrics: metrics,
       timestamp: entry.timestamp,
       imagePath: entry.imagePath,
       description: entry.description,
       status: FoodEntryStatus.synced,
-      icon: _validateIcon(result['icon']),
+      icon: _validateIcon(result['icon'], entry.type),
       durationMinutes: entry.type == EntryType.exercise
           ? _toInt(result['durationMinutes'])
           : null,
     );
 
-    // Update in store
-    final diaryService = ref.read(diaryServiceProvider);
-    await diaryService.updateEntry(updatedEntry);
+    await ref.read(diaryServiceProvider).updateEntry(updatedEntry);
+    _invalidateDay(entry.timestamp);
+  }
 
-    // Invalidate to show updated data
-    final normalizedDate = DateTime(
-      entry.timestamp.year,
-      entry.timestamp.month,
-      entry.timestamp.day,
+  Future<Map<String, dynamic>> _analyzeEntry({
+    required AIService aiService,
+    required DiaryEntry entry,
+    required UserProfile? userProfile,
+    required String? base64Image,
+    String? modelOverride,
+  }) {
+    if (entry.type == EntryType.exercise) {
+      return aiService.analyzeExercise(
+        textDescription: entry.description ?? 'Unspecified exercise',
+        userProfile: userProfile,
+        requestId: entry.id,
+        modelOverride: modelOverride,
+      );
+    }
+
+    return aiService.analyzeFood(
+      textDescription: entry.description,
+      base64Image: base64Image,
+      requestId: entry.id,
+      modelOverride: modelOverride,
     );
-    ref.invalidate(dayEntriesProvider(normalizedDate));
-    ref.invalidate(dailySummaryProvider(normalizedDate));
+  }
+
+  Future<void> _updateFailed(DiaryEntry entry) async {
+    final failedEntry = _entryWithStatus(
+      entry,
+      name: 'Analysis Failed',
+      status: FoodEntryStatus.failed,
+      icon: 'warning',
+    );
+    await ref.read(diaryServiceProvider).updateEntry(failedEntry);
+    _invalidateDay(entry.timestamp);
+  }
+
+  DiaryEntry _entryWithStatus(
+    DiaryEntry entry, {
+    required String name,
+    required FoodEntryStatus status,
+    required String icon,
+  }) {
+    return DiaryEntry(
+      id: entry.id,
+      name: name,
+      type: entry.type,
+      metrics: const {NutritionMetricType.calories: 0},
+      timestamp: entry.timestamp,
+      imagePath: entry.imagePath,
+      description: entry.description,
+      status: status,
+      icon: icon,
+      durationMinutes: entry.durationMinutes,
+    );
+  }
+
+  Future<String?> _imageToBase64(String? imagePath) async {
+    if (imagePath == null || imagePath.isEmpty) return null;
+    final file = File(imagePath);
+    if (!await file.exists()) return null;
+    final bytes = await file.readAsBytes();
+    return base64Encode(bytes);
+  }
+
+  bool _isCancellationError(Object error) {
+    return error.toString().contains('Request cancelled');
+  }
+
+  void _invalidateDay(DateTime dateTime) {
+    final date = DateTime(dateTime.year, dateTime.month, dateTime.day);
+    ref.invalidate(dayEntriesProvider(date));
+    ref.invalidate(dailySummaryProvider(date));
+  }
+
+  String _fallbackName(EntryType type) {
+    return type == EntryType.exercise ? 'Unknown Exercise' : 'Unknown Food';
+  }
+
+  String _defaultIconForType(EntryType type) {
+    return type == EntryType.exercise ? 'directions_run' : 'restaurant';
   }
 
   int _toInt(dynamic val) {
@@ -315,10 +291,10 @@ class DiaryController extends _$DiaryController {
     return _toDouble(value);
   }
 
-  String _validateIcon(dynamic icon) {
+  String _validateIcon(dynamic icon, EntryType type) {
     if (icon is String && IconUtils.availableIcons.contains(icon)) {
       return icon;
     }
-    return 'restaurant';
+    return _defaultIconForType(type);
   }
 }

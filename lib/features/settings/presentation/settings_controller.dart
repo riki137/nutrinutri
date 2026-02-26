@@ -13,7 +13,6 @@ class SettingsState {
   SettingsState({
     this.isLoading = false,
     this.isSyncing = false,
-    this.initialHash,
     this.selectedModel = 'google/gemini-3-flash-preview',
     this.fallbackModel,
     this.gender = 'male',
@@ -23,7 +22,6 @@ class SettingsState {
 
   final bool isLoading;
   final bool isSyncing;
-  final String? initialHash;
   final String selectedModel;
   final String gender;
   final String activityLevel;
@@ -34,7 +32,6 @@ class SettingsState {
   SettingsState copyWith({
     bool? isLoading,
     bool? isSyncing,
-    String? initialHash,
     String? selectedModel,
     String? fallbackModel,
     String? gender,
@@ -44,7 +41,6 @@ class SettingsState {
     return SettingsState(
       isLoading: isLoading ?? this.isLoading,
       isSyncing: isSyncing ?? this.isSyncing,
-      initialHash: initialHash ?? this.initialHash,
       selectedModel: selectedModel ?? this.selectedModel,
       fallbackModel: fallbackModel ?? this.fallbackModel,
       gender: gender ?? this.gender,
@@ -116,16 +112,11 @@ class SettingsController extends _$SettingsController {
   }
 
   void updateHomeMetric(int slot, NutritionMetricType metricType) {
-    final next = List<NutritionMetricType>.from(state.homeMetricTypes);
-    while (next.length < 6) {
-      next.add(
-        defaultHomeMetricTypes[next.length % defaultHomeMetricTypes.length],
-      );
-    }
+    final next = normalizeHomeMetricTypes(state.homeMetricTypes).toList();
 
     if (slot < 0 || slot >= next.length) return;
     next[slot] = metricType;
-    state = state.copyWith(homeMetricTypes: _normalizeHomeMetricTypes(next));
+    state = state.copyWith(homeMetricTypes: normalizeHomeMetricTypes(next));
   }
 
   Future<void> save({
@@ -178,35 +169,16 @@ class SettingsController extends _$SettingsController {
           activityLevel: state.activityLevel,
           calorieGoal: parsedCalorieGoal,
           metricGoals: metricGoals,
-          homeMetricTypes: homeMetricTypes,
+          homeMetricTypes: normalizeHomeMetricTypes(homeMetricTypes),
         );
       }
 
       ref.invalidate(apiKeyProvider);
       ref.invalidate(aiServiceProvider);
+      ref.invalidate(userProfileProvider);
     } finally {
       state = state.copyWith(isLoading: false);
     }
-  }
-
-  List<NutritionMetricType> _normalizeHomeMetricTypes(
-    List<NutritionMetricType> values,
-  ) {
-    final normalized = <NutritionMetricType>[];
-    for (final value in values) {
-      if (value == NutritionMetricType.calories || normalized.contains(value)) {
-        continue;
-      }
-      normalized.add(value);
-    }
-
-    for (final fallback in defaultHomeMetricTypes) {
-      if (!normalized.contains(fallback)) {
-        normalized.add(fallback);
-      }
-    }
-
-    return normalized.take(6).toList(growable: false);
   }
 
   double? _parseGoal(String raw) {

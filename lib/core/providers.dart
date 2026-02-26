@@ -1,4 +1,5 @@
 import 'package:nutrinutri/core/db/app_database.dart';
+import 'package:nutrinutri/core/domain/user_profile.dart';
 import 'package:nutrinutri/core/services/ai_service.dart';
 import 'package:nutrinutri/core/services/device_id_service.dart';
 import 'package:nutrinutri/core/services/google_user_info.dart';
@@ -32,6 +33,11 @@ SettingsService settingsService(Ref ref) {
 @Riverpod(keepAlive: true)
 Future<String?> apiKey(Ref ref) async {
   return ref.watch(settingsServiceProvider).getApiKey();
+}
+
+@Riverpod(keepAlive: true)
+Future<UserProfile?> userProfile(Ref ref) async {
+  return ref.watch(settingsServiceProvider).getUserProfile();
 }
 
 @Riverpod(keepAlive: true)

@@ -11,7 +11,6 @@ class SettingsService {
 
   static const _settingsId = 1;
   static const _profileId = 1;
-  static const _homeMetricSlots = 6;
 
   Future<({String deviceId, int now})> _audit() async {
     final deviceId = await _deviceId.getOrCreate();
@@ -77,7 +76,7 @@ class SettingsService {
               heightCm: height,
               gender: gender,
               activityLevel: activityLevel,
-              homeMetricTypes: Value(_encodeHomeMetricTypes(homeMetricTypes)),
+              homeMetricTypes: Value(serializeHomeMetricTypes(homeMetricTypes)),
               isConfigured: const Value(true),
               updatedAt: Value(audit.now),
               updatedBy: Value(audit.deviceId),
@@ -140,7 +139,7 @@ class SettingsService {
       gender: row.gender,
       activityLevel: row.activityLevel,
       metricGoals: Map.unmodifiable(goals),
-      homeMetricTypes: _decodeHomeMetricTypes(row.homeMetricTypes),
+      homeMetricTypes: parseHomeMetricTypes(row.homeMetricTypes),
       isConfigured: row.isConfigured,
     );
   }
@@ -186,48 +185,6 @@ class SettingsService {
           ),
           mode: InsertMode.insertOrReplace,
         );
-  }
-
-  List<NutritionMetricType> _decodeHomeMetricTypes(String raw) {
-    final parsed = <NutritionMetricType>[];
-    for (final part in raw.split(',')) {
-      final metric = NutritionMetricTypeX.fromKey(part.trim());
-      if (metric == null || metric == NutritionMetricType.calories) {
-        continue;
-      }
-      if (!parsed.contains(metric)) {
-        parsed.add(metric);
-      }
-    }
-
-    for (final metric in defaultHomeMetricTypes) {
-      if (!parsed.contains(metric)) {
-        parsed.add(metric);
-      }
-    }
-
-    return parsed.take(_homeMetricSlots).toList(growable: false);
-  }
-
-  String _encodeHomeMetricTypes(List<NutritionMetricType> values) {
-    final normalized = <NutritionMetricType>[];
-    for (final value in values) {
-      if (value == NutritionMetricType.calories || normalized.contains(value)) {
-        continue;
-      }
-      normalized.add(value);
-    }
-
-    for (final fallback in defaultHomeMetricTypes) {
-      if (!normalized.contains(fallback)) {
-        normalized.add(fallback);
-      }
-    }
-
-    return normalized
-        .take(_homeMetricSlots)
-        .map((metric) => metric.key)
-        .join(',');
   }
 
   double _roundMetricValue(double value) {

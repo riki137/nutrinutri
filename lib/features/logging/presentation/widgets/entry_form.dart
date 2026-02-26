@@ -35,6 +35,47 @@ class EntryForm extends StatelessWidget {
     return metricControllers[metric]!;
   }
 
+  Widget _buildDateTimeButton({
+    required VoidCallback onPressed,
+    required IconData icon,
+    required String label,
+  }) {
+    return Expanded(
+      child: OutlinedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon),
+        label: Text(label),
+      ),
+    );
+  }
+
+  Widget _buildNumericField({
+    required TextEditingController controller,
+    required String labelText,
+    bool allowDecimal = true,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: allowDecimal
+          ? const TextInputType.numberWithOptions(decimal: true)
+          : TextInputType.number,
+      decoration: InputDecoration(
+        labelText: labelText,
+        border: const OutlineInputBorder(),
+      ),
+    );
+  }
+
+  Widget _buildMetricField(NutritionMetricType metric) {
+    return SizedBox(
+      width: 190,
+      child: _buildNumericField(
+        controller: _controllerFor(metric),
+        labelText: '${metric.label} (${metric.unit})',
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final nonCalorieMetrics = NutritionMetricType.values
@@ -55,7 +96,7 @@ class EntryForm extends StatelessWidget {
             children: [
               IconPickerButton(
                 selectedIcon: selectedIcon,
-                onIconChanged: (val) => onIconChanged(val),
+                onIconChanged: onIconChanged,
                 availableIcons: isExercise
                     ? IconUtils.availableExerciseIcons
                     : IconUtils.availableFoodIcons,
@@ -83,14 +124,7 @@ class EntryForm extends StatelessWidget {
                 label: Text(name),
                 onPressed: () {
                   nameController.text = name;
-                  // Map exercise names to icons
-                  final icon = IconUtils.exerciseNameMap[name];
-                  if (icon != null) {
-                    onIconChanged(icon);
-                  } else {
-                    // Default fallback
-                    onIconChanged('sports');
-                  }
+                  onIconChanged(IconUtils.exerciseNameMap[name] ?? 'sports');
                 },
               );
             }).toList(),
@@ -100,20 +134,16 @@ class EntryForm extends StatelessWidget {
 
         Row(
           children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: onPickDate,
-                icon: const Icon(Icons.calendar_today),
-                label: Text(DateFormat('yyyy-MM-dd').format(selectedDate)),
-              ),
+            _buildDateTimeButton(
+              onPressed: onPickDate,
+              icon: Icons.calendar_today,
+              label: DateFormat('yyyy-MM-dd').format(selectedDate),
             ),
             const Gap(16),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: onPickTime,
-                icon: const Icon(Icons.access_time),
-                label: Text(selectedTime.format(context)),
-              ),
+            _buildDateTimeButton(
+              onPressed: onPickTime,
+              icon: Icons.access_time,
+              label: selectedTime.format(context),
             ),
           ],
         ),
@@ -121,27 +151,18 @@ class EntryForm extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: TextField(
+              child: _buildNumericField(
                 controller: _controllerFor(NutritionMetricType.calories),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                decoration: InputDecoration(
-                  labelText: isExercise ? 'Calories Burned' : 'Calories',
-                  border: const OutlineInputBorder(),
-                ),
+                labelText: isExercise ? 'Calories Burned' : 'Calories',
               ),
             ),
             if (isExercise && durationController != null) ...[
               const Gap(16),
               Expanded(
-                child: TextField(
-                  controller: durationController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Duration (min)',
-                    border: OutlineInputBorder(),
-                  ),
+                child: _buildNumericField(
+                  controller: durationController!,
+                  labelText: 'Duration (min)',
+                  allowDecimal: false,
                 ),
               ),
             ],
@@ -153,21 +174,7 @@ class EntryForm extends StatelessWidget {
             spacing: 12,
             runSpacing: 12,
             children: nonCalorieMetrics
-                .map((metric) {
-                  return SizedBox(
-                    width: 190,
-                    child: TextField(
-                      controller: _controllerFor(metric),
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      decoration: InputDecoration(
-                        labelText: '${metric.label} (${metric.unit})',
-                        border: const OutlineInputBorder(),
-                      ),
-                    ),
-                  );
-                })
+                .map(_buildMetricField)
                 .toList(growable: false),
           ),
         ],

@@ -6,8 +6,10 @@ import 'package:nutrinutri/features/settings/presentation/settings_controller.da
 
 class SettingsFormManager {
   SettingsFormManager({required this.ref, required this.onStateChanged}) {
-    _apiKeyControllerListener();
-    _setupCalorieListeners();
+    apiKeyController.addListener(onStateChanged);
+    ageController.addListener(_calculateRecommendedCalories);
+    weightController.addListener(_calculateRecommendedCalories);
+    heightController.addListener(_calculateRecommendedCalories);
   }
   final WidgetRef ref;
   final VoidCallback onStateChanged;
@@ -29,26 +31,7 @@ class SettingsFormManager {
   Map<NutritionMetricType, TextEditingController> get metricGoalControllers =>
       _metricGoalControllers;
 
-  TextEditingController get proteinController =>
-      _metricGoalControllers[NutritionMetricType.protein]!;
-
-  TextEditingController get carbsController =>
-      _metricGoalControllers[NutritionMetricType.carbs]!;
-
-  TextEditingController get fatsController =>
-      _metricGoalControllers[NutritionMetricType.fats]!;
-
   String _initialHash = '';
-
-  void _apiKeyControllerListener() {
-    apiKeyController.addListener(onStateChanged);
-  }
-
-  void _setupCalorieListeners() {
-    ageController.addListener(_calculateRecommendedCalories);
-    weightController.addListener(_calculateRecommendedCalories);
-    heightController.addListener(_calculateRecommendedCalories);
-  }
 
   void dispose() {
     apiKeyController.dispose();
