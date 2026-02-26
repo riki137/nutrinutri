@@ -59,6 +59,9 @@ flutter_launcher_icons:
     generate: true
     image_path: "assets/images/nutrinutri.png"
     icon_size: 48
+  linux:
+    generate: true
+    image_path: "assets/images/nutrinutri.png"
   macos:
     generate: true
     image_path: "assets/images/nutrinutri.png"
