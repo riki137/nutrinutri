@@ -8,6 +8,8 @@ import 'package:nutrinutri/features/dashboard/presentation/dashboard_providers.d
 import 'package:nutrinutri/features/dashboard/presentation/widgets/daily_summary_section.dart';
 import 'package:nutrinutri/features/dashboard/presentation/widgets/date_switcher.dart';
 import 'package:nutrinutri/features/dashboard/presentation/widgets/entries_list.dart';
+import 'package:nutrinutri/features/dashboard/presentation/widgets/water_log_dialog.dart';
+import 'package:nutrinutri/features/diary/application/diary_controller.dart';
 
 class DashboardPage extends ConsumerStatefulWidget {
   const DashboardPage({super.key});
@@ -52,6 +54,23 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   }) async {
     await context.push(_addEntryRoute(isExercise: isExercise));
     _refresh();
+  }
+
+  Future<void> _logWater(BuildContext context) async {
+    final amount = await showDialog<int>(
+      context: context,
+      builder: (context) => const WaterLogDialog(),
+    );
+
+    if (amount != null && amount > 0) {
+      await ref.read(diaryControllerProvider.notifier).logWater(amount);
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Added ${amount}ml water')));
+      }
+      _refresh();
+    }
   }
 
   @override
@@ -116,6 +135,12 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   ),
                   const Spacer(),
                   // Quick actions
+                  FilledButton.tonalIcon(
+                    onPressed: () => _logWater(context),
+                    icon: const Icon(Icons.water_drop),
+                    label: const Text('Log Water'),
+                  ),
+                  const Gap(12),
                   FilledButton.tonalIcon(
                     onPressed: () => _openAddEntry(context, isExercise: true),
                     icon: const Icon(Icons.fitness_center),
@@ -203,6 +228,13 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
+        FloatingActionButton.small(
+          heroTag: 'log_water',
+          onPressed: () => _logWater(context),
+          tooltip: 'Log Water',
+          child: const Icon(Icons.water_drop),
+        ),
+        const Gap(16),
         FloatingActionButton.small(
           heroTag: 'log_exercise',
           onPressed: () => _openAddEntry(context, isExercise: true),

@@ -55,6 +55,27 @@ class DiaryController extends _$DiaryController {
     unawaited(_analyzeAndFill(entry));
   }
 
+  Future<void> logWater(int amountInMl) async {
+    final diaryService = ref.read(diaryServiceProvider);
+    final now = DateTime.now();
+
+    final entry = DiaryEntry(
+      id: const Uuid().v4(),
+      name: 'Water (${amountInMl}ml)',
+      type: EntryType.food,
+      metrics: {
+        NutritionMetricType.water: amountInMl.toDouble(),
+        NutritionMetricType.calories: 0,
+      },
+      timestamp: now,
+      status: FoodEntryStatus.synced,
+      icon: 'water_drop',
+    );
+
+    await diaryService.addEntry(entry);
+    _invalidateDay(now);
+  }
+
   Future<void> cancelAnalysis(DiaryEntry entry) async {
     final aiService = await ref.read(aiServiceProvider.future);
     aiService.cancelRequest(entry.id);

@@ -114,7 +114,7 @@ class EntriesList extends ConsumerWidget {
                                 .cancelAnalysis(entry);
                           },
                         ),
-                      if (isError)
+                      if (isError) ...[
                         IconButton(
                           icon: const Icon(Icons.refresh),
                           onPressed: () {
@@ -123,7 +123,6 @@ class EntriesList extends ConsumerWidget {
                                 .retryAnalysis(entry);
                           },
                         ),
-                      if (!isProcessing)
                         IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
                           onPressed: () async {
@@ -140,10 +139,11 @@ class EntriesList extends ConsumerWidget {
                               await ref
                                   .read(diaryServiceProvider)
                                   .deleteEntry(entry);
-                              _refreshDay(ref);
+                              if (context.mounted) _refreshDay(ref);
                             }
                           },
                         ),
+                      ],
                     ],
                   ),
                 );
