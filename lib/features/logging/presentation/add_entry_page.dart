@@ -169,6 +169,12 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
                   onEnterManually: () => ref
                       .read(addEntryControllerProvider.notifier)
                       .toggleForm(true),
+                  onEntrySelected: (entry) {
+                    _formManager.autofill(entry);
+                    ref
+                        .read(addEntryControllerProvider.notifier)
+                        .toggleForm(true);
+                  },
                 ),
               if (state.showForm)
                 ManualEntrySection(

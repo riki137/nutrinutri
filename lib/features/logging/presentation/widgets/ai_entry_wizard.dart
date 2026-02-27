@@ -18,6 +18,7 @@ class AIEntryWizard extends StatefulWidget {
     required this.onPromptSearch,
     required this.onAddOptimistic,
     required this.onEnterManually,
+    required this.onEntrySelected,
   });
   final bool isExercise;
   final TextEditingController descriptionController;
@@ -27,6 +28,7 @@ class AIEntryWizard extends StatefulWidget {
   final Future<List<DiaryEntry>> Function(String) onPromptSearch;
   final VoidCallback onAddOptimistic;
   final VoidCallback onEnterManually;
+  final Function(DiaryEntry) onEntrySelected;
 
   @override
   State<AIEntryWizard> createState() => _AIEntryWizardState();
@@ -79,11 +81,7 @@ class _AIEntryWizardState extends State<AIEntryWizard> {
               },
               displayStringForOption: _suggestionText,
               onSelected: (entry) {
-                final text = _suggestionText(entry);
-                widget.descriptionController.value = TextEditingValue(
-                  text: text,
-                  selection: TextSelection.collapsed(offset: text.length),
-                );
+                widget.onEntrySelected(entry);
               },
               fieldViewBuilder: (context, controller, focusNode, onSubmitted) {
                 return TextField(
