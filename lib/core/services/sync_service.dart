@@ -85,6 +85,10 @@ class SyncService {
     final pending = _restoreSessionFuture;
     if (pending != null) return pending;
 
+    if (_currentCredentials != null) {
+      return Future.value();
+    }
+
     final future = _restoreSessionInternal();
     _restoreSessionFuture = future;
     return future.whenComplete(() {
