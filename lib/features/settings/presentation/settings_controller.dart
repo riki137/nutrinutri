@@ -274,11 +274,3 @@ class SettingsController extends _$SettingsController {
     );
   }
 }
-
-@riverpod
-class UnsavedSettingsChanges extends _$UnsavedSettingsChanges {
-  @override
-  bool build() => false;
-
-  void set(bool value) => state = value;
-}

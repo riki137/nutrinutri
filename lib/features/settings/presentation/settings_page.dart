@@ -33,9 +33,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       onStateChanged: () {
         if (mounted) {
           setState(() {});
-          ref
-              .read(unsavedSettingsChangesProvider.notifier)
-              .set(_formManager.hasChanges());
         }
       },
     );
@@ -47,9 +44,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   @override
   void dispose() {
-    Future.microtask(
-      () => ref.read(unsavedSettingsChangesProvider.notifier).set(false),
-    );
     _formManager.dispose();
     super.dispose();
   }
