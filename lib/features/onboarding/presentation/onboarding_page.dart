@@ -297,7 +297,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           weightController: _formManager.weightController,
           heightController: _formManager.heightController,
           metricGoalControllers: _formManager.metricGoalControllers,
-          homeMetricTypes: state.homeMetricTypes,
           gender: state.gender,
           activityLevel: state.activityLevel,
           onGenderChanged: (value) {
@@ -310,11 +309,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             if (value != null) {
               controller.updateActivityLevel(value);
               _formManager.recalculateCalories();
-            }
-          },
-          onHomeMetricChanged: (slot, metric) {
-            if (metric != null) {
-              controller.updateHomeMetric(slot, metric);
             }
           },
         );

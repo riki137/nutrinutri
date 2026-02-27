@@ -13,24 +13,19 @@ class ProfileSection extends StatelessWidget {
     required this.weightController,
     required this.heightController,
     required this.metricGoalControllers,
-    required this.homeMetricTypes,
     required this.gender,
     required this.activityLevel,
     required this.onGenderChanged,
     required this.onActivityLevelChanged,
-    required this.onHomeMetricChanged,
   });
   final TextEditingController ageController;
   final TextEditingController weightController;
   final TextEditingController heightController;
   final Map<NutritionMetricType, TextEditingController> metricGoalControllers;
-  final List<NutritionMetricType> homeMetricTypes;
   final String gender;
   final String activityLevel;
   final ValueChanged<String?> onGenderChanged;
   final ValueChanged<String?> onActivityLevelChanged;
-  final void Function(int slot, NutritionMetricType? metric)
-  onHomeMetricChanged;
 
   TextEditingController _controllerFor(NutritionMetricType metric) {
     return metricGoalControllers[metric]!;
@@ -47,38 +42,11 @@ class ProfileSection extends StatelessWidget {
     );
   }
 
-  Widget _buildHomeMetricField({
-    required int index,
-    required NutritionMetricType selected,
-    required List<NutritionMetricType> options,
-  }) {
-    return SizedBox(
-      width: 220,
-      child: DropdownButtonFormField<NutritionMetricType>(
-        key: ValueKey('home_metric_${index}_${selected.key}'),
-        initialValue: selected,
-        decoration: InputDecoration(
-          labelText: 'Slot ${index + 1}',
-          border: const OutlineInputBorder(),
-        ),
-        items: options
-            .map(
-              (metric) =>
-                  DropdownMenuItem(value: metric, child: Text(metric.label)),
-            )
-            .toList(growable: false),
-        onChanged: (metric) => onHomeMetricChanged(index, metric),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final nonCalorieMetrics = NutritionMetricType.values
         .where((metric) => metric != NutritionMetricType.calories)
         .toList(growable: false);
-
-    final selectedHomeMetrics = normalizeHomeMetricTypes(homeMetricTypes);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -174,26 +142,6 @@ class ProfileSection extends StatelessWidget {
           children: nonCalorieMetrics
               .map(_buildMetricGoalField)
               .toList(growable: false),
-        ),
-        const Gap(24),
-        const Text(
-          'Homepage Metrics',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        const Gap(8),
-        const Text('Choose 6 metric rings shown on the dashboard.'),
-        const Gap(12),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: List.generate(
-            homeMetricSlotCount,
-            (index) => _buildHomeMetricField(
-              index: index,
-              selected: selectedHomeMetrics[index],
-              options: nonCalorieMetrics,
-            ),
-          ),
         ),
       ],
     );

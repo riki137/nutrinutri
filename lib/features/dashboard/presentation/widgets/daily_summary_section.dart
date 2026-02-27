@@ -45,8 +45,6 @@ class DailySummarySection extends ConsumerWidget {
         ? Colors.red.withValues(alpha: 0.1)
         : Colors.grey[200]!;
 
-    final homeMetrics = profile.dashboardMetricTypes;
-
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -82,57 +80,81 @@ class DailySummarySection extends ConsumerWidget {
               ],
             ),
             const Gap(16),
-            SizedBox(
-              height: 150,
-              width: 150,
-              child: Stack(
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  PieChart(
-                    PieChartData(
-                      sections: [
-                        PieChartSectionData(
-                          value: progress,
-                          color: statusColor,
-                          radius: 20,
-                          showTitle: false,
+                  _MetricRing(
+                    label: NutritionMetricType.caffeine.label,
+                    value: summary[NutritionMetricType.caffeine.key] ?? 0,
+                    goal: profile.goalFor(NutritionMetricType.caffeine),
+                    unit: NutritionMetricType.caffeine.unit,
+                    color: _metricColor(NutritionMetricType.caffeine),
+                  ),
+                  SizedBox(
+                    height: 150,
+                    width: 150,
+                    child: Stack(
+                      children: [
+                        PieChart(
+                          PieChartData(
+                            sections: [
+                              PieChartSectionData(
+                                value: progress,
+                                color: statusColor,
+                                radius: 20,
+                                showTitle: false,
+                              ),
+                              PieChartSectionData(
+                                value: 1 - progress,
+                                color: secondaryColor,
+                                radius: 20,
+                                showTitle: false,
+                              ),
+                            ],
+                            startDegreeOffset: 270,
+                          ),
                         ),
-                        PieChartSectionData(
-                          value: 1 - progress,
-                          color: secondaryColor,
-                          radius: 20,
-                          showTitle: false,
+                        Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                isOver
+                                    ? remaining.abs().round().toString()
+                                    : remaining.round().toString(),
+                                style: TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  color: isOver
+                                      ? Colors.redAccent
+                                      : Theme.of(
+                                          context,
+                                        ).textTheme.headlineMedium?.color,
+                                ),
+                              ),
+                              Text(
+                                isOver ? 'Over' : 'Left',
+                                style: TextStyle(
+                                  color: isOver
+                                      ? Colors.redAccent
+                                      : Colors.grey,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
-                      startDegreeOffset: 270,
                     ),
                   ),
-                  Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          isOver
-                              ? remaining.abs().round().toString()
-                              : remaining.round().toString(),
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: isOver
-                                ? Colors.redAccent
-                                : Theme.of(
-                                    context,
-                                  ).textTheme.headlineMedium?.color,
-                          ),
-                        ),
-                        Text(
-                          isOver ? 'Over' : 'Left',
-                          style: TextStyle(
-                            color: isOver ? Colors.redAccent : Colors.grey,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
+                  _MetricRing(
+                    label: NutritionMetricType.water.label,
+                    value: summary[NutritionMetricType.water.key] ?? 0,
+                    goal: profile.goalFor(NutritionMetricType.water),
+                    unit: NutritionMetricType.water.unit,
+                    color: _metricColor(NutritionMetricType.water),
                   ),
                 ],
               ),
@@ -142,17 +164,52 @@ class DailySummarySection extends ConsumerWidget {
               spacing: 16,
               runSpacing: 16,
               alignment: WrapAlignment.center,
-              children: homeMetrics
-                  .map((metric) {
-                    return _MetricRing(
-                      label: metric.label,
-                      value: summary[metric.key] ?? 0,
-                      goal: profile.goalFor(metric),
-                      unit: metric.unit,
-                      color: _metricColor(metric),
-                    );
-                  })
-                  .toList(growable: false),
+              children: [
+                _MetricRing(
+                  label: NutritionMetricType.protein.label,
+                  value: summary[NutritionMetricType.protein.key] ?? 0,
+                  goal: profile.goalFor(NutritionMetricType.protein),
+                  unit: NutritionMetricType.protein.unit,
+                  color: _metricColor(NutritionMetricType.protein),
+                ),
+                _NestedMetricRing(
+                  outerLabel: NutritionMetricType.carbs.label,
+                  outerValue: summary[NutritionMetricType.carbs.key] ?? 0,
+                  outerGoal: profile.goalFor(NutritionMetricType.carbs),
+                  outerUnit: NutritionMetricType.carbs.unit,
+                  outerColor: _metricColor(NutritionMetricType.carbs),
+                  innerLabel: NutritionMetricType.sugars.label,
+                  innerValue: summary[NutritionMetricType.sugars.key] ?? 0,
+                  innerGoal: profile.goalFor(NutritionMetricType.sugars),
+                  innerColor: _metricColor(NutritionMetricType.sugars),
+                ),
+                _NestedMetricRing(
+                  outerLabel: NutritionMetricType.fats.label,
+                  outerValue: summary[NutritionMetricType.fats.key] ?? 0,
+                  outerGoal: profile.goalFor(NutritionMetricType.fats),
+                  outerUnit: NutritionMetricType.fats.unit,
+                  outerColor: _metricColor(NutritionMetricType.fats),
+                  innerLabel: 'Sat. Fats',
+                  innerValue:
+                      summary[NutritionMetricType.saturatedFats.key] ?? 0,
+                  innerGoal: profile.goalFor(NutritionMetricType.saturatedFats),
+                  innerColor: _metricColor(NutritionMetricType.saturatedFats),
+                ),
+                _MetricRing(
+                  label: NutritionMetricType.fiber.label,
+                  value: summary[NutritionMetricType.fiber.key] ?? 0,
+                  goal: profile.goalFor(NutritionMetricType.fiber),
+                  unit: NutritionMetricType.fiber.unit,
+                  color: _metricColor(NutritionMetricType.fiber),
+                ),
+                _MetricRing(
+                  label: NutritionMetricType.sodium.label,
+                  value: summary[NutritionMetricType.sodium.key] ?? 0,
+                  goal: profile.goalFor(NutritionMetricType.sodium),
+                  unit: NutritionMetricType.sodium.unit,
+                  color: _metricColor(NutritionMetricType.sodium),
+                ),
+              ],
             ),
           ],
         ),
@@ -207,65 +264,224 @@ class _MetricRing extends StatelessWidget {
     final chartProgress = hasGoal ? (value / goal).clamp(0.0, 1.0) : 0.0;
     final percentage = hasGoal ? ((value / goal) * 100).round() : 0;
 
-    return Column(
-      children: [
-        SizedBox(
-          height: 60,
-          width: 60,
-          child: Stack(
-            children: [
-              PieChart(
-                PieChartData(
-                  sections: [
-                    PieChartSectionData(
-                      value: chartProgress,
-                      color: color,
-                      radius: 8,
-                      showTitle: false,
-                    ),
-                    PieChartSectionData(
-                      value: 1 - chartProgress,
-                      color: color.withValues(alpha: 0.2),
-                      radius: 8,
-                      showTitle: false,
-                    ),
-                  ],
-                  startDegreeOffset: 270,
-                  sectionsSpace: 0,
-                  centerSpaceRadius: 22,
-                ),
-              ),
-              Center(
-                child: Text(
-                  hasGoal ? '$percentage%' : '--',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                    color: isOver
-                        ? color
-                        : Theme.of(context).textTheme.bodyMedium?.color,
+    return SizedBox(
+      width: 100,
+      child: Column(
+        children: [
+          SizedBox(
+            height: 70,
+            width: 70,
+            child: Stack(
+              children: [
+                PieChart(
+                  PieChartData(
+                    sections: [
+                      PieChartSectionData(
+                        value: chartProgress,
+                        color: color,
+                        radius: 8,
+                        showTitle: false,
+                      ),
+                      PieChartSectionData(
+                        value: 1 - chartProgress,
+                        color: color.withValues(alpha: 0.2),
+                        radius: 8,
+                        showTitle: false,
+                      ),
+                    ],
+                    startDegreeOffset: 270,
+                    sectionsSpace: 0,
+                    centerSpaceRadius: 24,
                   ),
                 ),
-              ),
-            ],
+                Center(
+                  child: Text(
+                    hasGoal ? '$percentage%' : '--',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      color: isOver
+                          ? color
+                          : Theme.of(context).textTheme.bodyMedium?.color,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        const Gap(8),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-        ),
-        Text(
-          hasGoal
-              ? '${_formatValue(value)}/${_formatValue(goal)} $unit'
-              : 'No goal',
-          style: TextStyle(
-            fontSize: 10,
-            color: isOver ? color : Colors.grey[600],
-            fontWeight: isOver ? FontWeight.bold : FontWeight.normal,
+          const Gap(8),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
           ),
-        ),
-      ],
+          Text(
+            hasGoal
+                ? '${_formatValue(value)}/${_formatValue(goal)} $unit'
+                : 'No goal',
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 10,
+              color: isOver ? color : Colors.grey[600],
+              fontWeight: isOver ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatValue(double value) {
+    if (value == value.roundToDouble()) {
+      return value.round().toString();
+    }
+    return value.toStringAsFixed(1);
+  }
+}
+
+class _NestedMetricRing extends StatelessWidget {
+  const _NestedMetricRing({
+    required this.outerLabel,
+    required this.outerValue,
+    required this.outerGoal,
+    required this.outerUnit,
+    required this.outerColor,
+    required this.innerLabel,
+    required this.innerValue,
+    required this.innerGoal,
+    required this.innerColor,
+  });
+  final String outerLabel;
+  final double outerValue;
+  final double outerGoal;
+  final String outerUnit;
+  final Color outerColor;
+  final String innerLabel;
+  final double innerValue;
+  final double innerGoal;
+  final Color innerColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final outerHasGoal = outerGoal > 0;
+    final outerIsOver = outerHasGoal && outerValue > outerGoal;
+    final outerChartProgress = outerHasGoal
+        ? (outerValue / outerGoal).clamp(0.0, 1.0)
+        : 0.0;
+    final outerPercentage = outerHasGoal
+        ? ((outerValue / outerGoal) * 100).round()
+        : 0;
+
+    final innerHasGoal = innerGoal > 0;
+    final innerIsOver = innerHasGoal && innerValue > innerGoal;
+    final innerChartProgress = innerHasGoal
+        ? (innerValue / innerGoal).clamp(0.0, 1.0)
+        : 0.0;
+
+    return SizedBox(
+      width: 100,
+      child: Column(
+        children: [
+          SizedBox(
+            height: 70,
+            width: 70,
+            child: Stack(
+              children: [
+                PieChart(
+                  PieChartData(
+                    sections: [
+                      PieChartSectionData(
+                        value: outerChartProgress,
+                        color: outerColor,
+                        radius: 8,
+                        showTitle: false,
+                      ),
+                      PieChartSectionData(
+                        value: 1 - outerChartProgress,
+                        color: outerColor.withValues(alpha: 0.2),
+                        radius: 8,
+                        showTitle: false,
+                      ),
+                    ],
+                    startDegreeOffset: 270,
+                    sectionsSpace: 0,
+                    centerSpaceRadius: 24,
+                  ),
+                ),
+                PieChart(
+                  PieChartData(
+                    sections: [
+                      PieChartSectionData(
+                        value: innerChartProgress,
+                        color: innerColor,
+                        radius: 6,
+                        showTitle: false,
+                      ),
+                      PieChartSectionData(
+                        value: 1 - innerChartProgress,
+                        color: innerColor.withValues(alpha: 0.2),
+                        radius: 6,
+                        showTitle: false,
+                      ),
+                    ],
+                    startDegreeOffset: 270,
+                    sectionsSpace: 0,
+                    centerSpaceRadius: 16,
+                  ),
+                ),
+                Center(
+                  child: Text(
+                    outerHasGoal ? '$outerPercentage%' : '--',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      color: outerIsOver
+                          ? outerColor
+                          : Theme.of(context).textTheme.bodyMedium?.color,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Gap(8),
+          Text(
+            outerLabel,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+          ),
+          Text(
+            outerHasGoal
+                ? '${_formatValue(outerValue)}/${_formatValue(outerGoal)} $outerUnit'
+                : 'No goal',
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 10,
+              color: outerIsOver ? outerColor : Colors.grey[600],
+              fontWeight: outerIsOver ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+          Text(
+            '$innerLabel: ${_formatValue(innerValue)}${innerHasGoal ? '/${_formatValue(innerGoal)}' : ''} $outerUnit',
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 10,
+              color: innerIsOver ? innerColor : Colors.grey[600],
+              fontWeight: innerIsOver ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

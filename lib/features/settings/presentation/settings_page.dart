@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
-import 'package:nutrinutri/core/domain/nutrition_metric.dart';
 import 'package:nutrinutri/core/providers.dart';
 import 'package:nutrinutri/core/services/google_user_info.dart';
 import 'package:nutrinutri/core/utils/platform_helper.dart';
@@ -143,15 +142,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     _formManager.recalculateCalories();
   }
 
-  void _onHomeMetricChanged(
-    SettingsController controller,
-    int slot,
-    NutritionMetricType? metric,
-  ) {
-    if (metric == null) return;
-    controller.updateHomeMetric(slot, metric);
-  }
-
   Future<void> _openLicenses() async {
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       const platform = MethodChannel('sk.popelis.nutrinutri/licenses');
@@ -190,8 +180,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       onGenderChanged: (value) => _onGenderChanged(controller, value),
       onActivityLevelChanged: (value) =>
           _onActivityLevelChanged(controller, value),
-      onHomeMetricChanged: (slot, metric) =>
-          _onHomeMetricChanged(controller, slot, metric),
       onSync: () => unawaited(_handleSync()),
       onOpenLicenses: () => unawaited(_openLicenses()),
     );
@@ -287,7 +275,6 @@ class _SettingsSections extends StatelessWidget {
     required this.onFallbackModelChanged,
     required this.onGenderChanged,
     required this.onActivityLevelChanged,
-    required this.onHomeMetricChanged,
     required this.onSync,
     required this.onOpenLicenses,
   });
@@ -300,8 +287,6 @@ class _SettingsSections extends StatelessWidget {
   final ValueChanged<String?> onFallbackModelChanged;
   final ValueChanged<String?> onGenderChanged;
   final ValueChanged<String?> onActivityLevelChanged;
-  final void Function(int slot, NutritionMetricType? metric)
-  onHomeMetricChanged;
   final VoidCallback onSync;
   final VoidCallback onOpenLicenses;
 
@@ -334,12 +319,10 @@ class _SettingsSections extends StatelessWidget {
           weightController: formManager.weightController,
           heightController: formManager.heightController,
           metricGoalControllers: formManager.metricGoalControllers,
-          homeMetricTypes: state.homeMetricTypes,
           gender: state.gender,
           activityLevel: state.activityLevel,
           onGenderChanged: onGenderChanged,
           onActivityLevelChanged: onActivityLevelChanged,
-          onHomeMetricChanged: onHomeMetricChanged,
         ),
         const _SettingsSectionBreak(),
         _AboutSection(onOpenLicenses: onOpenLicenses),
