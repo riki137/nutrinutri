@@ -53,6 +53,7 @@ DiaryService diaryService(Ref ref) {
   return DiaryService(
     ref.watch(appDatabaseProvider),
     ref.watch(deviceIdServiceProvider),
+    ref.watch(syncServiceProvider),
   );
 }
 

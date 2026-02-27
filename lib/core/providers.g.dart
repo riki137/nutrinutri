@@ -283,7 +283,7 @@ final class DiaryServiceProvider
   }
 }
 
-String _$diaryServiceHash() => r'716d71e447b58f3ef2ff161b9ee3417af4dc9954';
+String _$diaryServiceHash() => r'daf4f2b4332b13f42396c5af03f3b15d77ea4035';
 
 @ProviderFor(syncService)
 final syncServiceProvider = SyncServiceProvider._();

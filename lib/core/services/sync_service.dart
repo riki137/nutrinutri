@@ -10,13 +10,22 @@ import 'package:nutrinutri/core/services/drive_snapshot.dart';
 import 'package:nutrinutri/core/services/google_drive_appdata.dart';
 import 'package:nutrinutri/core/services/google_user_info.dart';
 
+class SyncResult {
+  const SyncResult({required this.downloaded, required this.uploaded});
+  final int downloaded;
+  final int uploaded;
+}
+
 class SyncService {
   SyncService({required AppDatabase db}) : _db = db;
 
   static const _snapshotFileName = 'nutrinutri.json';
+  static const _pendingSyncKey = 'pending_sync';
 
   final AppDatabase _db;
   final _drive = const GoogleDriveAppData();
+
+  Timer? _syncTimer;
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     params: GoogleSignInParams(
@@ -132,7 +141,50 @@ class SyncService {
 
   Future<void> syncIfNeeded() async {
     if (currentUser == null) return;
-    await sync();
+
+    final pendingPref = await (_db.select(
+      _db.localPrefs,
+    )..where((t) => t.key.equals(_pendingSyncKey))).getSingleOrNull();
+    final isPending = pendingPref?.value == 'true';
+
+    if (isPending) {
+      try {
+        await sync();
+      } catch (e) {
+        debugPrint('Pending sync failed: $e');
+      }
+    } else {
+      // Also sync if it's been more than 1 hour since the last sync to fetch remote changes
+      final lastSyncPref = await (_db.select(
+        _db.localPrefs,
+      )..where((t) => t.key.equals('last_sync_time'))).getSingleOrNull();
+      final lastSync = int.tryParse(lastSyncPref?.value ?? '0') ?? 0;
+      final now = DateTime.now().millisecondsSinceEpoch;
+
+      if (now - lastSync > const Duration(hours: 1).inMilliseconds) {
+        try {
+          await sync();
+        } catch (e) {
+          debugPrint('Periodic sync failed: $e');
+        }
+      }
+    }
+  }
+
+  Future<void> requestSync() async {
+    if (currentUser == null) return;
+
+    await _db
+        .into(_db.localPrefs)
+        .insert(
+          const LocalPrefRow(key: _pendingSyncKey, value: 'true'),
+          mode: InsertMode.insertOrReplace,
+        );
+
+    _syncTimer?.cancel();
+    _syncTimer = Timer(const Duration(minutes: 1), () {
+      sync();
+    });
   }
 
   Widget? get webSignInButton {
@@ -142,12 +194,43 @@ class SyncService {
     return null;
   }
 
-  Future<int> sync() async {
-    if (_currentCredentials == null) return 0;
+  Future<SyncResult> sync() async {
+    if (_currentCredentials == null) {
+      return const SyncResult(downloaded: 0, uploaded: 0);
+    }
 
-    final client = await _googleSignIn.authenticatedClient;
-    if (client == null) return 0;
+    var client = await _googleSignIn.authenticatedClient;
+    if (client == null) {
+      return const SyncResult(downloaded: 0, uploaded: 0);
+    }
 
+    try {
+      return await _performSync(client);
+    } catch (e) {
+      final message = e.toString();
+      if (message.contains('invalid_token') ||
+          message.contains('Access was denied') ||
+          message.contains('401')) {
+        try {
+          await _restoreSessionInternal();
+          if (_currentCredentials != null) {
+            client = await _googleSignIn.authenticatedClient;
+            if (client != null) {
+              return await _performSync(client);
+            }
+          }
+        } catch (retryError) {
+          debugPrint('Token refresh failed: $retryError');
+        }
+
+        await signOut();
+        throw 'Your session has expired. Please sign in again.';
+      }
+      rethrow;
+    }
+  }
+
+  Future<SyncResult> _performSync(dynamic client) async {
     final driveApi = drive.DriveApi(client);
     final fileId = await _drive.findFileId(driveApi, name: _snapshotFileName);
 
@@ -196,6 +279,7 @@ class SyncService {
 
     var remoteNeedsUpdate = false;
     var localUpdates = 0;
+    var uploadedUpdates = 0;
 
     await _db.transaction(() async {
       final allIds = {...localDiary.keys, ...remote.diaryEntries.keys};
@@ -207,6 +291,7 @@ class SyncService {
         if (remoteEntry == null && local != null) {
           nextDiary[id] = local;
           remoteNeedsUpdate = true;
+          uploadedUpdates++;
           continue;
         }
 
@@ -227,6 +312,7 @@ class SyncService {
         if (cmp > 0) {
           nextDiary[id] = local;
           remoteNeedsUpdate = true;
+          uploadedUpdates++;
         } else if (cmp < 0) {
           await _applyRemoteDiaryEntry(remoteEntry);
           localUpdates++;
@@ -242,6 +328,7 @@ class SyncService {
       );
       localUpdates += profileResult.localUpdates;
       remoteNeedsUpdate = remoteNeedsUpdate || profileResult.remoteNeedsUpdate;
+      if (profileResult.remoteNeedsUpdate) uploadedUpdates++;
       nextProfile = profileResult.nextRemote;
 
       final settingsResult = await _mergeSingleton(
@@ -253,6 +340,7 @@ class SyncService {
       );
       localUpdates += settingsResult.localUpdates;
       remoteNeedsUpdate = remoteNeedsUpdate || settingsResult.remoteNeedsUpdate;
+      if (settingsResult.remoteNeedsUpdate) uploadedUpdates++;
       nextSettings = settingsResult.nextRemote;
     });
 
@@ -261,6 +349,9 @@ class SyncService {
             localProfile != null ||
             localSettings != null)) {
       remoteNeedsUpdate = true;
+      // In this case, we're uploading everything for the first time
+      // But uploadedUpdates is already correctly counting the non-null local items
+      // because remote was null.
     }
 
     if (remoteNeedsUpdate) {
@@ -281,7 +372,22 @@ class SyncService {
       _syncCompleteController.add(null);
     }
 
-    return localUpdates;
+    await (_db.delete(
+      _db.localPrefs,
+    )..where((t) => t.key.equals(_pendingSyncKey))).go();
+    await _db
+        .into(_db.localPrefs)
+        .insert(
+          LocalPrefRow(
+            key: 'last_sync_time',
+            value: DateTime.now().millisecondsSinceEpoch.toString(),
+          ),
+          mode: InsertMode.insertOrReplace,
+        );
+    _syncTimer?.cancel();
+    _syncTimer = null;
+
+    return SyncResult(downloaded: localUpdates, uploaded: uploadedUpdates);
   }
 
   Future<void> _applyRemoteDiaryEntry(SyncedDiaryEntry remote) async {

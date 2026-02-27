@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:nutrinutri/core/domain/nutrition_metric.dart';
 import 'package:nutrinutri/core/domain/user_profile.dart';
 import 'package:nutrinutri/core/providers.dart';
+import 'package:nutrinutri/core/services/sync_service.dart';
 import 'package:nutrinutri/core/utils/calorie_calculator.dart';
 import 'package:nutrinutri/features/settings/domain/ai_model_info.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -187,7 +188,7 @@ class SettingsController extends _$SettingsController {
     return double.tryParse(normalized);
   }
 
-  Future<int> sync() async {
+  Future<SyncResult> sync() async {
     state = state.copyWith(isSyncing: true);
     try {
       return await ref.read(syncServiceProvider).sync();

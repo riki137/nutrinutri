@@ -1,13 +1,17 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart';
 import 'package:nutrinutri/core/db/app_database.dart';
 import 'package:nutrinutri/core/domain/nutrition_metric.dart';
 import 'package:nutrinutri/core/services/device_id_service.dart';
+import 'package:nutrinutri/core/services/sync_service.dart';
 import 'package:nutrinutri/features/diary/domain/diary_entry.dart';
 
 class DiaryService {
-  DiaryService(this._db, this._deviceId);
+  DiaryService(this._db, this._deviceId, this._syncService);
   final AppDatabase _db;
   final DeviceIdService _deviceId;
+  final SyncService _syncService;
 
   ({int startMs, int endMsInclusive}) _dayBounds(DateTime date) {
     final start = DateTime(date.year, date.month, date.day);
@@ -164,6 +168,7 @@ class DiaryService {
           );
       await _replaceMetrics(entry.id, entry.metrics);
     });
+    unawaited(_syncService.requestSync());
   }
 
   Future<void> updateEntry(DiaryEntry entry) async {
@@ -178,6 +183,7 @@ class DiaryService {
       );
       await _replaceMetrics(entry.id, entry.metrics);
     });
+    unawaited(_syncService.requestSync());
   }
 
   Future<void> deleteEntry(DiaryEntry entry) async {
@@ -186,6 +192,7 @@ class DiaryService {
 
     await (_db.update(_db.diaryEntries)..where((t) => t.id.equals(entry.id)))
         .write(_entryDeleteCompanion(deviceId: deviceId, now: now));
+    unawaited(_syncService.requestSync());
   }
 
   Future<Map<String, double>> getSummary(DateTime date) async {

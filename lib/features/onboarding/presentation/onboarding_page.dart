@@ -62,11 +62,11 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
   Future<void> _handleSync() async {
     try {
-      final count = await ref.read(settingsControllerProvider.notifier).sync();
+      final result = await ref.read(settingsControllerProvider.notifier).sync();
       await _formManager.loadSettings();
       _hasSyncedAfterSignIn = true;
       if (mounted) {
-        _showSnack('Sync complete. $count items updated.');
+        _showSnack('Sync complete: ↓${result.downloaded} ↑${result.uploaded}');
       }
     } catch (e) {
       if (mounted) {
@@ -84,11 +84,13 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       if (currentUser == null) return;
 
       _hasSyncedAfterSignIn = false;
-      final count = await ref.read(settingsControllerProvider.notifier).sync();
+      final result = await ref.read(settingsControllerProvider.notifier).sync();
       await _formManager.loadSettings();
       _hasSyncedAfterSignIn = true;
       if (mounted) {
-        _showSnack('Connected and synced. $count items updated.');
+        _showSnack(
+          'Connected and synced: ↓${result.downloaded} ↑${result.uploaded}',
+        );
       }
     } catch (e) {
       if (mounted) {

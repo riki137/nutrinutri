@@ -77,10 +77,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   Future<void> _handleSync() async {
     try {
-      final count = await ref.read(settingsControllerProvider.notifier).sync();
+      final result = await ref.read(settingsControllerProvider.notifier).sync();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Sync complete. $count items updated.')),
+          SnackBar(
+            content: Text(
+              'Sync complete: ↓${result.downloaded} ↑${result.uploaded}',
+            ),
+          ),
         );
       }
     } catch (e) {
