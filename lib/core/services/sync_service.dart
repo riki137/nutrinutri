@@ -111,22 +111,6 @@ class SyncService {
     _listenToAuthState();
 
     try {
-      final lightweightCredentials = await _googleSignIn.lightweightSignIn();
-      _setCredentials(lightweightCredentials);
-      if (lightweightCredentials != null) return;
-    } catch (e) {
-      debugPrint('Lightweight restore failed: $e');
-    }
-
-    final isMobile =
-        !kIsWeb &&
-        (defaultTargetPlatform == TargetPlatform.android ||
-            defaultTargetPlatform == TargetPlatform.iOS);
-    if (isMobile) {
-      return;
-    }
-
-    try {
       final credentials = await _googleSignIn.silentSignIn();
       _setCredentials(credentials);
     } catch (e) {
@@ -194,7 +178,22 @@ class SyncService {
     return null;
   }
 
-  Future<SyncResult> sync() async {
+  Future<SyncResult>? _syncFuture;
+
+  Future<SyncResult> sync() {
+    final pending = _syncFuture;
+    if (pending != null) return pending;
+
+    final future = _syncInternal();
+    _syncFuture = future;
+    return future.whenComplete(() {
+      if (identical(_syncFuture, future)) {
+        _syncFuture = null;
+      }
+    });
+  }
+
+  Future<SyncResult> _syncInternal() async {
     if (_currentCredentials == null) {
       return const SyncResult(downloaded: 0, uploaded: 0);
     }
@@ -212,7 +211,8 @@ class SyncService {
           message.contains('Access was denied') ||
           message.contains('401')) {
         try {
-          await _restoreSessionInternal();
+          final credentials = await _googleSignIn.lightweightSignIn();
+          _setCredentials(credentials);
           if (_currentCredentials != null) {
             client = await _googleSignIn.authenticatedClient;
             if (client != null) {
