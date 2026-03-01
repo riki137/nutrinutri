@@ -42,7 +42,7 @@ final class SettingsControllerProvider
 }
 
 String _$settingsControllerHash() =>
-    r'b2b9882529cf098a41d91f1228ee5c3c2b580d41';
+    r'd8b1bb0477de1ee3d5cf388adabeb2bd08dad9df';
 
 abstract class _$SettingsController extends $Notifier<SettingsState> {
   SettingsState build();
@@ -55,59 +55,6 @@ abstract class _$SettingsController extends $Notifier<SettingsState> {
             as $ClassProviderElement<
               AnyNotifier<SettingsState, SettingsState>,
               SettingsState,
-              Object?,
-              Object?
-            >;
-    element.handleCreate(ref, build);
-  }
-}
-
-@ProviderFor(UnsavedSettingsChanges)
-final unsavedSettingsChangesProvider = UnsavedSettingsChangesProvider._();
-
-final class UnsavedSettingsChangesProvider
-    extends $NotifierProvider<UnsavedSettingsChanges, bool> {
-  UnsavedSettingsChangesProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'unsavedSettingsChangesProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$unsavedSettingsChangesHash();
-
-  @$internal
-  @override
-  UnsavedSettingsChanges create() => UnsavedSettingsChanges();
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(bool value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<bool>(value),
-    );
-  }
-}
-
-String _$unsavedSettingsChangesHash() =>
-    r'368b496d7fe9fe358260d4f2661b864e9353b1e7';
-
-abstract class _$UnsavedSettingsChanges extends $Notifier<bool> {
-  bool build();
-  @$mustCallSuper
-  @override
-  void runBuild() {
-    final ref = this.ref as $Ref<bool, bool>;
-    final element =
-        ref.element
-            as $ClassProviderElement<
-              AnyNotifier<bool, bool>,
-              bool,
               Object?,
               Object?
             >;

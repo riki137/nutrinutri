@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nutrinutri/core/domain/nutrition_metric.dart';
 import 'package:nutrinutri/features/diary/domain/diary_entry.dart';
 import 'package:nutrinutri/features/logging/presentation/add_entry_controller.dart';
 
@@ -13,13 +14,18 @@ class AddEntryFormManager {
 
   final descriptionController = TextEditingController();
   final nameController = TextEditingController();
-  final caloriesController = TextEditingController();
-  final proteinController = TextEditingController();
-  final carbsController = TextEditingController();
-  final fatsController = TextEditingController();
+  final metricControllers = {
+    for (final metric in NutritionMetricType.values)
+      metric: TextEditingController(),
+  };
   final durationController = TextEditingController();
+  int _calorieRequestToken = 0;
+
+  TextEditingController get caloriesController =>
+      metricControllers[NutritionMetricType.calories]!;
 
   void _updateCalories() async {
+    final token = ++_calorieRequestToken;
     final state = ref.read(addEntryControllerProvider);
     if (state.type != EntryType.exercise) return;
 
@@ -30,7 +36,7 @@ class AddEntryFormManager {
       final calories = await ref
           .read(addEntryControllerProvider.notifier)
           .calculateExerciseCalories(name, duration);
-      if (calories != null) {
+      if (token == _calorieRequestToken && calories != null) {
         caloriesController.text = calories.toString();
       }
     }
@@ -39,20 +45,16 @@ class AddEntryFormManager {
   void dispose() {
     descriptionController.dispose();
     nameController.dispose();
-    caloriesController.dispose();
-    proteinController.dispose();
-    carbsController.dispose();
-    fatsController.dispose();
+    for (final controller in metricControllers.values) {
+      controller.dispose();
+    }
     durationController.dispose();
   }
 
   void initializeWithEntry(DiaryEntry entry) {
     ref.read(addEntryControllerProvider.notifier).initializeWithEntry(entry);
     nameController.text = entry.name;
-    caloriesController.text = entry.calories.toString();
-    proteinController.text = entry.protein.toString();
-    carbsController.text = entry.carbs.toString();
-    fatsController.text = entry.fats.toString();
+    _applyMetrics(entry);
     durationController.text = entry.durationMinutes?.toString() ?? '';
     onStateChanged();
   }
@@ -64,12 +66,20 @@ class AddEntryFormManager {
 
   void autofill(DiaryEntry entry) {
     nameController.text = entry.name;
-    caloriesController.text = entry.calories.toString();
-    proteinController.text = entry.protein.toString();
-    carbsController.text = entry.carbs.toString();
-    fatsController.text = entry.fats.toString();
+    _applyMetrics(entry);
+    durationController.text = entry.durationMinutes?.toString() ?? '';
     if (entry.icon != null) {
       ref.read(addEntryControllerProvider.notifier).updateIcon(entry.icon!);
+    }
+  }
+
+  void _applyMetrics(DiaryEntry entry) {
+    for (final metric in NutritionMetricType.values) {
+      final value = entry.metricValue(metric);
+      metricControllers[metric]!.text =
+          (metric == NutritionMetricType.calories || value > 0)
+          ? _formatMetric(value)
+          : '';
     }
   }
 
@@ -90,15 +100,22 @@ class AddEntryFormManager {
         .saveEntry(
           existingEntry: existingEntry,
           name: nameController.text,
-          calories: caloriesController.text,
-          protein: proteinController.text,
-          carbs: carbsController.text,
-          fats: fatsController.text,
+          metricValues: {
+            for (final entry in metricControllers.entries)
+              entry.key: entry.value.text,
+          },
           durationMinutes: durationController.text,
         );
   }
 
   Future<void> deleteEntry(DiaryEntry entry) async {
     await ref.read(addEntryControllerProvider.notifier).deleteEntry(entry);
+  }
+
+  String _formatMetric(double value) {
+    if (value == value.roundToDouble()) {
+      return value.round().toString();
+    }
+    return value.toStringAsFixed(1);
   }
 }

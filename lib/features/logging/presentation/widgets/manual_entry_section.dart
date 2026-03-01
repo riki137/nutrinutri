@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:nutrinutri/core/domain/nutrition_metric.dart';
 import 'package:nutrinutri/features/logging/presentation/widgets/entry_action_buttons.dart';
 import 'package:nutrinutri/features/logging/presentation/widgets/entry_form.dart';
 
@@ -9,10 +10,7 @@ class ManualEntrySection extends StatelessWidget {
     required this.isEditing,
     required this.isExercise,
     required this.nameController,
-    required this.caloriesController,
-    required this.proteinController,
-    required this.carbsController,
-    required this.fatsController,
+    required this.metricControllers,
     this.durationController,
     required this.selectedIcon,
     required this.selectedDate,
@@ -27,10 +25,7 @@ class ManualEntrySection extends StatelessWidget {
   final bool isEditing;
   final bool isExercise;
   final TextEditingController nameController;
-  final TextEditingController caloriesController;
-  final TextEditingController proteinController;
-  final TextEditingController carbsController;
-  final TextEditingController fatsController;
+  final Map<NutritionMetricType, TextEditingController> metricControllers;
   final TextEditingController? durationController;
   final String selectedIcon;
   final DateTime selectedDate;
@@ -57,10 +52,7 @@ class ManualEntrySection extends StatelessWidget {
         ],
         EntryForm(
           nameController: nameController,
-          caloriesController: caloriesController,
-          proteinController: proteinController,
-          carbsController: carbsController,
-          fatsController: fatsController,
+          metricControllers: metricControllers,
           durationController: durationController,
           selectedIcon: selectedIcon,
           selectedDate: selectedDate,

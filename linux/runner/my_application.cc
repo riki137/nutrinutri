@@ -45,11 +45,16 @@ static void my_application_activate(GApplication* application) {
   if (use_header_bar) {
     GtkHeaderBar* header_bar = GTK_HEADER_BAR(gtk_header_bar_new());
     gtk_widget_show(GTK_WIDGET(header_bar));
-    gtk_header_bar_set_title(header_bar, "nutrinutri");
+    gtk_header_bar_set_title(header_bar, "NutriNutri");
     gtk_header_bar_set_show_close_button(header_bar, TRUE);
     gtk_window_set_titlebar(window, GTK_WIDGET(header_bar));
   } else {
-    gtk_window_set_title(window, "nutrinutri");
+    gtk_window_set_title(window, "NutriNutri");
+  }
+
+  g_autoptr(GError) icon_error = nullptr;
+  if (!gtk_window_set_icon_from_file(window, "data/app_icon.png", &icon_error)) {
+    g_warning("Failed to load app icon: %s", icon_error->message);
   }
 
   gtk_window_set_default_size(window, 1280, 720);

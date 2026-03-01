@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -31,9 +33,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       onStateChanged: () {
         if (mounted) {
           setState(() {});
-          ref
-              .read(unsavedSettingsChangesProvider.notifier)
-              .set(_formManager.hasChanges());
         }
       },
     );
@@ -45,9 +44,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   @override
   void dispose() {
-    Future.microtask(
-      () => ref.read(unsavedSettingsChangesProvider.notifier).set(false),
-    );
     _formManager.dispose();
     super.dispose();
   }
@@ -75,10 +71,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   Future<void> _handleSync() async {
     try {
-      final count = await ref.read(settingsControllerProvider.notifier).sync();
+      final result = await ref.read(settingsControllerProvider.notifier).sync();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Sync complete. $count items updated.')),
+          SnackBar(
+            content: Text(
+              'Sync complete: ↓${result.downloaded} ↑${result.uploaded}',
+            ),
+          ),
         );
       }
     } catch (e) {
@@ -123,6 +123,44 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     return shouldPop ?? false;
   }
 
+  void _onModelChanged(SettingsController controller, String? value) {
+    if (value == null) return;
+    controller.updateModel(value);
+  }
+
+  void _onGenderChanged(SettingsController controller, String? value) {
+    if (value == null) return;
+    controller.updateGender(value);
+    _formManager.recalculateCalories();
+  }
+
+  void _onActivityLevelChanged(SettingsController controller, String? value) {
+    if (value == null) return;
+    controller.updateActivityLevel(value);
+    _formManager.recalculateCalories();
+  }
+
+  Future<void> _openLicenses() async {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      const platform = MethodChannel('sk.popelis.nutrinutri/licenses');
+      try {
+        await platform.invokeMethod('showLicenses');
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to load licenses: '$e'.")),
+        );
+      }
+      return;
+    }
+
+    showLicensePage(
+      context: context,
+      applicationName: 'NutriNutri',
+      useRootNavigator: true,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(settingsControllerProvider);
@@ -130,6 +168,19 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final controller = ref.read(settingsControllerProvider.notifier);
     final isDesktop = PlatformHelper.isDesktopOrWeb;
     final theme = Theme.of(context);
+    final settingsSections = _SettingsSections(
+      state: state,
+      currentUser: currentUser,
+      controller: controller,
+      formManager: _formManager,
+      onModelChanged: (value) => _onModelChanged(controller, value),
+      onFallbackModelChanged: controller.updateFallbackModel,
+      onGenderChanged: (value) => _onGenderChanged(controller, value),
+      onActivityLevelChanged: (value) =>
+          _onActivityLevelChanged(controller, value),
+      onSync: () => unawaited(_handleSync()),
+      onOpenLicenses: () => unawaited(_openLicenses()),
+    );
 
     return PopScope(
       canPop: false,
@@ -143,14 +194,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       child: Scaffold(
         appBar: isDesktop ? null : AppBar(title: const Text('Settings')),
         body: isDesktop
-            ? _buildDesktopLayout(
-                context,
-                theme,
-                state,
-                currentUser,
-                controller,
-              )
-            : _buildMobileLayout(state, currentUser, controller),
+            ? _buildDesktopLayout(context, theme, state, settingsSections)
+            : _buildMobileLayout(state, settingsSections),
       ),
     );
   }
@@ -159,8 +204,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     BuildContext context,
     ThemeData theme,
     SettingsState state,
-    GoogleUserInfo? currentUser,
-    SettingsController controller,
+    Widget settingsSections,
   ) {
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -191,11 +235,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               maxWidth: 900,
               child: ListView(
                 padding: EdgeInsets.zero,
-                children: _buildSettingsSections(
-                  state,
-                  currentUser,
-                  controller,
-                ),
+                children: [settingsSections],
               ),
             ),
           ),
@@ -204,16 +244,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
-  Widget _buildMobileLayout(
-    SettingsState state,
-    GoogleUserInfo? currentUser,
-    SettingsController controller,
-  ) {
+  Widget _buildMobileLayout(SettingsState state, Widget settingsSections) {
     return ResponsiveCenter(
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          ..._buildSettingsSections(state, currentUser, controller),
+          settingsSections,
           const Gap(24),
           FilledButton.icon(
             onPressed: state.isLoading ? null : _save,
@@ -225,91 +261,105 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       ),
     );
   }
+}
 
-  List<Widget> _buildSettingsSections(
-    SettingsState state,
-    GoogleUserInfo? currentUser,
-    SettingsController controller,
-  ) {
-    return [
-      AIConfigurationSection(
-        apiKeyController: _formManager.apiKeyController,
-        customModelController: _formManager.customModelController,
-        selectedModel: state.selectedModel,
-        fallbackModel: state.fallbackModel,
-        availableModels: controller.availableModels,
-        onModelChanged: (v) => v != null ? controller.updateModel(v) : null,
-        onFallbackModelChanged: controller.updateFallbackModel,
-      ),
-      const Gap(32),
-      const Divider(),
-      const Gap(16),
-      SyncSection(
-        currentUser: currentUser,
-        isSyncing: state.isSyncing,
-        onSignIn: controller.signIn,
-        onSignOut: controller.signOut,
-        onSync: _handleSync,
-        webSignInButton: controller.webSignInButton,
-      ),
-      const Gap(32),
-      const Divider(),
-      const Gap(16),
-      ProfileSection(
-        ageController: _formManager.ageController,
-        weightController: _formManager.weightController,
-        heightController: _formManager.heightController,
-        goalController: _formManager.goalController,
-        proteinController: _formManager.proteinController,
-        carbsController: _formManager.carbsController,
-        fatsController: _formManager.fatsController,
-        gender: state.gender,
-        activityLevel: state.activityLevel,
-        onGenderChanged: (v) {
-          if (v != null) {
-            controller.updateGender(v);
-            _formManager.recalculateCalories();
-          }
-        },
-        onActivityLevelChanged: (v) {
-          if (v != null) {
-            controller.updateActivityLevel(v);
-            _formManager.recalculateCalories();
-          }
-        },
-      ),
-      const Gap(32),
-      const Divider(),
-      const Gap(16),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Text('About', style: Theme.of(context).textTheme.titleMedium),
-      ),
-      const Gap(8),
-      ListTile(
-        title: const Text('Open Source Licenses'),
-        leading: const Icon(Icons.description),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () async {
-          if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-            const platform = MethodChannel('sk.popelis.nutrinutri/licenses');
-            try {
-              await platform.invokeMethod('showLicenses');
-            } catch (e) {
-              if (!mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Failed to load licenses: '$e'.")),
-              );
-            }
-          } else {
-            showLicensePage(
-              context: context,
-              applicationName: 'NutriNutri',
-              useRootNavigator: true,
-            );
-          }
-        },
-      ),
-    ];
+class _SettingsSections extends StatelessWidget {
+  const _SettingsSections({
+    required this.state,
+    required this.currentUser,
+    required this.controller,
+    required this.formManager,
+    required this.onModelChanged,
+    required this.onFallbackModelChanged,
+    required this.onGenderChanged,
+    required this.onActivityLevelChanged,
+    required this.onSync,
+    required this.onOpenLicenses,
+  });
+
+  final SettingsState state;
+  final GoogleUserInfo? currentUser;
+  final SettingsController controller;
+  final SettingsFormManager formManager;
+  final ValueChanged<String?> onModelChanged;
+  final ValueChanged<String?> onFallbackModelChanged;
+  final ValueChanged<String?> onGenderChanged;
+  final ValueChanged<String?> onActivityLevelChanged;
+  final VoidCallback onSync;
+  final VoidCallback onOpenLicenses;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AIConfigurationSection(
+          apiKeyController: formManager.apiKeyController,
+          customModelController: formManager.customModelController,
+          selectedModel: state.selectedModel,
+          fallbackModel: state.fallbackModel,
+          availableModels: controller.availableModels,
+          onModelChanged: onModelChanged,
+          onFallbackModelChanged: onFallbackModelChanged,
+        ),
+        const _SettingsSectionBreak(),
+        SyncSection(
+          currentUser: currentUser,
+          isSyncing: state.isSyncing,
+          onSignIn: controller.signIn,
+          onSignOut: controller.signOut,
+          onSync: onSync,
+          webSignInButton: controller.webSignInButton,
+        ),
+        const _SettingsSectionBreak(),
+        ProfileSection(
+          ageController: formManager.ageController,
+          weightController: formManager.weightController,
+          heightController: formManager.heightController,
+          metricGoalControllers: formManager.metricGoalControllers,
+          gender: state.gender,
+          activityLevel: state.activityLevel,
+          onGenderChanged: onGenderChanged,
+          onActivityLevelChanged: onActivityLevelChanged,
+        ),
+        const _SettingsSectionBreak(),
+        _AboutSection(onOpenLicenses: onOpenLicenses),
+      ],
+    );
+  }
+}
+
+class _SettingsSectionBreak extends StatelessWidget {
+  const _SettingsSectionBreak();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(children: [Gap(32), Divider(), Gap(16)]);
+  }
+}
+
+class _AboutSection extends StatelessWidget {
+  const _AboutSection({required this.onOpenLicenses});
+
+  final VoidCallback onOpenLicenses;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text('About', style: Theme.of(context).textTheme.titleMedium),
+        ),
+        const Gap(8),
+        ListTile(
+          title: const Text('Open Source Licenses'),
+          leading: const Icon(Icons.description),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: onOpenLicenses,
+        ),
+      ],
+    );
   }
 }

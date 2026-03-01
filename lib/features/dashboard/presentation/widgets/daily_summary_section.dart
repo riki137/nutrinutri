@@ -2,10 +2,10 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
+import 'package:nutrinutri/core/domain/nutrition_metric.dart';
 import 'package:nutrinutri/core/domain/user_profile.dart';
-import 'package:nutrinutri/core/providers.dart';
-import 'package:nutrinutri/core/utils/calorie_calculator.dart';
 import 'package:nutrinutri/features/dashboard/presentation/dashboard_providers.dart';
+import 'package:nutrinutri/features/dashboard/presentation/widgets/metric_ring.dart';
 
 class DailySummarySection extends ConsumerWidget {
   const DailySummarySection({super.key, required this.today});
@@ -13,25 +13,15 @@ class DailySummarySection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profileAsync = ref.watch(settingsServiceProvider).getUserProfile();
-    final summaryAsync = ref.watch(dailySummaryProvider(today));
+    final summaryDataAsync = ref.watch(dailySummaryDataProvider(today));
 
-    return FutureBuilder(
-      future: profileAsync,
-      builder: (context, profileSnapshot) {
-        if (!profileSnapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final profile = profileSnapshot.data;
-        if (profile == null) return const Text('Profile not found');
-
-        return summaryAsync.when(
-          data: (summary) => _buildContent(context, profile, summary),
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, stack) => Text('Error: $err'),
-        );
+    return summaryDataAsync.when(
+      data: (summaryData) {
+        if (summaryData == null) return const Text('Profile not found');
+        return _buildContent(context, summaryData.profile, summaryData.summary);
       },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, stack) => Text('Error: $err'),
     );
   }
 
@@ -40,38 +30,21 @@ class DailySummarySection extends ConsumerWidget {
     UserProfile profile,
     Map<String, double> summary,
   ) {
-    final goal = profile.goalCalories;
-    final consumed = summary['calories']!;
+    final consumed = summary[NutritionMetricType.calories.key] ?? 0;
     final burned = summary['caloriesBurned'] ?? 0.0;
+    final goal = profile.goalFor(NutritionMetricType.calories);
     final effectiveGoal = goal + burned;
     final remaining = effectiveGoal - consumed;
     final isOver = remaining < 0;
 
-    // Visual progress clamps at 1.0 (full circle)
-    final progress = (consumed / effectiveGoal).clamp(0.0, 1.0);
+    final progress = effectiveGoal <= 0
+        ? 0.0
+        : (consumed / effectiveGoal).clamp(0.0, 1.0);
 
     final statusColor = isOver ? Colors.redAccent : Colors.green;
     final secondaryColor = isOver
         ? Colors.red.withValues(alpha: 0.1)
         : Colors.grey[200]!;
-
-    // Macro Goals Calculation (Default split: 30% P, 40% C, 30% F)
-    // Macro Goals Calculation
-    final defaults = CalorieCalculator.calculateMacroGoals(goal);
-
-    final double proteinGoal =
-        (profile.goalProtein != null && profile.goalProtein! > 0)
-        ? profile.goalProtein!.toDouble()
-        : defaults.protein;
-
-    final double carbsGoal =
-        (profile.goalCarbs != null && profile.goalCarbs! > 0)
-        ? profile.goalCarbs!.toDouble()
-        : defaults.carbs;
-
-    final double fatsGoal = (profile.goalFat != null && profile.goalFat! > 0)
-        ? profile.goalFat!.toDouble()
-        : defaults.fats;
 
     return Card(
       elevation: 4,
@@ -91,7 +64,7 @@ class DailySummarySection extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      'Goal: ${effectiveGoal.round()}',
+                      'Goal: ${effectiveGoal.round()} kcal',
                       style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                     ),
                     if (burned > 0)
@@ -108,82 +81,133 @@ class DailySummarySection extends ConsumerWidget {
               ],
             ),
             const Gap(16),
-            SizedBox(
-              height: 150,
-              width: 150,
-              child: Stack(
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  PieChart(
-                    PieChartData(
-                      sections: [
-                        PieChartSectionData(
-                          value: progress,
-                          color: statusColor,
-                          radius: 20,
-                          showTitle: false,
+                  MetricRing(
+                    label: NutritionMetricType.caffeine.label,
+                    value: summary[NutritionMetricType.caffeine.key] ?? 0,
+                    goal: profile.goalFor(NutritionMetricType.caffeine),
+                    unit: NutritionMetricType.caffeine.unit,
+                    color: _metricColor(NutritionMetricType.caffeine),
+                  ),
+                  SizedBox(
+                    height: 150,
+                    width: 150,
+                    child: Stack(
+                      children: [
+                        PieChart(
+                          PieChartData(
+                            sections: [
+                              PieChartSectionData(
+                                value: progress,
+                                color: statusColor,
+                                radius: 20,
+                                showTitle: false,
+                              ),
+                              PieChartSectionData(
+                                value: 1 - progress,
+                                color: secondaryColor,
+                                radius: 20,
+                                showTitle: false,
+                              ),
+                            ],
+                            startDegreeOffset: 270,
+                          ),
                         ),
-                        PieChartSectionData(
-                          value: 1 - progress,
-                          color: secondaryColor,
-                          radius: 20,
-                          showTitle: false,
+                        Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                isOver
+                                    ? remaining.abs().round().toString()
+                                    : remaining.round().toString(),
+                                style: TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  color: isOver
+                                      ? Colors.redAccent
+                                      : Theme.of(
+                                          context,
+                                        ).textTheme.headlineMedium?.color,
+                                ),
+                              ),
+                              Text(
+                                isOver ? 'Over' : 'Left',
+                                style: TextStyle(
+                                  color: isOver
+                                      ? Colors.redAccent
+                                      : Colors.grey,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
-                      startDegreeOffset: 270,
                     ),
                   ),
-                  Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          isOver
-                              ? remaining.abs().round().toString()
-                              : remaining.round().toString(),
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: isOver
-                                ? Colors.redAccent
-                                : Theme.of(
-                                    context,
-                                  ).textTheme.headlineMedium?.color,
-                          ),
-                        ),
-                        Text(
-                          isOver ? 'Over' : 'Left',
-                          style: TextStyle(
-                            color: isOver ? Colors.redAccent : Colors.grey,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
+                  MetricRing(
+                    label: NutritionMetricType.water.label,
+                    value: summary[NutritionMetricType.water.key] ?? 0,
+                    goal: profile.goalFor(NutritionMetricType.water),
+                    unit: NutritionMetricType.water.unit,
+                    color: _metricColor(NutritionMetricType.water),
                   ),
                 ],
               ),
             ),
             const Gap(24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+            Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              alignment: WrapAlignment.center,
               children: [
-                _MacroRing(
-                  label: 'Protein',
-                  value: summary['protein']!,
-                  goal: proteinGoal,
-                  color: Colors.blue,
+                MetricRing(
+                  label: NutritionMetricType.protein.label,
+                  value: summary[NutritionMetricType.protein.key] ?? 0,
+                  goal: profile.goalFor(NutritionMetricType.protein),
+                  unit: NutritionMetricType.protein.unit,
+                  color: _metricColor(NutritionMetricType.protein),
                 ),
-                _MacroRing(
-                  label: 'Carbs',
-                  value: summary['carbs']!,
-                  goal: carbsGoal,
-                  color: Colors.orange,
+                MetricRing(
+                  label: NutritionMetricType.carbs.label,
+                  value: summary[NutritionMetricType.carbs.key] ?? 0,
+                  goal: profile.goalFor(NutritionMetricType.carbs),
+                  unit: NutritionMetricType.carbs.unit,
+                  color: _metricColor(NutritionMetricType.carbs),
+                  subLabel: NutritionMetricType.sugars.label,
+                  subValue: summary[NutritionMetricType.sugars.key] ?? 0,
+                  subGoal: profile.goalFor(NutritionMetricType.sugars),
+                  subColor: _metricColor(NutritionMetricType.sugars),
                 ),
-                _MacroRing(
-                  label: 'Fats',
-                  value: summary['fats']!,
-                  goal: fatsGoal,
-                  color: Colors.red,
+                MetricRing(
+                  label: NutritionMetricType.fats.label,
+                  value: summary[NutritionMetricType.fats.key] ?? 0,
+                  goal: profile.goalFor(NutritionMetricType.fats),
+                  unit: NutritionMetricType.fats.unit,
+                  color: _metricColor(NutritionMetricType.fats),
+                  subLabel: 'Sat. Fats',
+                  subValue: summary[NutritionMetricType.saturatedFats.key] ?? 0,
+                  subGoal: profile.goalFor(NutritionMetricType.saturatedFats),
+                  subColor: _metricColor(NutritionMetricType.saturatedFats),
+                ),
+                MetricRing(
+                  label: NutritionMetricType.fiber.label,
+                  value: summary[NutritionMetricType.fiber.key] ?? 0,
+                  goal: profile.goalFor(NutritionMetricType.fiber),
+                  unit: NutritionMetricType.fiber.unit,
+                  color: _metricColor(NutritionMetricType.fiber),
+                ),
+                MetricRing(
+                  label: NutritionMetricType.sodium.label,
+                  value: summary[NutritionMetricType.sodium.key] ?? 0,
+                  goal: profile.goalFor(NutritionMetricType.sodium),
+                  unit: NutritionMetricType.sodium.unit,
+                  color: _metricColor(NutritionMetricType.sodium),
                 ),
               ],
             ),
@@ -192,93 +216,29 @@ class DailySummarySection extends ConsumerWidget {
       ),
     );
   }
-}
 
-class _MacroRing extends StatelessWidget {
-  const _MacroRing({
-    required this.label,
-    required this.value,
-    required this.goal,
-    required this.color,
-  });
-  final String label;
-  final double value;
-  final double goal;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    // Determine if we are over the goal
-    final isOver = value > goal;
-
-    // Visual progress for the chart (clamped to 100%)
-    final chartProgress = (value / goal).clamp(0.0, 1.0);
-
-    // Actual percentage for display (can exceed 100%)
-    final percentage = ((value / goal) * 100).round();
-
-    // Status color (dim/mix with grey if not full, full color if full)
-    // Actually, we want to keep the distinct macro colors.
-    // If over, we might want to alert, but the user asked primarily for the number fix.
-    // Let's keep the base color but maybe bold the text if over.
-
-    return Column(
-      children: [
-        SizedBox(
-          height: 60,
-          width: 60,
-          child: Stack(
-            children: [
-              PieChart(
-                PieChartData(
-                  sections: [
-                    PieChartSectionData(
-                      value: chartProgress,
-                      color: color,
-                      radius: 8,
-                      showTitle: false,
-                    ),
-                    PieChartSectionData(
-                      value: 1 - chartProgress,
-                      color: color.withValues(alpha: 0.2),
-                      radius: 8,
-                      showTitle: false,
-                    ),
-                  ],
-                  startDegreeOffset: 270,
-                  sectionsSpace: 0,
-                  centerSpaceRadius: 22,
-                ),
-              ),
-              Center(
-                child: Text(
-                  '$percentage%',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                    color: isOver
-                        ? color
-                        : Theme.of(context).textTheme.bodyMedium?.color,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const Gap(8),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-        ),
-        Text(
-          '${value.round()}/${goal.round()}g',
-          style: TextStyle(
-            fontSize: 10,
-            color: isOver ? color : Colors.grey[600],
-            fontWeight: isOver ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-      ],
-    );
+  Color _metricColor(NutritionMetricType metric) {
+    switch (metric) {
+      case NutritionMetricType.protein:
+        return Colors.blue;
+      case NutritionMetricType.carbs:
+        return Colors.amber;
+      case NutritionMetricType.sugars:
+        return Colors.orange;
+      case NutritionMetricType.fats:
+        return Colors.redAccent;
+      case NutritionMetricType.saturatedFats:
+        return Colors.red;
+      case NutritionMetricType.fiber:
+        return Colors.green;
+      case NutritionMetricType.sodium:
+        return Colors.teal;
+      case NutritionMetricType.caffeine:
+        return Colors.brown;
+      case NutritionMetricType.water:
+        return Colors.lightBlue;
+      case NutritionMetricType.calories:
+        return Colors.deepOrange;
+    }
   }
 }

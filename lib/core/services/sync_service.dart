@@ -10,13 +10,22 @@ import 'package:nutrinutri/core/services/drive_snapshot.dart';
 import 'package:nutrinutri/core/services/google_drive_appdata.dart';
 import 'package:nutrinutri/core/services/google_user_info.dart';
 
+class SyncResult {
+  const SyncResult({required this.downloaded, required this.uploaded});
+  final int downloaded;
+  final int uploaded;
+}
+
 class SyncService {
   SyncService({required AppDatabase db}) : _db = db;
 
   static const _snapshotFileName = 'nutrinutri.json';
+  static const _pendingSyncKey = 'pending_sync';
 
   final AppDatabase _db;
   final _drive = const GoogleDriveAppData();
+
+  Timer? _syncTimer;
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     params: GoogleSignInParams(
@@ -85,6 +94,10 @@ class SyncService {
     final pending = _restoreSessionFuture;
     if (pending != null) return pending;
 
+    if (_currentCredentials != null) {
+      return Future.value();
+    }
+
     final future = _restoreSessionInternal();
     _restoreSessionFuture = future;
     return future.whenComplete(() {
@@ -96,22 +109,6 @@ class SyncService {
 
   Future<void> _restoreSessionInternal() async {
     _listenToAuthState();
-
-    try {
-      final lightweightCredentials = await _googleSignIn.lightweightSignIn();
-      _setCredentials(lightweightCredentials);
-      if (lightweightCredentials != null) return;
-    } catch (e) {
-      debugPrint('Lightweight restore failed: $e');
-    }
-
-    final isMobile =
-        !kIsWeb &&
-        (defaultTargetPlatform == TargetPlatform.android ||
-            defaultTargetPlatform == TargetPlatform.iOS);
-    if (isMobile) {
-      return;
-    }
 
     try {
       final credentials = await _googleSignIn.silentSignIn();
@@ -128,7 +125,50 @@ class SyncService {
 
   Future<void> syncIfNeeded() async {
     if (currentUser == null) return;
-    await sync();
+
+    final pendingPref = await (_db.select(
+      _db.localPrefs,
+    )..where((t) => t.key.equals(_pendingSyncKey))).getSingleOrNull();
+    final isPending = pendingPref?.value == 'true';
+
+    if (isPending) {
+      try {
+        await sync();
+      } catch (e) {
+        debugPrint('Pending sync failed: $e');
+      }
+    } else {
+      // Also sync if it's been more than 1 hour since the last sync to fetch remote changes
+      final lastSyncPref = await (_db.select(
+        _db.localPrefs,
+      )..where((t) => t.key.equals('last_sync_time'))).getSingleOrNull();
+      final lastSync = int.tryParse(lastSyncPref?.value ?? '0') ?? 0;
+      final now = DateTime.now().millisecondsSinceEpoch;
+
+      if (now - lastSync > const Duration(hours: 1).inMilliseconds) {
+        try {
+          await sync();
+        } catch (e) {
+          debugPrint('Periodic sync failed: $e');
+        }
+      }
+    }
+  }
+
+  Future<void> requestSync() async {
+    if (currentUser == null) return;
+
+    await _db
+        .into(_db.localPrefs)
+        .insert(
+          const LocalPrefRow(key: _pendingSyncKey, value: 'true'),
+          mode: InsertMode.insertOrReplace,
+        );
+
+    _syncTimer?.cancel();
+    _syncTimer = Timer(const Duration(minutes: 1), () {
+      sync();
+    });
   }
 
   Widget? get webSignInButton {
@@ -138,12 +178,59 @@ class SyncService {
     return null;
   }
 
-  Future<int> sync() async {
-    if (_currentCredentials == null) return 0;
+  Future<SyncResult>? _syncFuture;
 
-    final client = await _googleSignIn.authenticatedClient;
-    if (client == null) return 0;
+  Future<SyncResult> sync() {
+    final pending = _syncFuture;
+    if (pending != null) return pending;
 
+    final future = _syncInternal();
+    _syncFuture = future;
+    return future.whenComplete(() {
+      if (identical(_syncFuture, future)) {
+        _syncFuture = null;
+      }
+    });
+  }
+
+  Future<SyncResult> _syncInternal() async {
+    if (_currentCredentials == null) {
+      return const SyncResult(downloaded: 0, uploaded: 0);
+    }
+
+    var client = await _googleSignIn.authenticatedClient;
+    if (client == null) {
+      return const SyncResult(downloaded: 0, uploaded: 0);
+    }
+
+    try {
+      return await _performSync(client);
+    } catch (e) {
+      final message = e.toString();
+      if (message.contains('invalid_token') ||
+          message.contains('Access was denied') ||
+          message.contains('401')) {
+        try {
+          final credentials = await _googleSignIn.lightweightSignIn();
+          _setCredentials(credentials);
+          if (_currentCredentials != null) {
+            client = await _googleSignIn.authenticatedClient;
+            if (client != null) {
+              return await _performSync(client);
+            }
+          }
+        } catch (retryError) {
+          debugPrint('Token refresh failed: $retryError');
+        }
+
+        await signOut();
+        throw 'Your session has expired. Please sign in again.';
+      }
+      rethrow;
+    }
+  }
+
+  Future<SyncResult> _performSync(dynamic client) async {
     final driveApi = drive.DriveApi(client);
     final fileId = await _drive.findFileId(driveApi, name: _snapshotFileName);
 
@@ -153,23 +240,46 @@ class SyncService {
     final remote = DriveSnapshot.decode(remoteRaw);
 
     final localDiaryRows = await _db.select(_db.diaryEntries).get();
-    final localDiary = <String, DiaryEntryRow>{
-      for (final row in localDiaryRows) row.id: row,
+    final localMetricRows = await _db.select(_db.entryMetrics).get();
+
+    final localMetricsByEntryId = <String, List<EntryMetricRow>>{};
+    for (final metric in localMetricRows) {
+      localMetricsByEntryId
+          .putIfAbsent(metric.entryId, () => <EntryMetricRow>[])
+          .add(metric);
+    }
+
+    final localDiary = <String, SyncedDiaryEntry>{
+      for (final row in localDiaryRows)
+        row.id: SyncedDiaryEntry(
+          row: row,
+          metrics: localMetricsByEntryId[row.id] ?? const <EntryMetricRow>[],
+        ),
     };
 
-    final localProfile = await (_db.select(
+    final localProfileRow = await (_db.select(
       _db.userProfiles,
     )..where((t) => t.id.equals(1))).getSingleOrNull();
+
+    final localGoals = await (_db.select(
+      _db.metricGoals,
+    )..where((t) => t.profileId.equals(1))).get();
+
+    final localProfile = localProfileRow == null
+        ? null
+        : SyncedUserProfile(row: localProfileRow, goals: localGoals);
+
     final localSettings = await (_db.select(
       _db.appSettings,
     )..where((t) => t.id.equals(1))).getSingleOrNull();
 
-    final nextDiary = Map<String, DiaryEntryRow>.from(remote.diaryEntries);
-    UserProfileRow? nextProfile = remote.userProfile;
+    final nextDiary = Map<String, SyncedDiaryEntry>.from(remote.diaryEntries);
+    SyncedUserProfile? nextProfile = remote.userProfile;
     AppSettingsRow? nextSettings = remote.appSettings;
 
     var remoteNeedsUpdate = false;
     var localUpdates = 0;
+    var uploadedUpdates = 0;
 
     await _db.transaction(() async {
       final allIds = {...localDiary.keys, ...remote.diaryEntries.keys};
@@ -181,6 +291,7 @@ class SyncService {
         if (remoteEntry == null && local != null) {
           nextDiary[id] = local;
           remoteNeedsUpdate = true;
+          uploadedUpdates++;
           continue;
         }
 
@@ -193,14 +304,15 @@ class SyncService {
         if (local == null || remoteEntry == null) continue;
 
         final cmp = _compareRevision(
-          local.updatedAt,
-          local.updatedBy,
-          remoteEntry.updatedAt,
-          remoteEntry.updatedBy,
+          local.row.updatedAt,
+          local.row.updatedBy,
+          remoteEntry.row.updatedAt,
+          remoteEntry.row.updatedBy,
         );
         if (cmp > 0) {
           nextDiary[id] = local;
           remoteNeedsUpdate = true;
+          uploadedUpdates++;
         } else if (cmp < 0) {
           await _applyRemoteDiaryEntry(remoteEntry);
           localUpdates++;
@@ -211,11 +323,12 @@ class SyncService {
         local: localProfile,
         remote: remote.userProfile,
         revisionOf: (p) =>
-            _Revision(updatedAt: p.updatedAt, updatedBy: p.updatedBy),
+            _Revision(updatedAt: p.row.updatedAt, updatedBy: p.row.updatedBy),
         applyRemote: (remote) => _applyRemoteUserProfile(remote),
       );
       localUpdates += profileResult.localUpdates;
       remoteNeedsUpdate = remoteNeedsUpdate || profileResult.remoteNeedsUpdate;
+      if (profileResult.remoteNeedsUpdate) uploadedUpdates++;
       nextProfile = profileResult.nextRemote;
 
       final settingsResult = await _mergeSingleton(
@@ -227,6 +340,7 @@ class SyncService {
       );
       localUpdates += settingsResult.localUpdates;
       remoteNeedsUpdate = remoteNeedsUpdate || settingsResult.remoteNeedsUpdate;
+      if (settingsResult.remoteNeedsUpdate) uploadedUpdates++;
       nextSettings = settingsResult.nextRemote;
     });
 
@@ -235,6 +349,9 @@ class SyncService {
             localProfile != null ||
             localSettings != null)) {
       remoteNeedsUpdate = true;
+      // In this case, we're uploading everything for the first time
+      // But uploadedUpdates is already correctly counting the non-null local items
+      // because remote was null.
     }
 
     if (remoteNeedsUpdate) {
@@ -255,19 +372,70 @@ class SyncService {
       _syncCompleteController.add(null);
     }
 
-    return localUpdates;
+    await (_db.delete(
+      _db.localPrefs,
+    )..where((t) => t.key.equals(_pendingSyncKey))).go();
+    await _db
+        .into(_db.localPrefs)
+        .insert(
+          LocalPrefRow(
+            key: 'last_sync_time',
+            value: DateTime.now().millisecondsSinceEpoch.toString(),
+          ),
+          mode: InsertMode.insertOrReplace,
+        );
+    _syncTimer?.cancel();
+    _syncTimer = null;
+
+    return SyncResult(downloaded: localUpdates, uploaded: uploadedUpdates);
   }
 
-  Future<void> _applyRemoteDiaryEntry(DiaryEntryRow remote) async {
-    await _db
-        .into(_db.diaryEntries)
-        .insert(remote.toCompanion(false), mode: InsertMode.insertOrReplace);
+  Future<void> _applyRemoteDiaryEntry(SyncedDiaryEntry remote) async {
+    await _db.transaction(() async {
+      await _db
+          .into(_db.diaryEntries)
+          .insert(
+            remote.row.toCompanion(false),
+            mode: InsertMode.insertOrReplace,
+          );
+
+      await (_db.delete(
+        _db.entryMetrics,
+      )..where((t) => t.entryId.equals(remote.row.id))).go();
+
+      if (remote.metrics.isEmpty) return;
+      await _db.batch((batch) {
+        batch.insertAll(
+          _db.entryMetrics,
+          remote.metrics.map((row) => row.toCompanion(false)).toList(),
+          mode: InsertMode.insertOrReplace,
+        );
+      });
+    });
   }
 
-  Future<void> _applyRemoteUserProfile(UserProfileRow remote) async {
-    await _db
-        .into(_db.userProfiles)
-        .insert(remote.toCompanion(false), mode: InsertMode.insertOrReplace);
+  Future<void> _applyRemoteUserProfile(SyncedUserProfile remote) async {
+    await _db.transaction(() async {
+      await _db
+          .into(_db.userProfiles)
+          .insert(
+            remote.row.toCompanion(false),
+            mode: InsertMode.insertOrReplace,
+          );
+
+      await (_db.delete(
+        _db.metricGoals,
+      )..where((t) => t.profileId.equals(remote.row.id))).go();
+
+      if (remote.goals.isEmpty) return;
+      await _db.batch((batch) {
+        batch.insertAll(
+          _db.metricGoals,
+          remote.goals.map((row) => row.toCompanion(false)).toList(),
+          mode: InsertMode.insertOrReplace,
+        );
+      });
+    });
   }
 
   Future<void> _applyRemoteAppSettings(AppSettingsRow remote) async {

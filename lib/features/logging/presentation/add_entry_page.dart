@@ -169,16 +169,19 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
                   onEnterManually: () => ref
                       .read(addEntryControllerProvider.notifier)
                       .toggleForm(true),
+                  onEntrySelected: (entry) {
+                    _formManager.autofill(entry);
+                    ref
+                        .read(addEntryControllerProvider.notifier)
+                        .toggleForm(true);
+                  },
                 ),
               if (state.showForm)
                 ManualEntrySection(
                   isEditing: isEditing,
                   isExercise: isExercise,
                   nameController: _formManager.nameController,
-                  caloriesController: _formManager.caloriesController,
-                  proteinController: _formManager.proteinController,
-                  carbsController: _formManager.carbsController,
-                  fatsController: _formManager.fatsController,
+                  metricControllers: _formManager.metricControllers,
                   durationController: _formManager.durationController,
                   selectedIcon: state.selectedIcon,
                   selectedDate: state.selectedDate,
@@ -186,11 +189,13 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
                   onBackToWizard: () => ref
                       .read(addEntryControllerProvider.notifier)
                       .toggleForm(false),
-                  onIconChanged: (v) => v != null
-                      ? ref
-                            .read(addEntryControllerProvider.notifier)
-                            .updateIcon(v)
-                      : null,
+                  onIconChanged: (v) {
+                    if (v != null) {
+                      ref
+                          .read(addEntryControllerProvider.notifier)
+                          .updateIcon(v);
+                    }
+                  },
                   onPickDate: _pickDate,
                   onPickTime: _pickTime,
                   onSave: _saveEntry,

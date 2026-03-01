@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nutrinutri/core/domain/nutrition_metric.dart';
 import 'package:nutrinutri/core/domain/user_profile.dart';
 import 'package:nutrinutri/features/settings/presentation/settings_controller.dart';
 
 class SettingsFormManager {
   SettingsFormManager({required this.ref, required this.onStateChanged}) {
-    _apiKeyControllerListener();
-    _setupCalorieListeners();
+    apiKeyController.addListener(onStateChanged);
+    ageController.addListener(_calculateRecommendedCalories);
+    weightController.addListener(_calculateRecommendedCalories);
+    heightController.addListener(_calculateRecommendedCalories);
   }
   final WidgetRef ref;
   final VoidCallback onStateChanged;
@@ -16,22 +19,19 @@ class SettingsFormManager {
   final ageController = TextEditingController();
   final weightController = TextEditingController();
   final heightController = TextEditingController();
-  final goalController = TextEditingController();
-  final proteinController = TextEditingController();
-  final carbsController = TextEditingController();
-  final fatsController = TextEditingController();
+  final Map<NutritionMetricType, TextEditingController> _metricGoalControllers =
+      {
+        for (final metric in NutritionMetricType.values)
+          metric: TextEditingController(),
+      };
+
+  TextEditingController get goalController =>
+      _metricGoalControllers[NutritionMetricType.calories]!;
+
+  Map<NutritionMetricType, TextEditingController> get metricGoalControllers =>
+      _metricGoalControllers;
 
   String _initialHash = '';
-
-  void _apiKeyControllerListener() {
-    apiKeyController.addListener(onStateChanged);
-  }
-
-  void _setupCalorieListeners() {
-    ageController.addListener(_calculateRecommendedCalories);
-    weightController.addListener(_calculateRecommendedCalories);
-    heightController.addListener(_calculateRecommendedCalories);
-  }
 
   void dispose() {
     apiKeyController.dispose();
@@ -39,10 +39,9 @@ class SettingsFormManager {
     ageController.dispose();
     weightController.dispose();
     heightController.dispose();
-    goalController.dispose();
-    proteinController.dispose();
-    carbsController.dispose();
-    fatsController.dispose();
+    for (final controller in _metricGoalControllers.values) {
+      controller.dispose();
+    }
   }
 
   Future<void> loadSettings() async {
@@ -55,10 +54,17 @@ class SettingsFormManager {
             ageController.text = profile.age.toString();
             weightController.text = profile.weightKg.toString();
             heightController.text = profile.heightCm.toString();
-            goalController.text = profile.goalCalories.toString();
-            proteinController.text = profile.goalProtein?.toString() ?? '';
-            carbsController.text = profile.goalCarbs?.toString() ?? '';
-            fatsController.text = profile.goalFat?.toString() ?? '';
+            goalController.text = _formatGoal(
+              profile.goalFor(NutritionMetricType.calories),
+            );
+
+            for (final metric in NutritionMetricType.values) {
+              if (metric == NutritionMetricType.calories) continue;
+              final value = profile.metricGoals[metric];
+              _metricGoalControllers[metric]!.text = value == null
+                  ? ''
+                  : _formatGoal(value);
+            }
           },
         );
     _initialHash = _computeHash();
@@ -94,10 +100,13 @@ class SettingsFormManager {
           age: ageController.text,
           weight: weightController.text,
           height: heightController.text,
-          goalCalories: goalController.text,
-          protein: proteinController.text,
-          carbs: carbsController.text,
-          fats: fatsController.text,
+          calorieGoal: goalController.text,
+          metricGoalInputs: {
+            for (final entry in _metricGoalControllers.entries)
+              if (entry.key != NutritionMetricType.calories)
+                entry.key: entry.value.text,
+          },
+          homeMetricTypes: ref.read(settingsControllerProvider).homeMetricTypes,
         );
     _initialHash = _computeHash();
     onStateChanged();
@@ -109,7 +118,7 @@ class SettingsFormManager {
 
   String _computeHash() {
     final state = ref.read(settingsControllerProvider);
-    return Object.hash(
+    return Object.hashAll([
       apiKeyController.text,
       state.selectedModel,
       customModelController.text,
@@ -118,15 +127,22 @@ class SettingsFormManager {
       heightController.text,
       state.gender,
       state.activityLevel,
-      goalController.text,
-      proteinController.text,
-      carbsController.text,
-      fatsController.text,
-    ).toString();
+      ...NutritionMetricType.values.map(
+        (metric) => _metricGoalControllers[metric]!.text,
+      ),
+      ...state.homeMetricTypes,
+    ]).toString();
   }
 
   // Helper method to recalculate calories when gender/activity changes from UI
   void recalculateCalories() {
     _calculateRecommendedCalories();
+  }
+
+  String _formatGoal(double value) {
+    if (value == value.roundToDouble()) {
+      return value.round().toString();
+    }
+    return value.toStringAsFixed(1);
   }
 }

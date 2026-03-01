@@ -8,6 +8,8 @@ import 'package:nutrinutri/features/dashboard/presentation/dashboard_providers.d
 import 'package:nutrinutri/features/dashboard/presentation/widgets/daily_summary_section.dart';
 import 'package:nutrinutri/features/dashboard/presentation/widgets/date_switcher.dart';
 import 'package:nutrinutri/features/dashboard/presentation/widgets/entries_list.dart';
+import 'package:nutrinutri/features/dashboard/presentation/widgets/water_log_dialog.dart';
+import 'package:nutrinutri/features/diary/application/diary_controller.dart';
 
 class DashboardPage extends ConsumerStatefulWidget {
   const DashboardPage({super.key});
@@ -33,9 +35,42 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   }
 
   void _refresh() {
-    // Invalidate providers to force refresh
     ref.invalidate(dailySummaryProvider(_selectedDate));
     ref.invalidate(dayEntriesProvider(_selectedDate));
+  }
+
+  String _addEntryRoute({required bool isExercise}) {
+    if (!isExercise) return '/add-entry';
+
+    return Uri(
+      path: '/add-entry',
+      queryParameters: {'type': 'exercise'},
+    ).toString();
+  }
+
+  Future<void> _openAddEntry(
+    BuildContext context, {
+    required bool isExercise,
+  }) async {
+    await context.push(_addEntryRoute(isExercise: isExercise));
+    _refresh();
+  }
+
+  Future<void> _logWater(BuildContext context) async {
+    final amount = await showDialog<int>(
+      context: context,
+      builder: (context) => const WaterLogDialog(),
+    );
+
+    if (amount != null && amount > 0) {
+      await ref.read(diaryControllerProvider.notifier).logWater(amount);
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Added ${amount}ml water')));
+      }
+      _refresh();
+    }
   }
 
   @override
@@ -44,11 +79,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        // On desktop, always use wide layout if window is large enough
         final isWide = constraints.maxWidth >= 700;
 
         return Scaffold(
-          // On desktop, no app bar needed since we have the sidebar
           appBar: isDesktop
               ? null
               : AppBar(
@@ -103,24 +136,19 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   const Spacer(),
                   // Quick actions
                   FilledButton.tonalIcon(
-                    onPressed: () async {
-                      await context.push(
-                        Uri(
-                          path: '/add-entry',
-                          queryParameters: {'type': 'exercise'},
-                        ).toString(),
-                      );
-                      _refresh();
-                    },
+                    onPressed: () => _logWater(context),
+                    icon: const Icon(Icons.water_drop),
+                    label: const Text('Log Water'),
+                  ),
+                  const Gap(12),
+                  FilledButton.tonalIcon(
+                    onPressed: () => _openAddEntry(context, isExercise: true),
                     icon: const Icon(Icons.fitness_center),
                     label: const Text('Log Exercise'),
                   ),
                   const Gap(12),
                   FilledButton.icon(
-                    onPressed: () async {
-                      await context.push('/add-entry');
-                      _refresh();
-                    },
+                    onPressed: () => _openAddEntry(context, isExercise: false),
                     icon: const Icon(Icons.restaurant),
                     label: const Text('Log Food'),
                   ),
@@ -190,8 +218,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   }
 
   Widget? _buildFAB(BuildContext context, bool isWide) {
-    // Show FAB on mobile phones, or on desktop/web when window is narrow
-    // (narrow windows don't have the desktop header buttons)
     final shouldShowFAB = PlatformHelper.isMobile || !isWide;
 
     if (!shouldShowFAB) {
@@ -203,26 +229,22 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         FloatingActionButton.small(
+          heroTag: 'log_water',
+          onPressed: () => _logWater(context),
+          tooltip: 'Log Water',
+          child: const Icon(Icons.water_drop),
+        ),
+        const Gap(16),
+        FloatingActionButton.small(
           heroTag: 'log_exercise',
-          onPressed: () async {
-            await context.push(
-              Uri(
-                path: '/add-entry',
-                queryParameters: {'type': 'exercise'},
-              ).toString(),
-            );
-            _refresh();
-          },
+          onPressed: () => _openAddEntry(context, isExercise: true),
           tooltip: 'Log Exercise',
           child: const Icon(Icons.fitness_center),
         ),
         const Gap(16),
         FloatingActionButton.extended(
           heroTag: 'log_food',
-          onPressed: () async {
-            await context.push('/add-entry');
-            _refresh();
-          },
+          onPressed: () => _openAddEntry(context, isExercise: false),
           label: const Text('Log Food'),
           icon: const Icon(Icons.restaurant),
         ),

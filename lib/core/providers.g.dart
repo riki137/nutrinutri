@@ -167,6 +167,45 @@ final class ApiKeyProvider
 
 String _$apiKeyHash() => r'924832eaef3085a68ee2a4785acc71d4f23887b0';
 
+@ProviderFor(userProfile)
+final userProfileProvider = UserProfileProvider._();
+
+final class UserProfileProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<UserProfile?>,
+          UserProfile?,
+          FutureOr<UserProfile?>
+        >
+    with $FutureModifier<UserProfile?>, $FutureProvider<UserProfile?> {
+  UserProfileProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'userProfileProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$userProfileHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<UserProfile?> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<UserProfile?> create(Ref ref) {
+    return userProfile(ref);
+  }
+}
+
+String _$userProfileHash() => r'72317a9f015e7d336011f2e22f1c7ccd45601ae3';
+
 @ProviderFor(aiService)
 final aiServiceProvider = AiServiceProvider._();
 
@@ -244,7 +283,7 @@ final class DiaryServiceProvider
   }
 }
 
-String _$diaryServiceHash() => r'716d71e447b58f3ef2ff161b9ee3417af4dc9954';
+String _$diaryServiceHash() => r'daf4f2b4332b13f42396c5af03f3b15d77ea4035';
 
 @ProviderFor(syncService)
 final syncServiceProvider = SyncServiceProvider._();

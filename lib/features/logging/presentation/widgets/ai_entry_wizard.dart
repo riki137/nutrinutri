@@ -7,7 +7,7 @@ import 'package:nutrinutri/core/utils/icon_utils.dart';
 import 'package:nutrinutri/features/diary/domain/diary_entry.dart';
 import 'package:nutrinutri/features/logging/presentation/widgets/food_image_picker.dart';
 
-class AIEntryWizard extends StatelessWidget {
+class AIEntryWizard extends StatefulWidget {
   const AIEntryWizard({
     super.key,
     required this.isExercise,
@@ -18,6 +18,7 @@ class AIEntryWizard extends StatelessWidget {
     required this.onPromptSearch,
     required this.onAddOptimistic,
     required this.onEnterManually,
+    required this.onEntrySelected,
   });
   final bool isExercise;
   final TextEditingController descriptionController;
@@ -27,6 +28,26 @@ class AIEntryWizard extends StatelessWidget {
   final Future<List<DiaryEntry>> Function(String) onPromptSearch;
   final VoidCallback onAddOptimistic;
   final VoidCallback onEnterManually;
+  final Function(DiaryEntry) onEntrySelected;
+
+  @override
+  State<AIEntryWizard> createState() => _AIEntryWizardState();
+}
+
+class _AIEntryWizardState extends State<AIEntryWizard> {
+  late final FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
 
   String _suggestionText(DiaryEntry entry) {
     final prompt = entry.description?.trim();
@@ -39,35 +60,39 @@ class AIEntryWizard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (!isExercise)
+        if (!widget.isExercise)
           FoodImagePicker(
-            image: image,
-            canUseCamera: canUseCamera,
-            onPickImage: onPickImage,
+            image: widget.image,
+            canUseCamera: widget.canUseCamera,
+            onPickImage: widget.onPickImage,
           ),
-        if (!isExercise) const Gap(16),
+        if (!widget.isExercise) const Gap(16),
         LayoutBuilder(
           builder: (context, constraints) {
             return RawAutocomplete<DiaryEntry>(
-              optionsBuilder: (text) async => onPromptSearch(text.text),
+              textEditingController: widget.descriptionController,
+              focusNode: _focusNode,
+              optionsViewOpenDirection: OptionsViewOpenDirection.up,
+              optionsBuilder: (text) async {
+                if (text.text.trim().length < 3) {
+                  return const Iterable<DiaryEntry>.empty();
+                }
+                return widget.onPromptSearch(text.text);
+              },
               displayStringForOption: _suggestionText,
               onSelected: (entry) {
-                final text = _suggestionText(entry);
-                descriptionController.value = TextEditingValue(
-                  text: text,
-                  selection: TextSelection.collapsed(offset: text.length),
-                );
+                widget.onEntrySelected(entry);
               },
               fieldViewBuilder: (context, controller, focusNode, onSubmitted) {
                 return TextField(
-                  controller: descriptionController,
+                  controller: controller,
                   focusNode: focusNode,
                   decoration: InputDecoration(
-                    labelText: isExercise
+                    labelText: widget.isExercise
                         ? 'Describe the exercise'
                         : 'AI prompt (optional if image provided)',
                     border: const OutlineInputBorder(),
-                    hintText: isExercise
+                    hintText: widget.isExercise
                         ? 'e.g. 30 mins running'
                         : 'e.g. 2 eggs and toast',
                     suffixIcon: const Icon(Icons.history),
@@ -77,7 +102,7 @@ class AIEntryWizard extends StatelessWidget {
               },
               optionsViewBuilder: (context, onSelected, options) {
                 return Align(
-                  alignment: Alignment.topLeft,
+                  alignment: Alignment.bottomLeft,
                   child: Material(
                     elevation: 4,
                     child: ConstrainedBox(
@@ -88,6 +113,7 @@ class AIEntryWizard extends StatelessWidget {
                       child: ListView.builder(
                         padding: EdgeInsets.zero,
                         shrinkWrap: true,
+                        reverse: true,
                         itemCount: options.length,
                         itemBuilder: (context, index) {
                           final option = options.elementAt(index);
@@ -97,9 +123,15 @@ class AIEntryWizard extends StatelessWidget {
                               option.name.trim().isNotEmpty &&
                               option.name.trim() != title;
                           final subtitleParts = <String>[];
-                          if (showNameAsSubtitle) subtitleParts.add(option.name);
+                          if (showNameAsSubtitle) {
+                            subtitleParts.add(option.name);
+                          }
+                          final calories =
+                              option.calories == option.calories.roundToDouble()
+                              ? option.calories.round().toString()
+                              : option.calories.toStringAsFixed(1);
                           subtitleParts.add(
-                            '${option.calories} cal | P:${option.protein} C:${option.carbs} F:${option.fats}',
+                            '$calories cal | P:${option.protein.toStringAsFixed(1)} C:${option.carbs.toStringAsFixed(1)} F:${option.fats.toStringAsFixed(1)}',
                           );
 
                           final iconName = option.icon?.trim();
@@ -126,7 +158,7 @@ class AIEntryWizard extends StatelessWidget {
         ),
         const Gap(24),
         FilledButton.icon(
-          onPressed: onAddOptimistic,
+          onPressed: widget.onAddOptimistic,
           icon: const Icon(Icons.auto_awesome),
           label: const Text('Add Entry with AI'),
           style: FilledButton.styleFrom(padding: const EdgeInsets.all(16)),
@@ -144,7 +176,7 @@ class AIEntryWizard extends StatelessWidget {
         ),
         const Gap(16),
         OutlinedButton(
-          onPressed: onEnterManually,
+          onPressed: widget.onEnterManually,
           style: OutlinedButton.styleFrom(padding: const EdgeInsets.all(16)),
           child: const Text('Enter Manually'),
         ),

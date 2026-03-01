@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
+import 'package:nutrinutri/core/domain/nutrition_metric.dart';
 import 'package:nutrinutri/core/utils/icon_utils.dart';
 import 'package:nutrinutri/core/utils/met_values.dart';
 import 'package:nutrinutri/features/logging/presentation/widgets/icon_picker_button.dart';
@@ -9,10 +10,7 @@ class EntryForm extends StatelessWidget {
   const EntryForm({
     super.key,
     required this.nameController,
-    required this.caloriesController,
-    required this.proteinController,
-    required this.carbsController,
-    required this.fatsController,
+    required this.metricControllers,
     this.durationController,
     required this.selectedIcon,
     required this.selectedDate,
@@ -23,10 +21,7 @@ class EntryForm extends StatelessWidget {
     this.isExercise = false,
   });
   final TextEditingController nameController;
-  final TextEditingController caloriesController;
-  final TextEditingController proteinController;
-  final TextEditingController carbsController;
-  final TextEditingController fatsController;
+  final Map<NutritionMetricType, TextEditingController> metricControllers;
   final TextEditingController? durationController;
   final String selectedIcon;
   final DateTime selectedDate;
@@ -36,8 +31,57 @@ class EntryForm extends StatelessWidget {
   final VoidCallback onPickTime;
   final bool isExercise;
 
+  TextEditingController _controllerFor(NutritionMetricType metric) {
+    return metricControllers[metric]!;
+  }
+
+  Widget _buildDateTimeButton({
+    required VoidCallback onPressed,
+    required IconData icon,
+    required String label,
+  }) {
+    return Expanded(
+      child: OutlinedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon),
+        label: Text(label),
+      ),
+    );
+  }
+
+  Widget _buildNumericField({
+    required TextEditingController controller,
+    required String labelText,
+    bool allowDecimal = true,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: allowDecimal
+          ? const TextInputType.numberWithOptions(decimal: true)
+          : TextInputType.number,
+      decoration: InputDecoration(
+        labelText: labelText,
+        border: const OutlineInputBorder(),
+      ),
+    );
+  }
+
+  Widget _buildMetricField(NutritionMetricType metric) {
+    return SizedBox(
+      width: 190,
+      child: _buildNumericField(
+        controller: _controllerFor(metric),
+        labelText: '${metric.label} (${metric.unit})',
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final nonCalorieMetrics = NutritionMetricType.values
+        .where((metric) => metric != NutritionMetricType.calories)
+        .toList(growable: false);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -52,7 +96,7 @@ class EntryForm extends StatelessWidget {
             children: [
               IconPickerButton(
                 selectedIcon: selectedIcon,
-                onIconChanged: (val) => onIconChanged(val),
+                onIconChanged: onIconChanged,
                 availableIcons: isExercise
                     ? IconUtils.availableExerciseIcons
                     : IconUtils.availableFoodIcons,
@@ -80,14 +124,7 @@ class EntryForm extends StatelessWidget {
                 label: Text(name),
                 onPressed: () {
                   nameController.text = name;
-                  // Map exercise names to icons
-                  final icon = IconUtils.exerciseNameMap[name];
-                  if (icon != null) {
-                    onIconChanged(icon);
-                  } else {
-                    // Default fallback
-                    onIconChanged('sports');
-                  }
+                  onIconChanged(IconUtils.exerciseNameMap[name] ?? 'sports');
                 },
               );
             }).toList(),
@@ -97,20 +134,16 @@ class EntryForm extends StatelessWidget {
 
         Row(
           children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: onPickDate,
-                icon: const Icon(Icons.calendar_today),
-                label: Text(DateFormat('yyyy-MM-dd').format(selectedDate)),
-              ),
+            _buildDateTimeButton(
+              onPressed: onPickDate,
+              icon: Icons.calendar_today,
+              label: DateFormat('yyyy-MM-dd').format(selectedDate),
             ),
             const Gap(16),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: onPickTime,
-                icon: const Icon(Icons.access_time),
-                label: Text(selectedTime.format(context)),
-              ),
+            _buildDateTimeButton(
+              onPressed: onPickTime,
+              icon: Icons.access_time,
+              label: selectedTime.format(context),
             ),
           ],
         ),
@@ -118,25 +151,18 @@ class EntryForm extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: TextField(
-                controller: caloriesController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: isExercise ? 'Calories Burned' : 'Calories',
-                  border: const OutlineInputBorder(),
-                ),
+              child: _buildNumericField(
+                controller: _controllerFor(NutritionMetricType.calories),
+                labelText: isExercise ? 'Calories Burned' : 'Calories',
               ),
             ),
             if (isExercise && durationController != null) ...[
               const Gap(16),
               Expanded(
-                child: TextField(
-                  controller: durationController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Duration (min)',
-                    border: OutlineInputBorder(),
-                  ),
+                child: _buildNumericField(
+                  controller: durationController!,
+                  labelText: 'Duration (min)',
+                  allowDecimal: false,
                 ),
               ),
             ],
@@ -144,47 +170,12 @@ class EntryForm extends StatelessWidget {
         ),
         if (!isExercise) ...[
           const Gap(16),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: proteinController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: const InputDecoration(
-                    labelText: 'Protein (g)',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ),
-              const Gap(16),
-              Expanded(
-                child: TextField(
-                  controller: carbsController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: const InputDecoration(
-                    labelText: 'Carbs (g)',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ),
-              const Gap(16),
-              Expanded(
-                child: TextField(
-                  controller: fatsController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: const InputDecoration(
-                    labelText: 'Fats (g)',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ),
-            ],
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: nonCalorieMetrics
+                .map(_buildMetricField)
+                .toList(growable: false),
           ),
         ],
       ],

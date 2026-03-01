@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'package:nutrinutri/core/domain/nutrition_metric.dart';
 import 'package:nutrinutri/core/domain/user_profile.dart';
 import 'package:nutrinutri/core/providers.dart';
+import 'package:nutrinutri/core/services/sync_service.dart';
 import 'package:nutrinutri/core/utils/calorie_calculator.dart';
 import 'package:nutrinutri/features/settings/domain/ai_model_info.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -12,39 +14,39 @@ class SettingsState {
   SettingsState({
     this.isLoading = false,
     this.isSyncing = false,
-    this.initialHash,
     this.selectedModel = 'google/gemini-3-flash-preview',
     this.fallbackModel,
     this.gender = 'male',
     this.activityLevel = 'sedentary',
+    this.homeMetricTypes = defaultHomeMetricTypes,
   });
 
   final bool isLoading;
   final bool isSyncing;
-  final String? initialHash;
   final String selectedModel;
   final String gender;
   final String activityLevel;
+  final List<NutritionMetricType> homeMetricTypes;
 
   final String? fallbackModel;
 
   SettingsState copyWith({
     bool? isLoading,
     bool? isSyncing,
-    String? initialHash,
     String? selectedModel,
     String? fallbackModel,
     String? gender,
     String? activityLevel,
+    List<NutritionMetricType>? homeMetricTypes,
   }) {
     return SettingsState(
       isLoading: isLoading ?? this.isLoading,
       isSyncing: isSyncing ?? this.isSyncing,
-      initialHash: initialHash ?? this.initialHash,
       selectedModel: selectedModel ?? this.selectedModel,
       fallbackModel: fallbackModel ?? this.fallbackModel,
       gender: gender ?? this.gender,
       activityLevel: activityLevel ?? this.activityLevel,
+      homeMetricTypes: homeMetricTypes ?? this.homeMetricTypes,
     );
   }
 }
@@ -88,6 +90,7 @@ class SettingsController extends _$SettingsController {
       state = state.copyWith(
         gender: profile.gender,
         activityLevel: profile.activityLevel,
+        homeMetricTypes: profile.dashboardMetricTypes,
       );
       onProfileLoaded(profile);
     }
@@ -109,16 +112,23 @@ class SettingsController extends _$SettingsController {
     state = state.copyWith(activityLevel: level);
   }
 
+  void updateHomeMetric(int slot, NutritionMetricType metricType) {
+    final next = normalizeHomeMetricTypes(state.homeMetricTypes).toList();
+
+    if (slot < 0 || slot >= next.length) return;
+    next[slot] = metricType;
+    state = state.copyWith(homeMetricTypes: normalizeHomeMetricTypes(next));
+  }
+
   Future<void> save({
     required String apiKey,
     required String customModel,
     required String age,
     required String weight,
     required String height,
-    required String goalCalories,
-    required String protein,
-    required String carbs,
-    required String fats,
+    required String calorieGoal,
+    required Map<NutritionMetricType, String> metricGoalInputs,
+    required List<NutritionMetricType> homeMetricTypes,
   }) async {
     state = state.copyWith(isLoading: true);
     try {
@@ -134,31 +144,51 @@ class SettingsController extends _$SettingsController {
 
       await settings.saveFallbackModel(state.fallbackModel);
 
-      if (age.isNotEmpty &&
-          weight.isNotEmpty &&
-          height.isNotEmpty &&
-          goalCalories.isNotEmpty) {
+      final parsedAge = int.tryParse(age.trim());
+      final parsedWeight = _parseGoal(weight);
+      final parsedHeight = _parseGoal(height);
+      final parsedCalorieGoal = _parseGoal(calorieGoal);
+
+      if (parsedAge != null &&
+          parsedWeight != null &&
+          parsedHeight != null &&
+          parsedCalorieGoal != null &&
+          parsedCalorieGoal > 0) {
+        final metricGoals = <NutritionMetricType, double>{};
+        for (final entry in metricGoalInputs.entries) {
+          final parsed = _parseGoal(entry.value);
+          if (parsed != null && parsed > 0) {
+            metricGoals[entry.key] = parsed;
+          }
+        }
+
         await settings.saveUserProfile(
-          age: int.parse(age),
-          weight: double.parse(weight),
-          height: double.parse(height),
+          age: parsedAge,
+          weight: parsedWeight,
+          height: parsedHeight,
           gender: state.gender,
           activityLevel: state.activityLevel,
-          goalCalories: int.parse(goalCalories),
-          goalProtein: int.tryParse(protein),
-          goalCarbs: int.tryParse(carbs),
-          goalFat: int.tryParse(fats),
+          calorieGoal: parsedCalorieGoal,
+          metricGoals: metricGoals,
+          homeMetricTypes: normalizeHomeMetricTypes(homeMetricTypes),
         );
       }
 
       ref.invalidate(apiKeyProvider);
       ref.invalidate(aiServiceProvider);
+      ref.invalidate(userProfileProvider);
     } finally {
       state = state.copyWith(isLoading: false);
     }
   }
 
-  Future<int> sync() async {
+  double? _parseGoal(String raw) {
+    final normalized = raw.trim().replaceAll(',', '.');
+    if (normalized.isEmpty) return null;
+    return double.tryParse(normalized);
+  }
+
+  Future<SyncResult> sync() async {
     state = state.copyWith(isSyncing: true);
     try {
       return await ref.read(syncServiceProvider).sync();
@@ -243,12 +273,4 @@ class SettingsController extends _$SettingsController {
       activityLevel: activityLevel,
     );
   }
-}
-
-@riverpod
-class UnsavedSettingsChanges extends _$UnsavedSettingsChanges {
-  @override
-  bool build() => false;
-
-  void set(bool value) => state = value;
 }
