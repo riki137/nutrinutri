@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in_all_platforms/google_sign_in_all_platforms.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
+import 'package:googleapis_auth/googleapis_auth.dart' as gapis;
+import 'package:http/http.dart' as http;
 import 'package:nutrinutri/core/db/app_database.dart';
 import 'package:nutrinutri/core/services/drive_snapshot.dart';
 import 'package:nutrinutri/core/services/google_drive_appdata.dart';
@@ -15,6 +17,8 @@ class SyncResult {
   final int downloaded;
   final int uploaded;
 }
+
+String _encodeSnapshotBytes(DriveSnapshot snapshot) => snapshot.encode();
 
 class SyncService {
   SyncService({required AppDatabase db}) : _db = db;
@@ -31,11 +35,7 @@ class SyncService {
     params: GoogleSignInParams(
       clientId: _clientId,
       clientSecret: _clientSecret,
-      scopes: const [
-        'https://www.googleapis.com/auth/userinfo.email',
-        'https://www.googleapis.com/auth/userinfo.profile',
-        drive.DriveApi.driveAppdataScope,
-      ],
+      scopes: _scopes,
     ),
   );
 
@@ -45,6 +45,13 @@ class SyncService {
   // This is not actually a secret, Google just calls it that.
   // The app must have this to use Google Sign In, so there's no way to hide it.
   static const String _clientSecret = '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';
+
+  /// The scopes requested for Google Drive sync.
+  static const _scopes = [
+    'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/userinfo.profile',
+    drive.DriveApi.driveAppdataScope,
+  ];
 
   GoogleSignInCredentials? _currentCredentials;
   GoogleSignInCredentials? get currentCredentials => _currentCredentials;
@@ -110,6 +117,13 @@ class SyncService {
   Future<void> _restoreSessionInternal() async {
     _listenToAuthState();
 
+    // Read stored credentials from SharedPreferences.  This never
+    // contacts Google Play Services and never shows any UI.  The
+    // access token may be stale, but the user info (email, name,
+    // photo) is still valid for displaying in the UI.  When a sync
+    // is actually attempted, _syncInternal() will handle token expiry
+    // gracefully by building the HTTP client itself and recovering
+    // on 401.
     try {
       final credentials = await _googleSignIn.silentSignIn();
       _setCredentials(credentials);
@@ -193,12 +207,51 @@ class SyncService {
     });
   }
 
+  /// Builds an authenticated HTTP client directly from stored credentials.
+  ///
+  /// This bypasses the wrapper library's [authenticatedClient] getter which
+  /// has a destructive design flaw: on mobile (where there is no refresh
+  /// token) it calls [signOut()] when the access token has expired, silently
+  /// logging the user out.  By building the client ourselves with a
+  /// far-future local expiry, we avoid that code path entirely.  If the
+  /// token IS actually expired, the Google Drive API will return a 401
+  /// which we catch and handle in [_syncInternal].
+  ///
+  /// On desktop (where a refresh token IS present), we still go through the
+  /// wrapper's [authenticatedClient] because the base-class correctly uses
+  /// [autoRefreshingClient] for that case.
+  Future<http.Client?> _buildAuthenticatedClient() async {
+    final creds = _currentCredentials;
+    if (creds == null) return null;
+
+    // Desktop path: the wrapper handles refresh-token based auto-refresh.
+    if (creds.refreshToken != null) {
+      return await _googleSignIn.authenticatedClient;
+    }
+
+    // Mobile path: build the client manually.
+    return gapis.authenticatedClient(
+      http.Client(),
+      gapis.AccessCredentials(
+        gapis.AccessToken(
+          creds.tokenType ?? 'Bearer',
+          creds.accessToken,
+          // Far-future local expiry so googleapis_auth never rejects the
+          // token locally.  The real expiry is enforced server-side.
+          DateTime.now().toUtc().add(const Duration(days: 365)),
+        ),
+        null, // no refresh token on mobile
+        creds.scopes.isEmpty ? _scopes : creds.scopes,
+      ),
+    );
+  }
+
   Future<SyncResult> _syncInternal() async {
     if (_currentCredentials == null) {
       return const SyncResult(downloaded: 0, uploaded: 0);
     }
 
-    var client = await _googleSignIn.authenticatedClient;
+    var client = await _buildAuthenticatedClient();
     if (client == null) {
       return const SyncResult(downloaded: 0, uploaded: 0);
     }
@@ -210,21 +263,32 @@ class SyncService {
       if (message.contains('invalid_token') ||
           message.contains('Access was denied') ||
           message.contains('401')) {
+        // The stored access token is expired.  Attempt ONE recovery via
+        // lightweightSignIn which obtains a fresh token from Google Play
+        // Services.  On most single-account Android devices this is
+        // completely silent (auto-select). On multi-account devices it
+        // may show a brief account picker — but this only happens when
+        // the token has actually expired, NOT on every app resume.
         try {
           final credentials = await _googleSignIn.lightweightSignIn();
           _setCredentials(credentials);
           if (_currentCredentials != null) {
-            client = await _googleSignIn.authenticatedClient;
+            client = await _buildAuthenticatedClient();
             if (client != null) {
               return await _performSync(client);
             }
           }
         } catch (retryError) {
-          debugPrint('Token refresh failed: $retryError');
+          debugPrint('Token refresh after 401 failed: $retryError');
         }
 
-        await signOut();
-        throw 'Your session has expired. Please sign in again.';
+        // Recovery failed.  Do NOT sign the user out — their profile
+        // info is still valid and they should not lose their signed-in
+        // state.  The next sync attempt (e.g. on next resume) will
+        // retry, or the user can manually re-authenticate from settings.
+        debugPrint('Sync skipped: access token expired and silent '
+            'refresh was not possible.');
+        return const SyncResult(downloaded: 0, uploaded: 0);
       }
       rethrow;
     }
@@ -237,7 +301,7 @@ class SyncService {
     final remoteRaw = fileId == null
         ? ''
         : await _drive.downloadText(driveApi, fileId: fileId);
-    final remote = DriveSnapshot.decode(remoteRaw);
+    final remote = await compute(DriveSnapshot.decode, remoteRaw);
 
     final localDiaryRows = await _db.select(_db.diaryEntries).get();
     final localMetricRows = await _db.select(_db.entryMetrics).get();
@@ -284,7 +348,16 @@ class SyncService {
     await _db.transaction(() async {
       final allIds = {...localDiary.keys, ...remote.diaryEntries.keys};
 
+      final remoteEntriesToApply = <SyncedDiaryEntry>[];
+
+      var count = 0;
       for (final id in allIds) {
+        if (++count % 500 == 0) {
+          // Yield to event loop occasionally to prevent UI jank
+          // when there are thousands of diary entries bridging over.
+          await Future<void>.delayed(Duration.zero);
+        }
+
         final local = localDiary[id];
         final remoteEntry = remote.diaryEntries[id];
 
@@ -296,7 +369,7 @@ class SyncService {
         }
 
         if (local == null && remoteEntry != null) {
-          await _applyRemoteDiaryEntry(remoteEntry);
+          remoteEntriesToApply.add(remoteEntry);
           localUpdates++;
           continue;
         }
@@ -314,9 +387,43 @@ class SyncService {
           remoteNeedsUpdate = true;
           uploadedUpdates++;
         } else if (cmp < 0) {
-          await _applyRemoteDiaryEntry(remoteEntry);
+          remoteEntriesToApply.add(remoteEntry);
           localUpdates++;
         }
+      }
+
+      if (remoteEntriesToApply.isNotEmpty) {
+        final entries = remoteEntriesToApply
+            .map((e) => e.row.toCompanion(false))
+            .toList();
+        final metrics = remoteEntriesToApply
+            .expand((e) => e.metrics)
+            .map((e) => e.toCompanion(false))
+            .toList();
+        final ids = remoteEntriesToApply.map((e) => e.row.id).toList();
+
+        // SQLite IN clause limit is 999
+        for (var i = 0; i < ids.length; i += 900) {
+          final chunk = ids.skip(i).take(900).toList();
+          await (_db.delete(_db.entryMetrics)
+                ..where((t) => t.entryId.isIn(chunk)))
+              .go();
+        }
+
+        await _db.batch((batch) {
+          batch.insertAll(
+            _db.diaryEntries,
+            entries,
+            mode: InsertMode.insertOrReplace,
+          );
+          if (metrics.isNotEmpty) {
+            batch.insertAll(
+              _db.entryMetrics,
+              metrics,
+              mode: InsertMode.insertOrReplace,
+            );
+          }
+        });
       }
 
       final profileResult = await _mergeSingleton(
@@ -363,7 +470,7 @@ class SyncService {
       await _drive.uploadText(
         driveApi,
         name: _snapshotFileName,
-        content: nextSnapshot.encode(),
+        content: await compute(_encodeSnapshotBytes, nextSnapshot),
         fileId: fileId,
       );
     }
@@ -388,30 +495,6 @@ class SyncService {
     _syncTimer = null;
 
     return SyncResult(downloaded: localUpdates, uploaded: uploadedUpdates);
-  }
-
-  Future<void> _applyRemoteDiaryEntry(SyncedDiaryEntry remote) async {
-    await _db.transaction(() async {
-      await _db
-          .into(_db.diaryEntries)
-          .insert(
-            remote.row.toCompanion(false),
-            mode: InsertMode.insertOrReplace,
-          );
-
-      await (_db.delete(
-        _db.entryMetrics,
-      )..where((t) => t.entryId.equals(remote.row.id))).go();
-
-      if (remote.metrics.isEmpty) return;
-      await _db.batch((batch) {
-        batch.insertAll(
-          _db.entryMetrics,
-          remote.metrics.map((row) => row.toCompanion(false)).toList(),
-          mode: InsertMode.insertOrReplace,
-        );
-      });
-    });
   }
 
   Future<void> _applyRemoteUserProfile(SyncedUserProfile remote) async {
