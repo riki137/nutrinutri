@@ -18,6 +18,8 @@ class SyncResult {
   final int uploaded;
 }
 
+String _encodeSnapshotBytes(DriveSnapshot snapshot) => snapshot.encode();
+
 class SyncService {
   SyncService({required AppDatabase db}) : _db = db;
 
@@ -299,7 +301,7 @@ class SyncService {
     final remoteRaw = fileId == null
         ? ''
         : await _drive.downloadText(driveApi, fileId: fileId);
-    final remote = DriveSnapshot.decode(remoteRaw);
+    final remote = await compute(DriveSnapshot.decode, remoteRaw);
 
     final localDiaryRows = await _db.select(_db.diaryEntries).get();
     final localMetricRows = await _db.select(_db.entryMetrics).get();
@@ -346,7 +348,16 @@ class SyncService {
     await _db.transaction(() async {
       final allIds = {...localDiary.keys, ...remote.diaryEntries.keys};
 
+      final remoteEntriesToApply = <SyncedDiaryEntry>[];
+
+      var count = 0;
       for (final id in allIds) {
+        if (++count % 500 == 0) {
+          // Yield to event loop occasionally to prevent UI jank
+          // when there are thousands of diary entries bridging over.
+          await Future<void>.delayed(Duration.zero);
+        }
+
         final local = localDiary[id];
         final remoteEntry = remote.diaryEntries[id];
 
@@ -358,7 +369,7 @@ class SyncService {
         }
 
         if (local == null && remoteEntry != null) {
-          await _applyRemoteDiaryEntry(remoteEntry);
+          remoteEntriesToApply.add(remoteEntry);
           localUpdates++;
           continue;
         }
@@ -376,9 +387,43 @@ class SyncService {
           remoteNeedsUpdate = true;
           uploadedUpdates++;
         } else if (cmp < 0) {
-          await _applyRemoteDiaryEntry(remoteEntry);
+          remoteEntriesToApply.add(remoteEntry);
           localUpdates++;
         }
+      }
+
+      if (remoteEntriesToApply.isNotEmpty) {
+        final entries = remoteEntriesToApply
+            .map((e) => e.row.toCompanion(false))
+            .toList();
+        final metrics = remoteEntriesToApply
+            .expand((e) => e.metrics)
+            .map((e) => e.toCompanion(false))
+            .toList();
+        final ids = remoteEntriesToApply.map((e) => e.row.id).toList();
+
+        // SQLite IN clause limit is 999
+        for (var i = 0; i < ids.length; i += 900) {
+          final chunk = ids.skip(i).take(900).toList();
+          await (_db.delete(_db.entryMetrics)
+                ..where((t) => t.entryId.isIn(chunk)))
+              .go();
+        }
+
+        await _db.batch((batch) {
+          batch.insertAll(
+            _db.diaryEntries,
+            entries,
+            mode: InsertMode.insertOrReplace,
+          );
+          if (metrics.isNotEmpty) {
+            batch.insertAll(
+              _db.entryMetrics,
+              metrics,
+              mode: InsertMode.insertOrReplace,
+            );
+          }
+        });
       }
 
       final profileResult = await _mergeSingleton(
@@ -425,7 +470,7 @@ class SyncService {
       await _drive.uploadText(
         driveApi,
         name: _snapshotFileName,
-        content: nextSnapshot.encode(),
+        content: await compute(_encodeSnapshotBytes, nextSnapshot),
         fileId: fileId,
       );
     }
@@ -450,30 +495,6 @@ class SyncService {
     _syncTimer = null;
 
     return SyncResult(downloaded: localUpdates, uploaded: uploadedUpdates);
-  }
-
-  Future<void> _applyRemoteDiaryEntry(SyncedDiaryEntry remote) async {
-    await _db.transaction(() async {
-      await _db
-          .into(_db.diaryEntries)
-          .insert(
-            remote.row.toCompanion(false),
-            mode: InsertMode.insertOrReplace,
-          );
-
-      await (_db.delete(
-        _db.entryMetrics,
-      )..where((t) => t.entryId.equals(remote.row.id))).go();
-
-      if (remote.metrics.isEmpty) return;
-      await _db.batch((batch) {
-        batch.insertAll(
-          _db.entryMetrics,
-          remote.metrics.map((row) => row.toCompanion(false)).toList(),
-          mode: InsertMode.insertOrReplace,
-        );
-      });
-    });
   }
 
   Future<void> _applyRemoteUserProfile(SyncedUserProfile remote) async {
