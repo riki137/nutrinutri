@@ -46,6 +46,46 @@ class BenchmarkResult {
   });
 }
 
+/// Path to the append-only results cache. Never rewritten in place - only
+/// ever appended to, so a completed API call is durable the instant it's
+/// written, even if the run is later killed or crashes.
+const String _resultsFilePath = 'test/benchmark_results.jsonl';
+
+/// Splits a comma-separated env/dart-define value into a trimmed, non-empty
+/// set (mirrors the OPENROUTER_API_KEY lookup below).
+Set<String> _splitEnvList(String raw) => raw
+    .split(',')
+    .map((s) => s.trim())
+    .where((s) => s.isNotEmpty)
+    .toSet();
+
+/// Builds the cache/lookup key identifying one (model, case, iteration)
+/// combination.
+String _cacheKey(String model, String caseName, int iteration) =>
+    '$model $caseName $iteration';
+
+/// Loads previously recorded results from [_resultsFilePath], keyed by
+/// [_cacheKey]. Later lines for the same key overwrite earlier ones, so a
+/// forced re-run's fresh line always wins over the stale one still sitting
+/// in the file.
+Map<String, Map<String, dynamic>> _loadCache() {
+  final file = File(_resultsFilePath);
+  if (!file.existsSync()) return {};
+
+  final cache = <String, Map<String, dynamic>>{};
+  for (final line in file.readAsLinesSync()) {
+    if (line.trim().isEmpty) continue;
+    final record = jsonDecode(line) as Map<String, dynamic>;
+    final key = _cacheKey(
+      record['model'] as String,
+      record['caseName'] as String,
+      record['iteration'] as int,
+    );
+    cache[key] = record;
+  }
+  return cache;
+}
+
 void main() {
   // CONFIGURATION
   // Try to get API key from environment variables or --dart-define
@@ -54,11 +94,33 @@ void main() {
       ? dartDefineKey
       : Platform.environment['OPENROUTER_API_KEY'] ?? 'YOUR_OPENROUTER_API_KEY';
 
+  // Model IDs to fully redo (ignore cache) regardless of prior results, e.g.
+  // FORCE_RERUN_MODELS=google/gemini-3-pro-preview
+  const dartDefineForceRerunModels = String.fromEnvironment(
+    'FORCE_RERUN_MODELS',
+  );
+  final Set<String> forceRerunModels = _splitEnvList(
+    dartDefineForceRerunModels.isNotEmpty
+        ? dartDefineForceRerunModels
+        : Platform.environment['FORCE_RERUN_MODELS'] ?? '',
+  );
+
+  // Case names to fully redo (ignore cache) regardless of prior results.
+  const dartDefineForceRerunCases = String.fromEnvironment(
+    'FORCE_RERUN_CASES',
+  );
+  final Set<String> forceRerunCases = _splitEnvList(
+    dartDefineForceRerunCases.isNotEmpty
+        ? dartDefineForceRerunCases
+        : Platform.environment['FORCE_RERUN_CASES'] ?? '',
+  );
+
   // Models to test
   const List<String> modelsToTest = [
-    'google/gemini-3-flash-preview',
-    'google/gemini-3-pro-preview',
-    'openai/gpt-5.2',
+    // 'google/gemini-3-flash-preview',
+    // 'google/gemini-3-pro-preview',
+    // 'openai/gpt-5.2',
+    'nvidia/nemotron-3-super-120b-a12b:free',
     // 'openai/gpt-5-mini',
     // 'openai/gpt-5-nano',
     // 'openai/gpt-oss-120b',
@@ -346,145 +408,139 @@ void main() {
     final results = <BenchmarkResult>[];
     const int iterationsPerCase = 3;
 
+    final cache = _loadCache();
+    final sink = File(_resultsFilePath).openWrite(mode: FileMode.append);
+
     print('Starting Benchmark...');
     print('Models: $modelsToTest');
     print('Cases: ${cases.length}');
     print('Iterations per case: $iterationsPerCase');
+    print('Cached results loaded: ${cache.length}');
     print('--------------------------------------------------');
 
-    for (final model in modelsToTest) {
-      print('\nTesting Model: $model');
-      final aiService = AIService(apiKey: apiKey, model: model);
+    try {
+      for (final model in modelsToTest) {
+        print('\nTesting Model: $model');
+        final aiService = AIService(apiKey: apiKey, model: model);
 
-      for (final foodCase in cases) {
-        print('  Running case: ${foodCase.name}...');
+        for (final foodCase in cases) {
+          print('  Running case: ${foodCase.name}...');
 
-        String? base64Image;
-        if (foodCase.imagePath != null) {
-          try {
-            final file = File(foodCase.imagePath!);
-            if (await file.exists()) {
-              final bytes = await file.readAsBytes();
-              base64Image = base64Encode(bytes);
-            } else {
-              print('    [WARN] Image file not found: ${foodCase.imagePath}');
+          String? base64Image;
+          if (foodCase.imagePath != null) {
+            try {
+              final file = File(foodCase.imagePath!);
+              if (await file.exists()) {
+                final bytes = await file.readAsBytes();
+                base64Image = base64Encode(bytes);
+              } else {
+                print(
+                  '    [WARN] Image file not found: ${foodCase.imagePath}',
+                );
+              }
+            } catch (e) {
+              print('    [ERROR] Reading image: $e');
             }
-          } catch (e) {
-            print('    [ERROR] Reading image: $e');
-          }
-        }
-
-        for (int i = 1; i <= iterationsPerCase; i++) {
-          print('    Iteration $i/$iterationsPerCase...');
-
-          final stopwatch = Stopwatch()..start();
-          Map<String, dynamic>? response;
-          Object? error;
-
-          try {
-            response = await aiService.analyzeFood(
-              textDescription: foodCase.description,
-              base64Image: base64Image,
-            );
-          } catch (e) {
-            error = e;
-            print('      [ERROR] AI Request failed: $e');
-          } finally {
-            stopwatch.stop();
           }
 
-          results.add(
-            BenchmarkResult(
+          for (int i = 1; i <= iterationsPerCase; i++) {
+            final key = _cacheKey(model, foodCase.name, i);
+            final cached = cache[key];
+            final forceRerun =
+                forceRerunModels.contains(model) ||
+                forceRerunCases.contains(foodCase.name);
+
+            if (cached != null && cached['error'] == null && !forceRerun) {
+              print('    Iteration $i/$iterationsPerCase... [cached]');
+              results.add(
+                BenchmarkResult(
+                  modelName: model,
+                  foodCase: foodCase,
+                  iteration: i,
+                  aiResponse: cached['aiResponse'] as Map<String, dynamic>?,
+                  latency: Duration(milliseconds: cached['latencyMs'] as int),
+                  error: cached['error'],
+                ),
+              );
+              continue;
+            }
+
+            print('    Iteration $i/$iterationsPerCase...');
+
+            final stopwatch = Stopwatch()..start();
+            Map<String, dynamic>? response;
+            Object? error;
+
+            try {
+              response = await aiService.analyzeFood(
+                textDescription: foodCase.description,
+                base64Image: base64Image,
+              );
+            } catch (e) {
+              error = e;
+              print('      [ERROR] AI Request failed: $e');
+            } finally {
+              stopwatch.stop();
+            }
+
+            final result = BenchmarkResult(
               modelName: model,
               foodCase: foodCase,
               iteration: i,
               aiResponse: response,
               latency: stopwatch.elapsed,
               error: error,
-            ),
-          );
+            );
+            results.add(result);
 
-          // Slight delay to avoid rate limits if running sequentially tight
-          await Future.delayed(const Duration(milliseconds: 500));
+            final record = {
+              'model': model,
+              'caseName': foodCase.name,
+              'iteration': i,
+              'aiResponse': response,
+              'error': error?.toString(),
+              'latencyMs': stopwatch.elapsedMilliseconds,
+            };
+            sink.writeln(jsonEncode(record));
+            await sink.flush();
+            cache[key] = record;
+
+            // Slight delay to avoid rate limits if running sequentially tight
+            await Future.delayed(const Duration(milliseconds: 500));
+          }
         }
       }
+    } finally {
+      await sink.close();
     }
 
     print('\n--------------------------------------------------');
     print('Benchmark Complete. Generating Report...');
     print('--------------------------------------------------\n');
 
-    _printDetailedTable(results);
-    print('\n');
-    _printSummaryTable(results);
+    await _writeReport(results);
+    print('Report written to test/benchmark_report/index.md');
   }, timeout: const Timeout(Duration(minutes: 60)));
+}
+
+/// Reads a metric value out of a raw `analyzeFood` response, which nests
+/// them under a `metrics` map (see `AIService._foodMessages`).
+dynamic _metric(Map<String, dynamic>? aiResponse, String key) =>
+    (aiResponse?['metrics'] as Map?)?[key];
+
+/// Coerces a metric value (usually a `double` like `100.0`, per the AI's
+/// system prompt) into a display/comparison `int`.
+int _asInt(dynamic value) {
+  if (value is num) return value.round();
+  if (value is String) {
+    return int.tryParse(value) ?? double.tryParse(value)?.round() ?? 0;
+  }
+  return 0;
 }
 
 String _formatVal(int? real, dynamic aiVal) {
   if (real == null) return '-';
-  final aiInt = aiVal is int
-      ? aiVal
-      : (aiVal is String ? int.tryParse(aiVal) : null) ?? 0;
-  return '$real / $aiInt';
-}
-
-void _printDetailedTable(List<BenchmarkResult> results) {
-  // Group results by food case
-  final Map<String, List<BenchmarkResult>> resultsByFood = {};
-  for (final result in results) {
-    if (!resultsByFood.containsKey(result.foodCase.name)) {
-      resultsByFood[result.foodCase.name] = [];
-    }
-    resultsByFood[result.foodCase.name]!.add(result);
-  }
-
-  for (final foodName in resultsByFood.keys) {
-    print('### Results for $foodName');
-    print(
-      '| Model | Time (s) | Cal (Real/AI) | Prot (Real/AI) | Carb (Real/AI) | Fat (Real/AI) | Cal Err % |',
-    );
-    print('|---|---|---|---|---|---|---|');
-
-    for (final result in resultsByFood[foodName]!) {
-      final model = result.modelName.split('/').last; // Shorten model name
-      final latencySec = (result.latency.inMilliseconds / 1000.0)
-          .toStringAsFixed(2);
-
-      String calStr = '-';
-      String portStr = '-';
-      String carbStr = '-';
-      String fatStr = '-';
-      String errorStr = '-';
-
-      if (result.error != null) {
-        errorStr = 'ERROR';
-      } else if (result.aiResponse != null) {
-        final aiCals = result.aiResponse!['calories'];
-        final aiProt = result.aiResponse!['protein'];
-        final aiCarb = result.aiResponse!['carbs'];
-        final aiFat = result.aiResponse!['fats'];
-
-        calStr = _formatVal(result.foodCase.realCalories, aiCals);
-        portStr = _formatVal(result.foodCase.realProtein, aiProt);
-        carbStr = _formatVal(result.foodCase.realCarbs, aiCarb);
-        fatStr = _formatVal(result.foodCase.realFats, aiFat);
-
-        if (result.foodCase.realCalories != null) {
-          final real = result.foodCase.realCalories!;
-          final ai = aiCals is int
-              ? aiCals
-              : (int.tryParse(aiCals?.toString() ?? '0') ?? 0);
-          final err = _calculateError(real, ai);
-          errorStr = '${err.toStringAsFixed(1)}%';
-        }
-      }
-
-      print(
-        '| $model | $latencySec | $calStr | $portStr | $carbStr | $fatStr | $errorStr |',
-      );
-    }
-    print('');
-  }
+  return '$real / ${_asInt(aiVal)}';
 }
 
 double _calculateError(int real, int ai) {
@@ -492,47 +548,186 @@ double _calculateError(int real, int ai) {
   return ((ai - real).abs() / real) * 100.0;
 }
 
-void _printSummaryTable(List<BenchmarkResult> results) {
-  print('### Summary');
-  print('| Model | Avg Latency (s) | Avg Cal Error % | Max Cal Error % |');
-  print('|---|---|---|---|');
+double _median(List<double> values) {
+  if (values.isEmpty) return 0.0;
+  final sorted = [...values]..sort();
+  final mid = sorted.length ~/ 2;
+  return sorted.length.isOdd
+      ? sorted[mid]
+      : (sorted[mid - 1] + sorted[mid]) / 2.0;
+}
 
-  final models = results.map((e) => e.modelName).toSet();
+/// Filesystem-safe name for a model's report file, e.g.
+/// `nvidia/nemotron-3-super-120b-a12b:free` -> `nvidia-nemotron-3-super-120b-a12b-free`.
+String _modelSlug(String model) =>
+    model.replaceAll('/', '-').replaceAll(':', '-');
 
-  for (final model in models) {
+class _ModelStats {
+  _ModelStats({
+    required this.model,
+    required this.avgLatency,
+    required this.avgError,
+    required this.medianError,
+    required this.maxError,
+  });
+
+  final String model;
+  final double avgLatency;
+  final double avgError;
+  final double medianError;
+  final double maxError;
+}
+
+/// Builds one row of a food case's detailed table for [result]. [firstColumn]
+/// is the model's short name (index-wide tables) or iteration number
+/// (single-model tables) - the only column that differs between the two.
+String _detailRow(BenchmarkResult result, String firstColumn) {
+  final latencySec = (result.latency.inMilliseconds / 1000.0).toStringAsFixed(
+    2,
+  );
+
+  final aiResponse = result.aiResponse;
+  if (result.error != null || aiResponse == null) {
+    final errorStr = result.error != null ? 'ERROR' : '-';
+    return '| $firstColumn | $latencySec | - | - | - | - | $errorStr |';
+  }
+
+  final calStr = _formatVal(
+    result.foodCase.realCalories,
+    _metric(aiResponse, 'calories'),
+  );
+  final protStr = _formatVal(
+    result.foodCase.realProtein,
+    _metric(aiResponse, 'protein'),
+  );
+  final carbStr = _formatVal(
+    result.foodCase.realCarbs,
+    _metric(aiResponse, 'carbs'),
+  );
+  final fatStr = _formatVal(
+    result.foodCase.realFats,
+    _metric(aiResponse, 'fats'),
+  );
+
+  String errorStr = '-';
+  if (result.foodCase.realCalories != null) {
+    final err = _calculateError(
+      result.foodCase.realCalories!,
+      _asInt(_metric(aiResponse, 'calories')),
+    );
+    errorStr = '${err.toStringAsFixed(1)}%';
+  }
+
+  return '| $firstColumn | $latencySec | $calStr | $protStr | $carbStr | $fatStr | $errorStr |';
+}
+
+/// Builds `test/benchmark_report/<slug>.md`: detailed results for a single
+/// model, grouped by food case.
+String _buildModelReportMarkdown(
+  String model,
+  List<BenchmarkResult> results,
+) {
+  final shortName = model.split('/').last;
+  final buffer = StringBuffer()
+    ..writeln('# $shortName — Detailed Results')
+    ..writeln()
+    ..writeln('[← Back to summary](./index.md)')
+    ..writeln();
+
+  final resultsByFood = <String, List<BenchmarkResult>>{};
+  for (final result in results) {
+    resultsByFood.putIfAbsent(result.foodCase.name, () => []).add(result);
+  }
+
+  for (final entry in resultsByFood.entries) {
+    buffer
+      ..writeln('## ${entry.key}')
+      ..writeln(
+        '| Iteration | Time (s) | Cal (Real/AI) | Prot (Real/AI) | Carb (Real/AI) | Fat (Real/AI) | Cal Err % |',
+      )
+      ..writeln('|---|---|---|---|---|---|---|');
+    for (final result in entry.value) {
+      buffer.writeln(_detailRow(result, '${result.iteration}'));
+    }
+    buffer.writeln();
+  }
+
+  return buffer.toString();
+}
+
+/// Builds `test/benchmark_report/index.md`: one summary row per model,
+/// linking to its detail page.
+String _buildIndexMarkdown(List<_ModelStats> stats) {
+  final buffer = StringBuffer()
+    ..writeln('# AI Food Benchmark Report')
+    ..writeln()
+    ..writeln(
+      '| Model | Avg Latency (s) | Avg Cal Error % | Median Cal Error % | Max Cal Error % |',
+    )
+    ..writeln('|---|---|---|---|---|');
+
+  for (final s in stats) {
+    final shortName = s.model.split('/').last;
+    buffer.writeln(
+      '| [$shortName](./${_modelSlug(s.model)}.md) | ${s.avgLatency.toStringAsFixed(2)} | '
+      '${s.avgError.toStringAsFixed(1)}% | ${s.medianError.toStringAsFixed(1)}% | '
+      '${s.maxError.toStringAsFixed(1)}% |',
+    );
+  }
+
+  return buffer.toString();
+}
+
+/// Writes the full markdown report to `test/benchmark_report/`, rebuilding it
+/// from scratch every time from whatever's in [results] (cache hits and/or
+/// fresh calls) - safe to re-run without touching the results cache.
+Future<void> _writeReport(List<BenchmarkResult> results) async {
+  final reportDir = Directory('test/benchmark_report');
+  await reportDir.create(recursive: true);
+
+  final modelsInOrder = <String>[];
+  for (final r in results) {
+    if (!modelsInOrder.contains(r.modelName)) modelsInOrder.add(r.modelName);
+  }
+
+  final stats = <_ModelStats>[];
+  for (final model in modelsInOrder) {
     final modelResults = results.where((r) => r.modelName == model).toList();
-    if (modelResults.isEmpty) continue;
 
+    final errors = <double>[];
     double totalLatency = 0;
-    double totalError = 0;
-    double maxError = 0;
-    int errorCount = 0;
-
     for (final r in modelResults) {
       totalLatency += r.latency.inMilliseconds / 1000.0;
-
       if (r.error == null &&
           r.aiResponse != null &&
           r.foodCase.realCalories != null) {
-        final real = r.foodCase.realCalories!;
-        final aiVal = r.aiResponse!['calories'];
-        final ai = aiVal is int
-            ? aiVal
-            : (int.tryParse(aiVal?.toString() ?? '0') ?? 0);
-
-        final err = _calculateError(real, ai);
-        totalError += err;
-        maxError = max(maxError, err);
-        errorCount++;
+        errors.add(
+          _calculateError(
+            r.foodCase.realCalories!,
+            _asInt(_metric(r.aiResponse, 'calories')),
+          ),
+        );
       }
     }
 
-    final avgLatency = totalLatency / modelResults.length;
-    final avgError = errorCount > 0 ? totalError / errorCount : 0.0;
-    final shortName = model.split('/').last;
-
-    print(
-      '| $shortName | ${avgLatency.toStringAsFixed(2)} | ${avgError.toStringAsFixed(1)}% | ${maxError.toStringAsFixed(1)}% |',
+    stats.add(
+      _ModelStats(
+        model: model,
+        avgLatency: totalLatency / modelResults.length,
+        avgError: errors.isEmpty
+            ? 0.0
+            : errors.reduce((a, b) => a + b) / errors.length,
+        medianError: _median(errors),
+        maxError: errors.isEmpty ? 0.0 : errors.reduce(max),
+      ),
     );
+
+    await File(
+      'test/benchmark_report/${_modelSlug(model)}.md',
+    ).writeAsString(_buildModelReportMarkdown(model, modelResults));
   }
+
+  await File(
+    'test/benchmark_report/index.md',
+  ).writeAsString(_buildIndexMarkdown(stats));
 }
