@@ -2016,6 +2016,29 @@ class $AppSettingsTable extends AppSettings
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _providerMeta = const VerificationMeta(
+    'provider',
+  );
+  @override
+  late final GeneratedColumn<String> provider = GeneratedColumn<String>(
+    'provider',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('openrouter'),
+  );
+  static const VerificationMeta _customBaseUrlMeta = const VerificationMeta(
+    'customBaseUrl',
+  );
+  @override
+  late final GeneratedColumn<String> customBaseUrl = GeneratedColumn<String>(
+    'custom_base_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     updatedAt,
@@ -2025,6 +2048,8 @@ class $AppSettingsTable extends AppSettings
     apiKey,
     aiModel,
     fallbackModel,
+    provider,
+    customBaseUrl,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2080,6 +2105,21 @@ class $AppSettingsTable extends AppSettings
         ),
       );
     }
+    if (data.containsKey('provider')) {
+      context.handle(
+        _providerMeta,
+        provider.isAcceptableOrUnknown(data['provider']!, _providerMeta),
+      );
+    }
+    if (data.containsKey('custom_base_url')) {
+      context.handle(
+        _customBaseUrlMeta,
+        customBaseUrl.isAcceptableOrUnknown(
+          data['custom_base_url']!,
+          _customBaseUrlMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -2117,6 +2157,14 @@ class $AppSettingsTable extends AppSettings
         DriftSqlType.string,
         data['${effectivePrefix}fallback_model'],
       ),
+      provider: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}provider'],
+      )!,
+      customBaseUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}custom_base_url'],
+      ),
     );
   }
 
@@ -2134,6 +2182,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   final String? apiKey;
   final String aiModel;
   final String? fallbackModel;
+  final String provider;
+  final String? customBaseUrl;
   const AppSettingsRow({
     required this.updatedAt,
     required this.updatedBy,
@@ -2142,6 +2192,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     this.apiKey,
     required this.aiModel,
     this.fallbackModel,
+    required this.provider,
+    this.customBaseUrl,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2158,6 +2210,10 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     map['ai_model'] = Variable<String>(aiModel);
     if (!nullToAbsent || fallbackModel != null) {
       map['fallback_model'] = Variable<String>(fallbackModel);
+    }
+    map['provider'] = Variable<String>(provider);
+    if (!nullToAbsent || customBaseUrl != null) {
+      map['custom_base_url'] = Variable<String>(customBaseUrl);
     }
     return map;
   }
@@ -2177,6 +2233,10 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       fallbackModel: fallbackModel == null && nullToAbsent
           ? const Value.absent()
           : Value(fallbackModel),
+      provider: Value(provider),
+      customBaseUrl: customBaseUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(customBaseUrl),
     );
   }
 
@@ -2193,6 +2253,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       apiKey: serializer.fromJson<String?>(json['apiKey']),
       aiModel: serializer.fromJson<String>(json['aiModel']),
       fallbackModel: serializer.fromJson<String?>(json['fallbackModel']),
+      provider: serializer.fromJson<String>(json['provider']),
+      customBaseUrl: serializer.fromJson<String?>(json['customBaseUrl']),
     );
   }
   @override
@@ -2206,6 +2268,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       'apiKey': serializer.toJson<String?>(apiKey),
       'aiModel': serializer.toJson<String>(aiModel),
       'fallbackModel': serializer.toJson<String?>(fallbackModel),
+      'provider': serializer.toJson<String>(provider),
+      'customBaseUrl': serializer.toJson<String?>(customBaseUrl),
     };
   }
 
@@ -2217,6 +2281,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     Value<String?> apiKey = const Value.absent(),
     String? aiModel,
     Value<String?> fallbackModel = const Value.absent(),
+    String? provider,
+    Value<String?> customBaseUrl = const Value.absent(),
   }) => AppSettingsRow(
     updatedAt: updatedAt ?? this.updatedAt,
     updatedBy: updatedBy ?? this.updatedBy,
@@ -2227,6 +2293,10 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     fallbackModel: fallbackModel.present
         ? fallbackModel.value
         : this.fallbackModel,
+    provider: provider ?? this.provider,
+    customBaseUrl: customBaseUrl.present
+        ? customBaseUrl.value
+        : this.customBaseUrl,
   );
   AppSettingsRow copyWithCompanion(AppSettingsCompanion data) {
     return AppSettingsRow(
@@ -2239,6 +2309,10 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       fallbackModel: data.fallbackModel.present
           ? data.fallbackModel.value
           : this.fallbackModel,
+      provider: data.provider.present ? data.provider.value : this.provider,
+      customBaseUrl: data.customBaseUrl.present
+          ? data.customBaseUrl.value
+          : this.customBaseUrl,
     );
   }
 
@@ -2251,7 +2325,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('id: $id, ')
           ..write('apiKey: $apiKey, ')
           ..write('aiModel: $aiModel, ')
-          ..write('fallbackModel: $fallbackModel')
+          ..write('fallbackModel: $fallbackModel, ')
+          ..write('provider: $provider, ')
+          ..write('customBaseUrl: $customBaseUrl')
           ..write(')'))
         .toString();
   }
@@ -2265,6 +2341,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     apiKey,
     aiModel,
     fallbackModel,
+    provider,
+    customBaseUrl,
   );
   @override
   bool operator ==(Object other) =>
@@ -2276,7 +2354,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.id == this.id &&
           other.apiKey == this.apiKey &&
           other.aiModel == this.aiModel &&
-          other.fallbackModel == this.fallbackModel);
+          other.fallbackModel == this.fallbackModel &&
+          other.provider == this.provider &&
+          other.customBaseUrl == this.customBaseUrl);
 }
 
 class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
@@ -2287,6 +2367,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<String?> apiKey;
   final Value<String> aiModel;
   final Value<String?> fallbackModel;
+  final Value<String> provider;
+  final Value<String?> customBaseUrl;
   const AppSettingsCompanion({
     this.updatedAt = const Value.absent(),
     this.updatedBy = const Value.absent(),
@@ -2295,6 +2377,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
     this.apiKey = const Value.absent(),
     this.aiModel = const Value.absent(),
     this.fallbackModel = const Value.absent(),
+    this.provider = const Value.absent(),
+    this.customBaseUrl = const Value.absent(),
   });
   AppSettingsCompanion.insert({
     this.updatedAt = const Value.absent(),
@@ -2304,6 +2388,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
     this.apiKey = const Value.absent(),
     this.aiModel = const Value.absent(),
     this.fallbackModel = const Value.absent(),
+    this.provider = const Value.absent(),
+    this.customBaseUrl = const Value.absent(),
   });
   static Insertable<AppSettingsRow> custom({
     Expression<int>? updatedAt,
@@ -2313,6 +2399,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
     Expression<String>? apiKey,
     Expression<String>? aiModel,
     Expression<String>? fallbackModel,
+    Expression<String>? provider,
+    Expression<String>? customBaseUrl,
   }) {
     return RawValuesInsertable({
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -2322,6 +2410,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
       if (apiKey != null) 'api_key': apiKey,
       if (aiModel != null) 'ai_model': aiModel,
       if (fallbackModel != null) 'fallback_model': fallbackModel,
+      if (provider != null) 'provider': provider,
+      if (customBaseUrl != null) 'custom_base_url': customBaseUrl,
     });
   }
 
@@ -2333,6 +2423,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<String?>? apiKey,
     Value<String>? aiModel,
     Value<String?>? fallbackModel,
+    Value<String>? provider,
+    Value<String?>? customBaseUrl,
   }) {
     return AppSettingsCompanion(
       updatedAt: updatedAt ?? this.updatedAt,
@@ -2342,6 +2434,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
       apiKey: apiKey ?? this.apiKey,
       aiModel: aiModel ?? this.aiModel,
       fallbackModel: fallbackModel ?? this.fallbackModel,
+      provider: provider ?? this.provider,
+      customBaseUrl: customBaseUrl ?? this.customBaseUrl,
     );
   }
 
@@ -2369,6 +2463,12 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
     if (fallbackModel.present) {
       map['fallback_model'] = Variable<String>(fallbackModel.value);
     }
+    if (provider.present) {
+      map['provider'] = Variable<String>(provider.value);
+    }
+    if (customBaseUrl.present) {
+      map['custom_base_url'] = Variable<String>(customBaseUrl.value);
+    }
     return map;
   }
 
@@ -2381,7 +2481,9 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('id: $id, ')
           ..write('apiKey: $apiKey, ')
           ..write('aiModel: $aiModel, ')
-          ..write('fallbackModel: $fallbackModel')
+          ..write('fallbackModel: $fallbackModel, ')
+          ..write('provider: $provider, ')
+          ..write('customBaseUrl: $customBaseUrl')
           ..write(')'))
         .toString();
   }
@@ -3623,6 +3725,8 @@ typedef $$AppSettingsTableCreateCompanionBuilder =
       Value<String?> apiKey,
       Value<String> aiModel,
       Value<String?> fallbackModel,
+      Value<String> provider,
+      Value<String?> customBaseUrl,
     });
 typedef $$AppSettingsTableUpdateCompanionBuilder =
     AppSettingsCompanion Function({
@@ -3633,6 +3737,8 @@ typedef $$AppSettingsTableUpdateCompanionBuilder =
       Value<String?> apiKey,
       Value<String> aiModel,
       Value<String?> fallbackModel,
+      Value<String> provider,
+      Value<String?> customBaseUrl,
     });
 
 class $$AppSettingsTableFilterComposer
@@ -3676,6 +3782,16 @@ class $$AppSettingsTableFilterComposer
 
   ColumnFilters<String> get fallbackModel => $composableBuilder(
     column: $table.fallbackModel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get provider => $composableBuilder(
+    column: $table.provider,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get customBaseUrl => $composableBuilder(
+    column: $table.customBaseUrl,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -3723,6 +3839,16 @@ class $$AppSettingsTableOrderingComposer
     column: $table.fallbackModel,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get provider => $composableBuilder(
+    column: $table.provider,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get customBaseUrl => $composableBuilder(
+    column: $table.customBaseUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$AppSettingsTableAnnotationComposer
@@ -3754,6 +3880,14 @@ class $$AppSettingsTableAnnotationComposer
 
   GeneratedColumn<String> get fallbackModel => $composableBuilder(
     column: $table.fallbackModel,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get provider =>
+      $composableBuilder(column: $table.provider, builder: (column) => column);
+
+  GeneratedColumn<String> get customBaseUrl => $composableBuilder(
+    column: $table.customBaseUrl,
     builder: (column) => column,
   );
 }
@@ -3796,6 +3930,8 @@ class $$AppSettingsTableTableManager
                 Value<String?> apiKey = const Value.absent(),
                 Value<String> aiModel = const Value.absent(),
                 Value<String?> fallbackModel = const Value.absent(),
+                Value<String> provider = const Value.absent(),
+                Value<String?> customBaseUrl = const Value.absent(),
               }) => AppSettingsCompanion(
                 updatedAt: updatedAt,
                 updatedBy: updatedBy,
@@ -3804,6 +3940,8 @@ class $$AppSettingsTableTableManager
                 apiKey: apiKey,
                 aiModel: aiModel,
                 fallbackModel: fallbackModel,
+                provider: provider,
+                customBaseUrl: customBaseUrl,
               ),
           createCompanionCallback:
               ({
@@ -3814,6 +3952,8 @@ class $$AppSettingsTableTableManager
                 Value<String?> apiKey = const Value.absent(),
                 Value<String> aiModel = const Value.absent(),
                 Value<String?> fallbackModel = const Value.absent(),
+                Value<String> provider = const Value.absent(),
+                Value<String?> customBaseUrl = const Value.absent(),
               }) => AppSettingsCompanion.insert(
                 updatedAt: updatedAt,
                 updatedBy: updatedBy,
@@ -3822,6 +3962,8 @@ class $$AppSettingsTableTableManager
                 apiKey: apiKey,
                 aiModel: aiModel,
                 fallbackModel: fallbackModel,
+                provider: provider,
+                customBaseUrl: customBaseUrl,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

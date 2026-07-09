@@ -7,6 +7,7 @@ import 'package:nutrinutri/features/settings/presentation/settings_controller.da
 class SettingsFormManager {
   SettingsFormManager({required this.ref, required this.onStateChanged}) {
     apiKeyController.addListener(onStateChanged);
+    customBaseUrlController.addListener(onStateChanged);
     ageController.addListener(_calculateRecommendedCalories);
     weightController.addListener(_calculateRecommendedCalories);
     heightController.addListener(_calculateRecommendedCalories);
@@ -17,6 +18,7 @@ class SettingsFormManager {
   final apiKeyController = TextEditingController();
   final customModelController = TextEditingController();
   final customFallbackModelController = TextEditingController();
+  final customBaseUrlController = TextEditingController();
   final ageController = TextEditingController();
   final weightController = TextEditingController();
   final heightController = TextEditingController();
@@ -38,6 +40,7 @@ class SettingsFormManager {
     apiKeyController.dispose();
     customModelController.dispose();
     customFallbackModelController.dispose();
+    customBaseUrlController.dispose();
     ageController.dispose();
     weightController.dispose();
     heightController.dispose();
@@ -54,6 +57,7 @@ class SettingsFormManager {
           onCustomModelLoaded: (model) => customModelController.text = model,
           onCustomFallbackLoaded: (model) =>
               customFallbackModelController.text = model,
+          onCustomBaseUrlLoaded: (url) => customBaseUrlController.text = url,
           onProfileLoaded: (UserProfile profile) {
             ageController.text = profile.age.toString();
             weightController.text = profile.weightKg.toString();
@@ -102,6 +106,7 @@ class SettingsFormManager {
           apiKey: apiKeyController.text,
           customModel: customModelController.text,
           customFallbackModel: customFallbackModelController.text,
+          customBaseUrl: customBaseUrlController.text,
           age: ageController.text,
           weight: weightController.text,
           height: heightController.text,
@@ -125,6 +130,8 @@ class SettingsFormManager {
     final state = ref.read(settingsControllerProvider);
     return Object.hashAll([
       apiKeyController.text,
+      state.selectedProvider,
+      customBaseUrlController.text,
       state.selectedModel,
       customModelController.text,
       state.fallbackModel,

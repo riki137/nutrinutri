@@ -73,6 +73,9 @@ class AppSettings extends Table with AuditColumns {
   TextColumn get aiModel =>
       text().withDefault(const Constant('google/gemini-3-flash-preview'))();
   TextColumn get fallbackModel => text().nullable()();
+  TextColumn get provider =>
+      text().withDefault(const Constant('openrouter'))();
+  TextColumn get customBaseUrl => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -109,7 +112,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -120,8 +123,21 @@ class AppDatabase extends _$AppDatabase {
       if (from < 2) {
         await _migrateFromV1();
       }
+      if (from < 3) {
+        await _migrateToV3();
+      }
     },
   );
+
+  Future<void> _migrateToV3() async {
+    await customStatement(
+      "ALTER TABLE app_settings ADD COLUMN provider TEXT NOT NULL "
+      "DEFAULT 'openrouter';",
+    );
+    await customStatement(
+      'ALTER TABLE app_settings ADD COLUMN custom_base_url TEXT;',
+    );
+  }
 
   Future<void> _migrateFromV1() async {
     await customStatement('''

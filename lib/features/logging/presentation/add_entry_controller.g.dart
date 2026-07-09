@@ -42,7 +42,7 @@ final class AddEntryControllerProvider
 }
 
 String _$addEntryControllerHash() =>
-    r'e4582b554b7f350f7c25816fe6f9c0ffd47921b6';
+    r'c726dcd66db5dadba9639b63984ae60b17492a43';
 
 abstract class _$AddEntryController extends $Notifier<AddEntryState> {
   AddEntryState build();

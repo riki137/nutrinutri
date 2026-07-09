@@ -3,9 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:nutrinutri/core/domain/user_profile.dart';
 
-/// An error raised while talking to OpenRouter that carries a message suitable
-/// for showing directly to the user (either OpenRouter's own error text or a
-/// friendly "no internet connection" message).
+/// An error raised while talking to the AI provider that carries a message
+/// suitable for showing directly to the user (either the provider's own error
+/// text or a friendly "no internet connection" message).
 class AiRequestException implements Exception {
   const AiRequestException(this.message);
   final String message;
@@ -15,11 +15,20 @@ class AiRequestException implements Exception {
 }
 
 class AIService {
-  AIService({required this.apiKey, required this.model});
-  static const String _baseUrl =
-      'https://openrouter.ai/api/v1/chat/completions';
+  AIService({
+    required this.apiKey,
+    required this.model,
+    required this.baseUrl,
+    this.extraHeaders = const {},
+  });
+
+  /// Full chat-completions endpoint of the selected provider.
+  final String baseUrl;
   final String apiKey;
   final String model;
+
+  /// Provider-specific extra headers (e.g. OpenRouter's HTTP-Referer/X-Title).
+  final Map<String, String> extraHeaders;
 
   // Track active clients for cancellation
   final Map<String, http.Client> _activeRequests = {};
@@ -27,8 +36,7 @@ class AIService {
   Map<String, String> _headers() => {
     'Authorization': 'Bearer $apiKey',
     'Content-Type': 'application/json',
-    'HTTP-Referer': 'https://nutrinutri.popelis.sk', // OpenRouter requirement
-    'X-Title': 'NutriNutri',
+    ...extraHeaders,
   };
 
   List<Map<String, dynamic>> _foodMessages({
@@ -150,21 +158,21 @@ Calculate calories based on the user profile provided and standard MET values.
         text.contains('Failed to fetch');
   }
 
-  /// Builds a user-facing message from a non-200 OpenRouter response, using
-  /// OpenRouter's own error text when it can be parsed out of the body.
+  /// Builds a user-facing message from a non-200 response, using the provider's
+  /// own error text when it can be parsed out of the body.
   String _describeApiError(int statusCode, String body) {
     try {
       final decoded = jsonDecode(body);
       if (decoded is Map) {
         final error = decoded['error'];
         if (error is Map && error['message'] is String) {
-          return 'OpenRouter error ($statusCode): ${error['message']}';
+          return 'API error ($statusCode): ${error['message']}';
         }
         if (error is String && error.isNotEmpty) {
-          return 'OpenRouter error ($statusCode): $error';
+          return 'API error ($statusCode): $error';
         }
         if (decoded['message'] is String) {
-          return 'OpenRouter error ($statusCode): ${decoded['message']}';
+          return 'API error ($statusCode): ${decoded['message']}';
         }
       }
     } catch (_) {
@@ -173,8 +181,8 @@ Calculate calories based on the user profile provided and standard MET values.
 
     final trimmed = body.trim();
     return trimmed.isEmpty
-        ? 'OpenRouter request failed (HTTP $statusCode).'
-        : 'OpenRouter error ($statusCode): $trimmed';
+        ? 'API request failed (HTTP $statusCode).'
+        : 'API error ($statusCode): $trimmed';
   }
 
   Future<Map<String, dynamic>> _chatCompletion({
@@ -184,6 +192,11 @@ Calculate calories based on the user profile provided and standard MET values.
   }) async {
     if (apiKey.isEmpty) {
       throw Exception('API Key is missing');
+    }
+    if (baseUrl.isEmpty) {
+      throw const AiRequestException(
+        'No API base URL configured. Set a provider or custom URL in Settings.',
+      );
     }
 
     final client = http.Client();
@@ -200,7 +213,7 @@ Calculate calories based on the user profile provided and standard MET values.
 
     try {
       final response = await client.post(
-        Uri.parse(_baseUrl),
+        Uri.parse(baseUrl),
         headers: _headers(),
         body: body,
       );

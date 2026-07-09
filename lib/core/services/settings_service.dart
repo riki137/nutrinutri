@@ -48,6 +48,24 @@ class SettingsService {
     return (await _settings())?.fallbackModel;
   }
 
+  Future<void> saveProvider(String provider) async {
+    await _updateSettings(provider: Value(provider.trim()));
+  }
+
+  Future<String> getProvider() async {
+    return (await _settings())?.provider ?? 'openrouter';
+  }
+
+  Future<void> saveCustomBaseUrl(String? url) async {
+    await _updateSettings(
+      customBaseUrl: Value(url?.trim().isEmpty == true ? null : url?.trim()),
+    );
+  }
+
+  Future<String?> getCustomBaseUrl() async {
+    return (await _settings())?.customBaseUrl;
+  }
+
   Future<void> saveUserProfile({
     required int age,
     required double weight, // kg
@@ -159,6 +177,8 @@ class SettingsService {
     Value<String?> apiKey = const Value.absent(),
     Value<String> aiModel = const Value.absent(),
     Value<String?> fallbackModel = const Value.absent(),
+    Value<String> provider = const Value.absent(),
+    Value<String?> customBaseUrl = const Value.absent(),
   }) async {
     final audit = await _audit();
     final existing = await _settings();
@@ -170,6 +190,12 @@ class SettingsService {
     final nextFallbackModel = fallbackModel.present
         ? fallbackModel.value
         : existing?.fallbackModel;
+    final nextProvider = provider.present
+        ? provider.value
+        : (existing?.provider ?? 'openrouter');
+    final nextCustomBaseUrl = customBaseUrl.present
+        ? customBaseUrl.value
+        : existing?.customBaseUrl;
 
     await _db
         .into(_db.appSettings)
@@ -179,6 +205,8 @@ class SettingsService {
             apiKey: Value(nextApiKey),
             aiModel: Value(nextAiModel),
             fallbackModel: Value(nextFallbackModel),
+            provider: Value(nextProvider),
+            customBaseUrl: Value(nextCustomBaseUrl),
             updatedAt: Value(audit.now),
             updatedBy: Value(audit.deviceId),
             deletedAt: const Value(null),

@@ -271,9 +271,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       case 2:
       default:
         return const _OnboardingStep(
-          title: 'Connect OpenRouter',
+          title: 'Connect AI Provider',
           description:
-              'Add your API key and AI model settings for food analysis.',
+              'Pick your AI provider and add your API key and model settings '
+              'for food analysis.',
         );
     }
   }
@@ -321,9 +322,16 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           customModelController: _formManager.customModelController,
           customFallbackModelController:
               _formManager.customFallbackModelController,
+          customBaseUrlController: _formManager.customBaseUrlController,
+          selectedProvider: state.selectedProvider,
           selectedModel: state.selectedModel,
           fallbackModel: state.fallbackModel,
           availableModels: controller.availableModels,
+          onProviderChanged: (value) {
+            if (value != null) {
+              controller.updateProvider(value);
+            }
+          },
           onModelChanged: (value) {
             if (value != null) {
               controller.updateModel(value);
