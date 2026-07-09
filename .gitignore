@@ -49,7 +49,3 @@ app.*.map.json
 google-services.json
 GoogleService-Info.plist
 wes_client_secret.json
-
-# AI benchmark results cache (regenerable, per-run API cost artifact)
-test/benchmark_results.jsonl
-test/benchmark_report/

@@ -115,19 +115,20 @@ void main() {
         : Platform.environment['FORCE_RERUN_CASES'] ?? '',
   );
 
-  // Models to test
+  // Models to test (mirrors availableModels in settings_controller.dart,
+  // minus 'custom')
   const List<String> modelsToTest = [
-    // 'google/gemini-3-flash-preview',
-    // 'google/gemini-3-pro-preview',
-    // 'openai/gpt-5.2',
-    'nvidia/nemotron-3-super-120b-a12b:free',
-    // 'openai/gpt-5-mini',
-    // 'openai/gpt-5-nano',
-    // 'openai/gpt-oss-120b',
-    // 'anthropic/claude-sonnet-4.5',
-    // 'moonshotai/kimi-k2.5',
-    // 'deepseek/deepseek-v3.2',
-    // 'x-ai/grok-4.1-fast',
+    'google/gemini-3-flash-preview',
+    'google/gemini-3.5-flash',
+    'google/gemini-3.1-pro-preview',
+    'openai/gpt-5.5',
+    'openai/gpt-5.4-mini',
+    'anthropic/claude-sonnet-5',
+    'anthropic/claude-opus-4.8',
+    'x-ai/grok-4.3',
+    'google/gemma-4-31b-it',
+    'minimax/minimax-m3',
+    'xiaomi/mimo-v2.5',
   ];
 
   // Benchmark Cases

@@ -42,8 +42,80 @@ class AIConfigurationSection extends StatelessWidget {
     }
   }
 
+  Color _accuracyColor(ColorScheme colorScheme, int accuracy) {
+    if (accuracy >= 95) return Colors.green;
+    if (accuracy >= 90) return Colors.orange;
+    return colorScheme.error;
+  }
+
+  /// Extracts the dollar figure from a price label like "~$0.22 / 100 logs".
+  /// Returns null when there's no number to color (e.g. "Varies").
+  double? _parsePrice(String price) {
+    final match = RegExp(r'\$([0-9]+(?:\.[0-9]+)?)').firstMatch(price);
+    if (match == null) return null;
+    return double.tryParse(match.group(1)!);
+  }
+
+  /// Red-yellow-green scale for price per 100 logs. Cheaper is greener.
+  /// Null (unpriced/custom) keeps the neutral chip styling.
+  Color? _priceColor(ColorScheme colorScheme, String price) {
+    final value = _parsePrice(price);
+    if (value == null) return null;
+    if (value <= 0.30) return Colors.green;
+    if (value <= 0.80) return Colors.orange;
+    return colorScheme.error;
+  }
+
+  Widget _buildPriceChip(ColorScheme colorScheme, String price) {
+    final color = _priceColor(colorScheme, price);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color == null
+            ? colorScheme.primaryContainer
+            : color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        price,
+        style: TextStyle(
+          fontSize: 12,
+          color: color ?? colorScheme.onPrimaryContainer,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAccuracyBadge(ColorScheme colorScheme, int accuracy) {
+    final color = _accuracyColor(colorScheme, accuracy);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.track_changes, size: 12, color: color),
+          const Gap(4),
+          Text(
+            '$accuracy% accurate',
+            style: TextStyle(
+              fontSize: 12,
+              color: color,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildModelTile(BuildContext context, AIModelInfo model) {
     final colorScheme = Theme.of(context).colorScheme;
+    final accuracy = model.accuracy;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
@@ -52,31 +124,24 @@ class AIConfigurationSection extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(
-                model.name,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(12),
-                ),
+              Expanded(
                 child: Text(
-                  model.price,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: colorScheme.onPrimaryContainer,
+                  model.name,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
                 ),
               ),
+              const Gap(8),
+              _buildPriceChip(colorScheme, model.price),
             ],
           ),
+          if (accuracy != null) ...[
+            const Gap(4),
+            _buildAccuracyBadge(colorScheme, accuracy),
+          ],
           const Gap(4),
           Text(
             model.description,
