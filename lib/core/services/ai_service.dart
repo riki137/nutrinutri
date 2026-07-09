@@ -244,8 +244,25 @@ Calculate calories based on the user profile provided and standard MET values.
       }
 
       final data = jsonDecode(response.body);
-      final content = data['choices'][0]['message']['content'];
-      return jsonDecode(_extractJson(content));
+      // Some providers return HTTP 200 with a malformed/empty body (no
+      // `choices`, or an `error` field). Guard the indexing so that surfaces
+      // as a clean, user-facing error rather than a cryptic NoSuchMethodError.
+      String? content;
+      if (data is Map &&
+          data['choices'] is List &&
+          (data['choices'] as List).isNotEmpty) {
+        final first = (data['choices'] as List).first;
+        if (first is Map && first['message'] is Map) {
+          final rawContent = (first['message'] as Map)['content'];
+          if (rawContent is String) content = rawContent;
+        }
+      }
+      if (content == null) {
+        throw AiRequestException(
+          _describeApiError(response.statusCode, response.body),
+        );
+      }
+      return parseModelJson(content);
     } catch (e) {
       if (requestId != null &&
           _looksLikeClientException(e) &&
@@ -310,20 +327,198 @@ Calculate calories based on the user profile provided and standard MET values.
     }
   }
 
-  String _extractJson(String content) {
-    if (content.contains('```json')) {
-      final startIndex = content.indexOf('```json') + 7;
-      final endIndex = content.lastIndexOf('```');
-      if (endIndex > startIndex) {
-        return content.substring(startIndex, endIndex).trim();
-      }
-    } else if (content.contains('```')) {
-      final startIndex = content.indexOf('```') + 3;
-      final endIndex = content.lastIndexOf('```');
-      if (endIndex > startIndex) {
-        return content.substring(startIndex, endIndex).trim();
-      }
-    }
-    return content.trim();
+}
+
+/// Parses the JSON object out of a model's chat reply.
+///
+/// Providers do not always return byte-perfect JSON even in `json_object`
+/// mode. Two malformations were observed repeatedly in benchmarking (notably
+/// from `gemini-3.1-pro-preview`) that discard an otherwise usable — and
+/// already paid-for — response:
+///
+///   1. A complete, valid object followed by trailing junk, e.g. a duplicated
+///      closing brace (`...}\n}`) or prose after the object.
+///   2. A reply truncated mid-object (the generation was cut off), leaving
+///      unclosed braces and possibly a dangling key/value.
+///
+/// This decodes such replies by (a) stripping markdown fences, (b) extracting
+/// the first balanced top-level object so trailing junk is ignored, and
+/// (c) repairing a truncated object by closing its open structures. It only
+/// throws when nothing usable can be recovered, and then includes a bounded
+/// snippet of the raw content so the failure is debuggable from logs without
+/// re-issuing (paid) calls.
+Map<String, dynamic> parseModelJson(String rawContent) {
+  final content = _stripJsonFences(rawContent);
+
+  // Fast path: a clean, strictly-valid JSON object.
+  final direct = _tryDecodeObject(content);
+  if (direct != null) return direct;
+
+  // Trailing junk (e.g. a stray extra `}` or prose after the object):
+  // parse just the first balanced object and ignore anything after it.
+  final balanced = _firstBalancedObject(content);
+  if (balanced != null) {
+    final decoded = _tryDecodeObject(balanced);
+    if (decoded != null) return decoded;
   }
+
+  // Truncated reply: close the open structures, trimming the last incomplete
+  // token if necessary, until it parses.
+  final repaired = _repairTruncatedObject(content);
+  if (repaired != null) return repaired;
+
+  final snippet = content.length > 300
+      ? '${content.substring(0, 300)}…'
+      : content;
+  throw FormatException('Could not parse model JSON reply. Content: $snippet');
+}
+
+/// Strips a surrounding ```` ```json ```` / ```` ``` ```` markdown fence, if any.
+String _stripJsonFences(String content) {
+  final trimmed = content.trim();
+  if (trimmed.startsWith('```')) {
+    var inner = trimmed.substring(3);
+    if (inner.startsWith('json')) inner = inner.substring(4);
+    final fenceEnd = inner.lastIndexOf('```');
+    if (fenceEnd >= 0) inner = inner.substring(0, fenceEnd);
+    return inner.trim();
+  }
+  return trimmed;
+}
+
+Map<String, dynamic>? _tryDecodeObject(String content) {
+  try {
+    final decoded = jsonDecode(content);
+    if (decoded is Map<String, dynamic>) return decoded;
+  } on FormatException {
+    // Not strictly valid; caller falls back to lenient recovery.
+  }
+  return null;
+}
+
+/// Returns the substring from the first `{` to the matching `}` that closes it,
+/// or `null` if there is no balanced object (e.g. the reply was truncated).
+/// Content after the closing brace is ignored, which recovers replies that
+/// append a stray extra brace or trailing prose.
+String? _firstBalancedObject(String content) {
+  final start = content.indexOf('{');
+  if (start < 0) return null;
+
+  var inString = false;
+  var escaped = false;
+  var depth = 0;
+  for (var i = start; i < content.length; i++) {
+    final c = content[i];
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (c == r'\') {
+        escaped = true;
+      } else if (c == '"') {
+        inString = false;
+      }
+      continue;
+    }
+    if (c == '"') {
+      inString = true;
+    } else if (c == '{' || c == '[') {
+      depth++;
+    } else if (c == '}' || c == ']') {
+      depth--;
+      if (depth == 0) return content.substring(start, i + 1);
+    }
+  }
+  return null;
+}
+
+/// Best-effort recovery of a truncated object: close any open structures,
+/// dropping the trailing incomplete key/value and retrying until it parses.
+Map<String, dynamic>? _repairTruncatedObject(String content) {
+  final start = content.indexOf('{');
+  if (start < 0) return null;
+
+  var candidate = content.substring(start);
+  for (var attempt = 0; attempt < 6 && candidate.trim().length > 1; attempt++) {
+    final closed = _closeOpenStructures(candidate);
+    if (closed != null) {
+      final decoded = _tryDecodeObject(closed);
+      if (decoded != null) return decoded;
+    }
+    candidate = _dropTrailingFragment(candidate);
+  }
+  return null;
+}
+
+/// Appends the closers needed to balance [content]: terminates a dangling
+/// string, drops a trailing comma, then closes every open `{`/`[` in order.
+String? _closeOpenStructures(String content) {
+  var inString = false;
+  var escaped = false;
+  final stack = <String>[];
+  for (var i = 0; i < content.length; i++) {
+    final c = content[i];
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (c == r'\') {
+        escaped = true;
+      } else if (c == '"') {
+        inString = false;
+      }
+      continue;
+    }
+    if (c == '"') {
+      inString = true;
+    } else if (c == '{') {
+      stack.add('}');
+    } else if (c == '[') {
+      stack.add(']');
+    } else if (c == '}' || c == ']') {
+      if (stack.isEmpty) return null;
+      stack.removeLast();
+    }
+  }
+  if (stack.isEmpty && !inString) return content;
+
+  var result = content;
+  if (inString) result += '"';
+  result = result.trimRight();
+  if (result.endsWith(',')) {
+    result = result.substring(0, result.length - 1).trimRight();
+  }
+  // A dangling key with no value (`..."confidence":`) cannot be closed here;
+  // let the caller drop it on the next attempt.
+  if (result.endsWith(':')) return null;
+  for (final closer in stack.reversed) {
+    result += closer;
+  }
+  return result;
+}
+
+/// Trims the last, likely-incomplete key/value or element off [content] by
+/// cutting at the last top-level (outside-string) comma.
+String _dropTrailingFragment(String content) {
+  var inString = false;
+  var escaped = false;
+  var lastComma = -1;
+  for (var i = 0; i < content.length; i++) {
+    final c = content[i];
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (c == r'\') {
+        escaped = true;
+      } else if (c == '"') {
+        inString = false;
+      }
+      continue;
+    }
+    if (c == '"') {
+      inString = true;
+    } else if (c == ',') {
+      lastComma = i;
+    }
+  }
+  if (lastComma < 0) return '';
+  return content.substring(0, lastComma);
 }

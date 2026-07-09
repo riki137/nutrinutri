@@ -18,8 +18,8 @@ class SettingsState {
   SettingsState({
     this.isLoading = false,
     this.isSyncing = false,
-    this.selectedModel = 'google/gemini-3-flash-preview',
-    this.fallbackModel = 'openai/gpt-5.5',
+    this.selectedModel = 'google/gemini-3.5-flash',
+    this.fallbackModel = 'anthropic/claude-sonnet-5',
     this.gender = 'male',
     this.activityLevel = 'sedentary',
     this.homeMetricTypes = defaultHomeMetricTypes,
@@ -244,54 +244,94 @@ class SettingsController extends _$SettingsController {
     await ref.read(syncServiceProvider).signOut();
   }
 
+  // Only vision-capable models are listed — food logging supports photos, and
+  // text-only models (e.g. DeepSeek, Nemotron) fail on image input.
+  // Prices are shown per 100 logs (≈ a month of typical use) so they are easy
+  // to picture; they come from the real average cost-per-call in the
+  // OpenRouter activity log (2026-07-09) × 100. Accuracy is 100% minus the
+  // median calorie error %, from test/benchmark_report/index.md of the
+  // food-benchmark run (test/benchmark_ai.dart). Both are measured, not
+  // estimated.
+  //
+  // Ordered best-first by value — balancing accuracy, price, and speed —
+  // so the top of the list is the smart default. 'custom' stays last.
   final List<AIModelInfo> availableModels = const [
-    AIModelInfo(
-      id: 'google/gemini-3-flash-preview',
-      name: 'Gemini 3 Flash',
-      price: r'~$0.0008',
-      description: 'Recommended, Default, Fast, Accurate',
-    ),
     AIModelInfo(
       id: 'google/gemini-3.5-flash',
       name: 'Gemini 3.5 Flash',
-      price: r'~$0.0024',
-      description: 'Newer, near-Pro accuracy at Flash cost',
+      price: r'~$0.22 / 100 logs',
+      accuracy: 96,
+      description: 'Recommended default — fast, cheap, multilingual, and among the most accurate',
     ),
     AIModelInfo(
-      id: 'google/gemini-3.1-pro-preview',
-      name: 'Gemini 3.1 Pro',
-      price: r'~$0.04',
-      description: 'Best, expensive',
-    ),
-    AIModelInfo(
-      id: 'openai/gpt-5.5',
-      name: 'GPT-5.5',
-      price: r'~$0.02',
-      description: 'Reliable, Accurate',
-    ),
-    AIModelInfo(
-      id: 'openai/gpt-5.4-mini',
-      name: 'GPT-5.4 Mini',
-      price: r'~$0.008',
-      description: 'Cheaper, less knowledge',
-    ),
-    AIModelInfo(
-      id: 'anthropic/claude-sonnet-5',
-      name: 'Claude Sonnet 5',
-      price: r'~$0.007',
-      description: 'Not very accurate',
-    ),
-    AIModelInfo(
-      id: 'anthropic/claude-opus-4.8',
-      name: 'Claude Opus 4.8',
-      price: r'~$0.01',
-      description: 'Not very accurate',
+      id: 'google/gemini-3-flash-preview',
+      name: 'Gemini 3 Flash',
+      price: r'~$0.07 / 100 logs',
+      accuracy: 93,
+      description: 'Cheapest and fast, but 3.5 Flash is more accurate for a bit more',
     ),
     AIModelInfo(
       id: 'x-ai/grok-4.3',
       name: 'Grok 4.3',
-      price: '?',
-      description: 'Latest model from xAI',
+      price: r'~$0.25 / 100 logs',
+      accuracy: 95,
+      description: 'Good accuracy at low cost, but slower than the Flash models',
+    ),
+    AIModelInfo(
+      id: 'anthropic/claude-opus-4.8',
+      name: 'Claude Opus 4.8',
+      price: r'~$0.69 / 100 logs',
+      accuracy: 95,
+      description: 'Fast and accurate, but 3.5 Flash matches it for a third the price',
+    ),
+    AIModelInfo(
+      id: 'anthropic/claude-sonnet-5',
+      name: 'Claude Sonnet 5',
+      price: r'~$0.41 / 100 logs',
+      accuracy: 94,
+      description: 'Solid all-rounder: mid cost, mid speed, good accuracy',
+    ),
+    AIModelInfo(
+      id: 'openai/gpt-5.5',
+      name: 'GPT-5.5',
+      price: r'~$1.17 / 100 logs',
+      accuracy: 96,
+      description: 'Most accurate overall, but slow and expensive',
+    ),
+    AIModelInfo(
+      id: 'google/gemini-3.1-pro-preview',
+      name: 'Gemini 3.1 Pro',
+      price: r'~$1.37 / 100 logs',
+      accuracy: 95,
+      description: 'Slow and pricey, with no accuracy gain over 3.5 Flash',
+    ),
+    AIModelInfo(
+      id: 'minimax/minimax-m3',
+      name: 'MiniMax M3',
+      price: r'~$0.07 / 100 logs',
+      accuracy: 93,
+      description: 'Cheap, but slower and only middling accuracy with occasional large errors',
+    ),
+    AIModelInfo(
+      id: 'openai/gpt-5.4-mini',
+      name: 'GPT-5.4 Mini',
+      price: r'~$0.09 / 100 logs',
+      accuracy: 87,
+      description: 'Very fast and cheap, but clearly the least accurate',
+    ),
+    AIModelInfo(
+      id: 'google/gemma-4-31b-it',
+      name: 'Gemma 4 31B',
+      price: r'~$0.01 / 100 logs',
+      accuracy: 87,
+      description: 'Cheapest of all, but the least accurate — expect big misses on some foods',
+    ),
+    AIModelInfo(
+      id: 'xiaomi/mimo-v2.5',
+      name: 'MiMo V2.5',
+      price: r'~$0.02 / 100 logs',
+      accuracy: 87,
+      description: 'Very cheap, but painfully slow (~30s/log) and among the least accurate',
     ),
     AIModelInfo(
       id: 'custom',
