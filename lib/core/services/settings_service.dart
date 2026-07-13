@@ -66,6 +66,30 @@ class SettingsService {
     return (await _settings())?.customBaseUrl;
   }
 
+  Future<void> saveNutritionistInstructions(String? instructions) async {
+    await _updateSettings(
+      nutritionistInstructions: Value(
+        instructions?.trim().isEmpty == true ? null : instructions?.trim(),
+      ),
+    );
+  }
+
+  Future<String?> getNutritionistInstructions() async {
+    return (await _settings())?.nutritionistInstructions;
+  }
+
+  Future<void> saveTrainerInstructions(String? instructions) async {
+    await _updateSettings(
+      trainerInstructions: Value(
+        instructions?.trim().isEmpty == true ? null : instructions?.trim(),
+      ),
+    );
+  }
+
+  Future<String?> getTrainerInstructions() async {
+    return (await _settings())?.trainerInstructions;
+  }
+
   Future<void> saveUserProfile({
     required int age,
     required double weight, // kg
@@ -179,6 +203,8 @@ class SettingsService {
     Value<String?> fallbackModel = const Value.absent(),
     Value<String> provider = const Value.absent(),
     Value<String?> customBaseUrl = const Value.absent(),
+    Value<String?> nutritionistInstructions = const Value.absent(),
+    Value<String?> trainerInstructions = const Value.absent(),
   }) async {
     final audit = await _audit();
     final existing = await _settings();
@@ -196,6 +222,12 @@ class SettingsService {
     final nextCustomBaseUrl = customBaseUrl.present
         ? customBaseUrl.value
         : existing?.customBaseUrl;
+    final nextNutritionistInstructions = nutritionistInstructions.present
+        ? nutritionistInstructions.value
+        : existing?.nutritionistInstructions;
+    final nextTrainerInstructions = trainerInstructions.present
+        ? trainerInstructions.value
+        : existing?.trainerInstructions;
 
     await _db
         .into(_db.appSettings)
@@ -207,6 +239,8 @@ class SettingsService {
             fallbackModel: Value(nextFallbackModel),
             provider: Value(nextProvider),
             customBaseUrl: Value(nextCustomBaseUrl),
+            nutritionistInstructions: Value(nextNutritionistInstructions),
+            trainerInstructions: Value(nextTrainerInstructions),
             updatedAt: Value(audit.now),
             updatedBy: Value(audit.deviceId),
             deletedAt: const Value(null),

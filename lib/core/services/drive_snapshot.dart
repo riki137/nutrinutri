@@ -42,7 +42,9 @@ class DriveSnapshot {
   });
 
   /// Bump whenever the on-disk JSON shape changes.
-  static const int version = 3;
+  /// v4 added the optional `nutritionistInstructions` and
+  /// `trainerInstructions` fields to appSettings.
+  static const int version = 4;
 
   final Map<String, SyncedDiaryEntry> diaryEntries; // id -> row + metrics
   final SyncedUserProfile? userProfile; // id == 1

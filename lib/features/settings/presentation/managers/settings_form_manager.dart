@@ -8,6 +8,8 @@ class SettingsFormManager {
   SettingsFormManager({required this.ref, required this.onStateChanged}) {
     apiKeyController.addListener(onStateChanged);
     customBaseUrlController.addListener(onStateChanged);
+    nutritionistInstructionsController.addListener(onStateChanged);
+    trainerInstructionsController.addListener(onStateChanged);
     ageController.addListener(_calculateRecommendedCalories);
     weightController.addListener(_calculateRecommendedCalories);
     heightController.addListener(_calculateRecommendedCalories);
@@ -19,6 +21,8 @@ class SettingsFormManager {
   final customModelController = TextEditingController();
   final customFallbackModelController = TextEditingController();
   final customBaseUrlController = TextEditingController();
+  final nutritionistInstructionsController = TextEditingController();
+  final trainerInstructionsController = TextEditingController();
   final ageController = TextEditingController();
   final weightController = TextEditingController();
   final heightController = TextEditingController();
@@ -41,6 +45,8 @@ class SettingsFormManager {
     customModelController.dispose();
     customFallbackModelController.dispose();
     customBaseUrlController.dispose();
+    nutritionistInstructionsController.dispose();
+    trainerInstructionsController.dispose();
     ageController.dispose();
     weightController.dispose();
     heightController.dispose();
@@ -58,6 +64,10 @@ class SettingsFormManager {
           onCustomFallbackLoaded: (model) =>
               customFallbackModelController.text = model,
           onCustomBaseUrlLoaded: (url) => customBaseUrlController.text = url,
+          onNutritionistInstructionsLoaded: (instructions) =>
+              nutritionistInstructionsController.text = instructions,
+          onTrainerInstructionsLoaded: (instructions) =>
+              trainerInstructionsController.text = instructions,
           onProfileLoaded: (UserProfile profile) {
             ageController.text = profile.age.toString();
             weightController.text = profile.weightKg.toString();
@@ -107,6 +117,8 @@ class SettingsFormManager {
           customModel: customModelController.text,
           customFallbackModel: customFallbackModelController.text,
           customBaseUrl: customBaseUrlController.text,
+          nutritionistInstructions: nutritionistInstructionsController.text,
+          trainerInstructions: trainerInstructionsController.text,
           age: ageController.text,
           weight: weightController.text,
           height: heightController.text,
@@ -136,6 +148,8 @@ class SettingsFormManager {
       customModelController.text,
       state.fallbackModel,
       customFallbackModelController.text,
+      nutritionistInstructionsController.text,
+      trainerInstructionsController.text,
       ageController.text,
       weightController.text,
       heightController.text,

@@ -11,6 +11,8 @@ class AIConfigurationSection extends StatelessWidget {
     required this.customModelController,
     required this.customFallbackModelController,
     required this.customBaseUrlController,
+    required this.nutritionistInstructionsController,
+    required this.trainerInstructionsController,
     required this.selectedProvider,
     required this.selectedModel,
     this.fallbackModel,
@@ -23,6 +25,8 @@ class AIConfigurationSection extends StatelessWidget {
   final TextEditingController customModelController;
   final TextEditingController customFallbackModelController;
   final TextEditingController customBaseUrlController;
+  final TextEditingController nutritionistInstructionsController;
+  final TextEditingController trainerInstructionsController;
   final String selectedProvider;
   final String selectedModel;
   final String? fallbackModel;
@@ -45,33 +49,80 @@ class AIConfigurationSection extends StatelessWidget {
     }
   }
 
-  Widget _buildProviderDropdown(BuildContext context) {
-    return InputDecorator(
-      decoration: const InputDecoration(
-        labelText: 'AI Provider',
-        border: OutlineInputBorder(),
-        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+  Color _accuracyColor(ColorScheme colorScheme, int accuracy) {
+    if (accuracy >= 95) return Colors.green;
+    if (accuracy >= 90) return Colors.orange;
+    return colorScheme.error;
+  }
+
+  /// Extracts the dollar figure from a price label like "~$0.22 / 100 logs".
+  /// Returns null when there's no number to color (e.g. "Varies").
+  double? _parsePrice(String price) {
+    final match = RegExp(r'\$([0-9]+(?:\.[0-9]+)?)').firstMatch(price);
+    if (match == null) return null;
+    return double.tryParse(match.group(1)!);
+  }
+
+  /// Red-yellow-green scale for price per 100 logs. Cheaper is greener.
+  /// Null (unpriced/custom) keeps the neutral chip styling.
+  Color? _priceColor(ColorScheme colorScheme, String price) {
+    final value = _parsePrice(price);
+    if (value == null) return null;
+    if (value <= 0.30) return Colors.green;
+    if (value <= 0.80) return Colors.orange;
+    return colorScheme.error;
+  }
+
+  Widget _buildPriceChip(ColorScheme colorScheme, String price) {
+    final color = _priceColor(colorScheme, price);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color == null
+            ? colorScheme.primaryContainer
+            : color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: selectedProvider,
-          isExpanded: true,
-          items: kAiProviders
-              .map(
-                (provider) => DropdownMenuItem<String>(
-                  value: provider.id,
-                  child: Text(provider.name),
-                ),
-              )
-              .toList(),
-          onChanged: onProviderChanged,
+      child: Text(
+        price,
+        style: TextStyle(
+          fontSize: 12,
+          color: color ?? colorScheme.onPrimaryContainer,
+          fontWeight: FontWeight.bold,
         ),
+      ),
+    );
+  }
+
+  Widget _buildAccuracyBadge(ColorScheme colorScheme, int accuracy) {
+    final color = _accuracyColor(colorScheme, accuracy);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.track_changes, size: 12, color: color),
+          const Gap(4),
+          Text(
+            '$accuracy% accurate',
+            style: TextStyle(
+              fontSize: 12,
+              color: color,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildModelTile(BuildContext context, AIModelInfo model) {
     final colorScheme = Theme.of(context).colorScheme;
+    final accuracy = model.accuracy;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
@@ -80,31 +131,24 @@ class AIConfigurationSection extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(
-                model.name,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(12),
-                ),
+              Expanded(
                 child: Text(
-                  model.price,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: colorScheme.onPrimaryContainer,
+                  model.name,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
                 ),
               ),
+              const Gap(8),
+              _buildPriceChip(colorScheme, model.price),
             ],
           ),
+          if (accuracy != null) ...[
+            const Gap(4),
+            _buildAccuracyBadge(colorScheme, accuracy),
+          ],
           const Gap(4),
           Text(
             model.description,
@@ -159,6 +203,31 @@ class AIConfigurationSection extends StatelessWidget {
       ),
     );
     return items;
+  }
+
+  Widget _buildProviderDropdown(BuildContext context) {
+    return InputDecorator(
+      decoration: const InputDecoration(
+        labelText: 'AI Provider',
+        border: OutlineInputBorder(),
+        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: selectedProvider,
+          isExpanded: true,
+          items: kAiProviders
+              .map(
+                (provider) => DropdownMenuItem<String>(
+                  value: provider.id,
+                  child: Text(provider.name),
+                ),
+              )
+              .toList(),
+          onChanged: onProviderChanged,
+        ),
+      ),
+    );
   }
 
   Widget _buildModelDropdown({
@@ -320,6 +389,47 @@ class AIConfigurationSection extends StatelessWidget {
               ? _buildPresetModelFields(context)
               : _buildFreeTextModelFields()),
         ],
+        const Gap(16),
+        TextField(
+          controller: nutritionistInstructionsController,
+          minLines: 3,
+          maxLines: 8,
+          keyboardType: TextInputType.multiline,
+          decoration: const InputDecoration(
+            labelText: 'Nutritionist Instructions (Optional)',
+            border: OutlineInputBorder(),
+            alignLabelWithHint: true,
+            helperText:
+                'Extra guidance for food analysis, added on top of the '
+                'built-in instructions. Use it to get responses in your '
+                'language, set your country, or refine how portions are '
+                'estimated. Leave empty for the default.',
+            helperMaxLines: 4,
+            hintText:
+                'e.g. Reply in Slovak; I live in Slovakia; estimate '
+                'portions generously.',
+          ),
+        ),
+        const Gap(16),
+        TextField(
+          controller: trainerInstructionsController,
+          minLines: 3,
+          maxLines: 8,
+          keyboardType: TextInputType.multiline,
+          decoration: const InputDecoration(
+            labelText: 'Fitness Trainer Instructions (Optional)',
+            border: OutlineInputBorder(),
+            alignLabelWithHint: true,
+            helperText:
+                'Extra guidance for exercise analysis, added on top of the '
+                'built-in instructions. Use it to get responses in your '
+                'language or refine how burned calories are estimated. Leave '
+                'empty for the default.',
+            helperMaxLines: 4,
+            hintText:
+                'e.g. Reply in Slovak; I mostly do strength training.',
+          ),
+        ),
       ],
     );
   }

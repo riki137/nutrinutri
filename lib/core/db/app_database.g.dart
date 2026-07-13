@@ -2039,6 +2039,28 @@ class $AppSettingsTable extends AppSettings
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _nutritionistInstructionsMeta =
+      const VerificationMeta('nutritionistInstructions');
+  @override
+  late final GeneratedColumn<String> nutritionistInstructions =
+      GeneratedColumn<String>(
+        'nutritionist_instructions',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _trainerInstructionsMeta =
+      const VerificationMeta('trainerInstructions');
+  @override
+  late final GeneratedColumn<String> trainerInstructions =
+      GeneratedColumn<String>(
+        'trainer_instructions',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     updatedAt,
@@ -2050,6 +2072,8 @@ class $AppSettingsTable extends AppSettings
     fallbackModel,
     provider,
     customBaseUrl,
+    nutritionistInstructions,
+    trainerInstructions,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2120,6 +2144,24 @@ class $AppSettingsTable extends AppSettings
         ),
       );
     }
+    if (data.containsKey('nutritionist_instructions')) {
+      context.handle(
+        _nutritionistInstructionsMeta,
+        nutritionistInstructions.isAcceptableOrUnknown(
+          data['nutritionist_instructions']!,
+          _nutritionistInstructionsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('trainer_instructions')) {
+      context.handle(
+        _trainerInstructionsMeta,
+        trainerInstructions.isAcceptableOrUnknown(
+          data['trainer_instructions']!,
+          _trainerInstructionsMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -2165,6 +2207,14 @@ class $AppSettingsTable extends AppSettings
         DriftSqlType.string,
         data['${effectivePrefix}custom_base_url'],
       ),
+      nutritionistInstructions: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nutritionist_instructions'],
+      ),
+      trainerInstructions: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}trainer_instructions'],
+      ),
     );
   }
 
@@ -2184,6 +2234,18 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   final String? fallbackModel;
   final String provider;
   final String? customBaseUrl;
+
+  /// Optional user-supplied guidance appended on top of the built-in
+  /// nutritionist (food analysis) instructions.  The default behaviour and the
+  /// strict-JSON response contract stay hardcoded; this only adds extra
+  /// instructional text.  Null / empty means "use the defaults only".
+  final String? nutritionistInstructions;
+
+  /// Optional user-supplied guidance appended on top of the built-in fitness
+  /// trainer (exercise analysis) instructions.  The default behaviour and the
+  /// strict-JSON response contract stay hardcoded; this only adds extra
+  /// instructional text.  Null / empty means "use the defaults only".
+  final String? trainerInstructions;
   const AppSettingsRow({
     required this.updatedAt,
     required this.updatedBy,
@@ -2194,6 +2256,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     this.fallbackModel,
     required this.provider,
     this.customBaseUrl,
+    this.nutritionistInstructions,
+    this.trainerInstructions,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2214,6 +2278,14 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     map['provider'] = Variable<String>(provider);
     if (!nullToAbsent || customBaseUrl != null) {
       map['custom_base_url'] = Variable<String>(customBaseUrl);
+    }
+    if (!nullToAbsent || nutritionistInstructions != null) {
+      map['nutritionist_instructions'] = Variable<String>(
+        nutritionistInstructions,
+      );
+    }
+    if (!nullToAbsent || trainerInstructions != null) {
+      map['trainer_instructions'] = Variable<String>(trainerInstructions);
     }
     return map;
   }
@@ -2237,6 +2309,12 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       customBaseUrl: customBaseUrl == null && nullToAbsent
           ? const Value.absent()
           : Value(customBaseUrl),
+      nutritionistInstructions: nutritionistInstructions == null && nullToAbsent
+          ? const Value.absent()
+          : Value(nutritionistInstructions),
+      trainerInstructions: trainerInstructions == null && nullToAbsent
+          ? const Value.absent()
+          : Value(trainerInstructions),
     );
   }
 
@@ -2255,6 +2333,12 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       fallbackModel: serializer.fromJson<String?>(json['fallbackModel']),
       provider: serializer.fromJson<String>(json['provider']),
       customBaseUrl: serializer.fromJson<String?>(json['customBaseUrl']),
+      nutritionistInstructions: serializer.fromJson<String?>(
+        json['nutritionistInstructions'],
+      ),
+      trainerInstructions: serializer.fromJson<String?>(
+        json['trainerInstructions'],
+      ),
     );
   }
   @override
@@ -2270,6 +2354,10 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       'fallbackModel': serializer.toJson<String?>(fallbackModel),
       'provider': serializer.toJson<String>(provider),
       'customBaseUrl': serializer.toJson<String?>(customBaseUrl),
+      'nutritionistInstructions': serializer.toJson<String?>(
+        nutritionistInstructions,
+      ),
+      'trainerInstructions': serializer.toJson<String?>(trainerInstructions),
     };
   }
 
@@ -2283,6 +2371,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     Value<String?> fallbackModel = const Value.absent(),
     String? provider,
     Value<String?> customBaseUrl = const Value.absent(),
+    Value<String?> nutritionistInstructions = const Value.absent(),
+    Value<String?> trainerInstructions = const Value.absent(),
   }) => AppSettingsRow(
     updatedAt: updatedAt ?? this.updatedAt,
     updatedBy: updatedBy ?? this.updatedBy,
@@ -2297,6 +2387,12 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     customBaseUrl: customBaseUrl.present
         ? customBaseUrl.value
         : this.customBaseUrl,
+    nutritionistInstructions: nutritionistInstructions.present
+        ? nutritionistInstructions.value
+        : this.nutritionistInstructions,
+    trainerInstructions: trainerInstructions.present
+        ? trainerInstructions.value
+        : this.trainerInstructions,
   );
   AppSettingsRow copyWithCompanion(AppSettingsCompanion data) {
     return AppSettingsRow(
@@ -2313,6 +2409,12 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       customBaseUrl: data.customBaseUrl.present
           ? data.customBaseUrl.value
           : this.customBaseUrl,
+      nutritionistInstructions: data.nutritionistInstructions.present
+          ? data.nutritionistInstructions.value
+          : this.nutritionistInstructions,
+      trainerInstructions: data.trainerInstructions.present
+          ? data.trainerInstructions.value
+          : this.trainerInstructions,
     );
   }
 
@@ -2327,7 +2429,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('aiModel: $aiModel, ')
           ..write('fallbackModel: $fallbackModel, ')
           ..write('provider: $provider, ')
-          ..write('customBaseUrl: $customBaseUrl')
+          ..write('customBaseUrl: $customBaseUrl, ')
+          ..write('nutritionistInstructions: $nutritionistInstructions, ')
+          ..write('trainerInstructions: $trainerInstructions')
           ..write(')'))
         .toString();
   }
@@ -2343,6 +2447,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     fallbackModel,
     provider,
     customBaseUrl,
+    nutritionistInstructions,
+    trainerInstructions,
   );
   @override
   bool operator ==(Object other) =>
@@ -2356,7 +2462,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.aiModel == this.aiModel &&
           other.fallbackModel == this.fallbackModel &&
           other.provider == this.provider &&
-          other.customBaseUrl == this.customBaseUrl);
+          other.customBaseUrl == this.customBaseUrl &&
+          other.nutritionistInstructions == this.nutritionistInstructions &&
+          other.trainerInstructions == this.trainerInstructions);
 }
 
 class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
@@ -2369,6 +2477,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<String?> fallbackModel;
   final Value<String> provider;
   final Value<String?> customBaseUrl;
+  final Value<String?> nutritionistInstructions;
+  final Value<String?> trainerInstructions;
   const AppSettingsCompanion({
     this.updatedAt = const Value.absent(),
     this.updatedBy = const Value.absent(),
@@ -2379,6 +2489,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
     this.fallbackModel = const Value.absent(),
     this.provider = const Value.absent(),
     this.customBaseUrl = const Value.absent(),
+    this.nutritionistInstructions = const Value.absent(),
+    this.trainerInstructions = const Value.absent(),
   });
   AppSettingsCompanion.insert({
     this.updatedAt = const Value.absent(),
@@ -2390,6 +2502,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
     this.fallbackModel = const Value.absent(),
     this.provider = const Value.absent(),
     this.customBaseUrl = const Value.absent(),
+    this.nutritionistInstructions = const Value.absent(),
+    this.trainerInstructions = const Value.absent(),
   });
   static Insertable<AppSettingsRow> custom({
     Expression<int>? updatedAt,
@@ -2401,6 +2515,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
     Expression<String>? fallbackModel,
     Expression<String>? provider,
     Expression<String>? customBaseUrl,
+    Expression<String>? nutritionistInstructions,
+    Expression<String>? trainerInstructions,
   }) {
     return RawValuesInsertable({
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -2412,6 +2528,10 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
       if (fallbackModel != null) 'fallback_model': fallbackModel,
       if (provider != null) 'provider': provider,
       if (customBaseUrl != null) 'custom_base_url': customBaseUrl,
+      if (nutritionistInstructions != null)
+        'nutritionist_instructions': nutritionistInstructions,
+      if (trainerInstructions != null)
+        'trainer_instructions': trainerInstructions,
     });
   }
 
@@ -2425,6 +2545,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<String?>? fallbackModel,
     Value<String>? provider,
     Value<String?>? customBaseUrl,
+    Value<String?>? nutritionistInstructions,
+    Value<String?>? trainerInstructions,
   }) {
     return AppSettingsCompanion(
       updatedAt: updatedAt ?? this.updatedAt,
@@ -2436,6 +2558,9 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
       fallbackModel: fallbackModel ?? this.fallbackModel,
       provider: provider ?? this.provider,
       customBaseUrl: customBaseUrl ?? this.customBaseUrl,
+      nutritionistInstructions:
+          nutritionistInstructions ?? this.nutritionistInstructions,
+      trainerInstructions: trainerInstructions ?? this.trainerInstructions,
     );
   }
 
@@ -2469,6 +2594,14 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
     if (customBaseUrl.present) {
       map['custom_base_url'] = Variable<String>(customBaseUrl.value);
     }
+    if (nutritionistInstructions.present) {
+      map['nutritionist_instructions'] = Variable<String>(
+        nutritionistInstructions.value,
+      );
+    }
+    if (trainerInstructions.present) {
+      map['trainer_instructions'] = Variable<String>(trainerInstructions.value);
+    }
     return map;
   }
 
@@ -2483,7 +2616,9 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('aiModel: $aiModel, ')
           ..write('fallbackModel: $fallbackModel, ')
           ..write('provider: $provider, ')
-          ..write('customBaseUrl: $customBaseUrl')
+          ..write('customBaseUrl: $customBaseUrl, ')
+          ..write('nutritionistInstructions: $nutritionistInstructions, ')
+          ..write('trainerInstructions: $trainerInstructions')
           ..write(')'))
         .toString();
   }
@@ -3727,6 +3862,8 @@ typedef $$AppSettingsTableCreateCompanionBuilder =
       Value<String?> fallbackModel,
       Value<String> provider,
       Value<String?> customBaseUrl,
+      Value<String?> nutritionistInstructions,
+      Value<String?> trainerInstructions,
     });
 typedef $$AppSettingsTableUpdateCompanionBuilder =
     AppSettingsCompanion Function({
@@ -3739,6 +3876,8 @@ typedef $$AppSettingsTableUpdateCompanionBuilder =
       Value<String?> fallbackModel,
       Value<String> provider,
       Value<String?> customBaseUrl,
+      Value<String?> nutritionistInstructions,
+      Value<String?> trainerInstructions,
     });
 
 class $$AppSettingsTableFilterComposer
@@ -3792,6 +3931,16 @@ class $$AppSettingsTableFilterComposer
 
   ColumnFilters<String> get customBaseUrl => $composableBuilder(
     column: $table.customBaseUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nutritionistInstructions => $composableBuilder(
+    column: $table.nutritionistInstructions,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get trainerInstructions => $composableBuilder(
+    column: $table.trainerInstructions,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -3849,6 +3998,16 @@ class $$AppSettingsTableOrderingComposer
     column: $table.customBaseUrl,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get nutritionistInstructions => $composableBuilder(
+    column: $table.nutritionistInstructions,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get trainerInstructions => $composableBuilder(
+    column: $table.trainerInstructions,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$AppSettingsTableAnnotationComposer
@@ -3888,6 +4047,16 @@ class $$AppSettingsTableAnnotationComposer
 
   GeneratedColumn<String> get customBaseUrl => $composableBuilder(
     column: $table.customBaseUrl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get nutritionistInstructions => $composableBuilder(
+    column: $table.nutritionistInstructions,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get trainerInstructions => $composableBuilder(
+    column: $table.trainerInstructions,
     builder: (column) => column,
   );
 }
@@ -3932,6 +4101,8 @@ class $$AppSettingsTableTableManager
                 Value<String?> fallbackModel = const Value.absent(),
                 Value<String> provider = const Value.absent(),
                 Value<String?> customBaseUrl = const Value.absent(),
+                Value<String?> nutritionistInstructions = const Value.absent(),
+                Value<String?> trainerInstructions = const Value.absent(),
               }) => AppSettingsCompanion(
                 updatedAt: updatedAt,
                 updatedBy: updatedBy,
@@ -3942,6 +4113,8 @@ class $$AppSettingsTableTableManager
                 fallbackModel: fallbackModel,
                 provider: provider,
                 customBaseUrl: customBaseUrl,
+                nutritionistInstructions: nutritionistInstructions,
+                trainerInstructions: trainerInstructions,
               ),
           createCompanionCallback:
               ({
@@ -3954,6 +4127,8 @@ class $$AppSettingsTableTableManager
                 Value<String?> fallbackModel = const Value.absent(),
                 Value<String> provider = const Value.absent(),
                 Value<String?> customBaseUrl = const Value.absent(),
+                Value<String?> nutritionistInstructions = const Value.absent(),
+                Value<String?> trainerInstructions = const Value.absent(),
               }) => AppSettingsCompanion.insert(
                 updatedAt: updatedAt,
                 updatedBy: updatedBy,
@@ -3964,6 +4139,8 @@ class $$AppSettingsTableTableManager
                 fallbackModel: fallbackModel,
                 provider: provider,
                 customBaseUrl: customBaseUrl,
+                nutritionistInstructions: nutritionistInstructions,
+                trainerInstructions: trainerInstructions,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

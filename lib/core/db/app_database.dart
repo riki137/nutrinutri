@@ -77,6 +77,18 @@ class AppSettings extends Table with AuditColumns {
       text().withDefault(const Constant('openrouter'))();
   TextColumn get customBaseUrl => text().nullable()();
 
+  /// Optional user-supplied guidance appended on top of the built-in
+  /// nutritionist (food analysis) instructions.  The default behaviour and the
+  /// strict-JSON response contract stay hardcoded; this only adds extra
+  /// instructional text.  Null / empty means "use the defaults only".
+  TextColumn get nutritionistInstructions => text().nullable()();
+
+  /// Optional user-supplied guidance appended on top of the built-in fitness
+  /// trainer (exercise analysis) instructions.  The default behaviour and the
+  /// strict-JSON response contract stay hardcoded; this only adds extra
+  /// instructional text.  Null / empty means "use the defaults only".
+  TextColumn get trainerInstructions => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -112,7 +124,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -124,20 +136,15 @@ class AppDatabase extends _$AppDatabase {
         await _migrateFromV1();
       }
       if (from < 3) {
-        await _migrateToV3();
+        await m.addColumn(appSettings, appSettings.nutritionistInstructions);
+        await m.addColumn(appSettings, appSettings.trainerInstructions);
+      }
+      if (from < 4) {
+        await m.addColumn(appSettings, appSettings.provider);
+        await m.addColumn(appSettings, appSettings.customBaseUrl);
       }
     },
   );
-
-  Future<void> _migrateToV3() async {
-    await customStatement(
-      "ALTER TABLE app_settings ADD COLUMN provider TEXT NOT NULL "
-      "DEFAULT 'openrouter';",
-    );
-    await customStatement(
-      'ALTER TABLE app_settings ADD COLUMN custom_base_url TEXT;',
-    );
-  }
 
   Future<void> _migrateFromV1() async {
     await customStatement('''

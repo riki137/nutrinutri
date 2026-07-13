@@ -48,11 +48,15 @@ Future<AIService> aiService(Ref ref) async {
   final model = await settings.getAIModel();
   final provider = providerById(await settings.getProvider());
   final customBaseUrl = await settings.getCustomBaseUrl();
+  final nutritionistInstructions = await settings.getNutritionistInstructions();
+  final trainerInstructions = await settings.getTrainerInstructions();
   return AIService(
     apiKey: apiKey ?? '',
     model: model,
     baseUrl: resolveChatEndpoint(provider, customBaseUrl),
     extraHeaders: providerHeaders(provider),
+    nutritionistInstructions: nutritionistInstructions,
+    trainerInstructions: trainerInstructions,
   );
 }
 
