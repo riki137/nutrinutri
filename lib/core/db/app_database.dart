@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 
 part 'app_database.g.dart';
 
@@ -122,6 +123,11 @@ class AppDatabase extends _$AppDatabase {
           ),
         ),
       );
+
+  /// Builds a database backed by an arbitrary executor. Used by the screenshot
+  /// harness to inject an in-memory database (`NativeDatabase.memory()`).
+  @visibleForTesting
+  AppDatabase.forTesting(super.executor);
 
   @override
   int get schemaVersion => 4;
