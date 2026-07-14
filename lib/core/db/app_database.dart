@@ -73,6 +73,9 @@ class AppSettings extends Table with AuditColumns {
   TextColumn get aiModel =>
       text().withDefault(const Constant('google/gemini-3-flash-preview'))();
   TextColumn get fallbackModel => text().nullable()();
+  TextColumn get provider =>
+      text().withDefault(const Constant('openrouter'))();
+  TextColumn get customBaseUrl => text().nullable()();
 
   /// Optional user-supplied guidance appended on top of the built-in
   /// nutritionist (food analysis) instructions.  The default behaviour and the
@@ -121,7 +124,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -135,6 +138,10 @@ class AppDatabase extends _$AppDatabase {
       if (from < 3) {
         await m.addColumn(appSettings, appSettings.nutritionistInstructions);
         await m.addColumn(appSettings, appSettings.trainerInstructions);
+      }
+      if (from < 4) {
+        await m.addColumn(appSettings, appSettings.provider);
+        await m.addColumn(appSettings, appSettings.customBaseUrl);
       }
     },
   );

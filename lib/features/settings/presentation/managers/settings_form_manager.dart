@@ -7,6 +7,7 @@ import 'package:nutrinutri/features/settings/presentation/settings_controller.da
 class SettingsFormManager {
   SettingsFormManager({required this.ref, required this.onStateChanged}) {
     apiKeyController.addListener(onStateChanged);
+    customBaseUrlController.addListener(onStateChanged);
     nutritionistInstructionsController.addListener(onStateChanged);
     trainerInstructionsController.addListener(onStateChanged);
     ageController.addListener(_calculateRecommendedCalories);
@@ -19,6 +20,7 @@ class SettingsFormManager {
   final apiKeyController = TextEditingController();
   final customModelController = TextEditingController();
   final customFallbackModelController = TextEditingController();
+  final customBaseUrlController = TextEditingController();
   final nutritionistInstructionsController = TextEditingController();
   final trainerInstructionsController = TextEditingController();
   final ageController = TextEditingController();
@@ -42,6 +44,7 @@ class SettingsFormManager {
     apiKeyController.dispose();
     customModelController.dispose();
     customFallbackModelController.dispose();
+    customBaseUrlController.dispose();
     nutritionistInstructionsController.dispose();
     trainerInstructionsController.dispose();
     ageController.dispose();
@@ -60,6 +63,7 @@ class SettingsFormManager {
           onCustomModelLoaded: (model) => customModelController.text = model,
           onCustomFallbackLoaded: (model) =>
               customFallbackModelController.text = model,
+          onCustomBaseUrlLoaded: (url) => customBaseUrlController.text = url,
           onNutritionistInstructionsLoaded: (instructions) =>
               nutritionistInstructionsController.text = instructions,
           onTrainerInstructionsLoaded: (instructions) =>
@@ -112,6 +116,7 @@ class SettingsFormManager {
           apiKey: apiKeyController.text,
           customModel: customModelController.text,
           customFallbackModel: customFallbackModelController.text,
+          customBaseUrl: customBaseUrlController.text,
           nutritionistInstructions: nutritionistInstructionsController.text,
           trainerInstructions: trainerInstructionsController.text,
           age: ageController.text,
@@ -137,6 +142,8 @@ class SettingsFormManager {
     final state = ref.read(settingsControllerProvider);
     return Object.hashAll([
       apiKeyController.text,
+      state.selectedProvider,
+      customBaseUrlController.text,
       state.selectedModel,
       customModelController.text,
       state.fallbackModel,

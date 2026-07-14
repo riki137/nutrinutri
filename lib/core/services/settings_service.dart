@@ -48,6 +48,24 @@ class SettingsService {
     return (await _settings())?.fallbackModel;
   }
 
+  Future<void> saveProvider(String provider) async {
+    await _updateSettings(provider: Value(provider.trim()));
+  }
+
+  Future<String> getProvider() async {
+    return (await _settings())?.provider ?? 'openrouter';
+  }
+
+  Future<void> saveCustomBaseUrl(String? url) async {
+    await _updateSettings(
+      customBaseUrl: Value(url?.trim().isEmpty == true ? null : url?.trim()),
+    );
+  }
+
+  Future<String?> getCustomBaseUrl() async {
+    return (await _settings())?.customBaseUrl;
+  }
+
   Future<void> saveNutritionistInstructions(String? instructions) async {
     await _updateSettings(
       nutritionistInstructions: Value(
@@ -183,6 +201,8 @@ class SettingsService {
     Value<String?> apiKey = const Value.absent(),
     Value<String> aiModel = const Value.absent(),
     Value<String?> fallbackModel = const Value.absent(),
+    Value<String> provider = const Value.absent(),
+    Value<String?> customBaseUrl = const Value.absent(),
     Value<String?> nutritionistInstructions = const Value.absent(),
     Value<String?> trainerInstructions = const Value.absent(),
   }) async {
@@ -196,6 +216,12 @@ class SettingsService {
     final nextFallbackModel = fallbackModel.present
         ? fallbackModel.value
         : existing?.fallbackModel;
+    final nextProvider = provider.present
+        ? provider.value
+        : (existing?.provider ?? 'openrouter');
+    final nextCustomBaseUrl = customBaseUrl.present
+        ? customBaseUrl.value
+        : existing?.customBaseUrl;
     final nextNutritionistInstructions = nutritionistInstructions.present
         ? nutritionistInstructions.value
         : existing?.nutritionistInstructions;
@@ -211,6 +237,8 @@ class SettingsService {
             apiKey: Value(nextApiKey),
             aiModel: Value(nextAiModel),
             fallbackModel: Value(nextFallbackModel),
+            provider: Value(nextProvider),
+            customBaseUrl: Value(nextCustomBaseUrl),
             nutritionistInstructions: Value(nextNutritionistInstructions),
             trainerInstructions: Value(nextTrainerInstructions),
             updatedAt: Value(audit.now),

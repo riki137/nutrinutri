@@ -6,6 +6,7 @@ import 'package:nutrinutri/core/providers.dart';
 import 'package:nutrinutri/core/services/sync_service.dart';
 import 'package:nutrinutri/core/utils/calorie_calculator.dart';
 import 'package:nutrinutri/features/settings/domain/ai_model_info.dart';
+import 'package:nutrinutri/features/settings/domain/ai_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'settings_controller.g.dart';
@@ -18,6 +19,7 @@ class SettingsState {
   SettingsState({
     this.isLoading = false,
     this.isSyncing = false,
+    this.selectedProvider = kDefaultProviderId,
     this.selectedModel = 'google/gemini-3.5-flash',
     this.fallbackModel = 'anthropic/claude-sonnet-5',
     this.gender = 'male',
@@ -27,6 +29,7 @@ class SettingsState {
 
   final bool isLoading;
   final bool isSyncing;
+  final String selectedProvider;
   final String selectedModel;
   final String gender;
   final String activityLevel;
@@ -34,9 +37,14 @@ class SettingsState {
 
   final String? fallbackModel;
 
+  /// Whether the currently selected provider uses OpenRouter's rich preset
+  /// model list (true) versus a free-text model id field (false).
+  bool get usesModelPresets => selectedProvider == kDefaultProviderId;
+
   SettingsState copyWith({
     bool? isLoading,
     bool? isSyncing,
+    String? selectedProvider,
     String? selectedModel,
     Object? fallbackModel = _kUnset,
     String? gender,
@@ -46,6 +54,7 @@ class SettingsState {
     return SettingsState(
       isLoading: isLoading ?? this.isLoading,
       isSyncing: isSyncing ?? this.isSyncing,
+      selectedProvider: selectedProvider ?? this.selectedProvider,
       selectedModel: selectedModel ?? this.selectedModel,
       fallbackModel: identical(fallbackModel, _kUnset)
           ? this.fallbackModel
@@ -69,6 +78,7 @@ class SettingsController extends _$SettingsController {
     required void Function(String modelId) onCustomModelLoaded,
     required void Function(UserProfile profile) onProfileLoaded,
     required void Function(String modelId) onCustomFallbackLoaded,
+    required void Function(String url) onCustomBaseUrlLoaded,
     required void Function(String instructions) onNutritionistInstructionsLoaded,
     required void Function(String instructions) onTrainerInstructionsLoaded,
   }) async {
@@ -78,6 +88,18 @@ class SettingsController extends _$SettingsController {
     if (key != null) {
       onKeyLoaded(key);
     }
+
+    final provider = await settings.getProvider();
+    state = state.copyWith(selectedProvider: provider);
+
+    final customBaseUrl = await settings.getCustomBaseUrl();
+    if (customBaseUrl != null) {
+      onCustomBaseUrlLoaded(customBaseUrl);
+    }
+
+    // Only OpenRouter uses the preset dropdown; every other provider stores a
+    // free-text model id which is surfaced through the custom model field.
+    final usesPresets = provider == kDefaultProviderId;
 
     final nutritionistInstructions = await settings
         .getNutritionistInstructions();
@@ -92,7 +114,7 @@ class SettingsController extends _$SettingsController {
     }
 
     final model = await settings.getAIModel();
-    final isKnownModel = availableModels.any((m) => m.id == model);
+    final isKnownModel = usesPresets && availableModels.any((m) => m.id == model);
 
     if (isKnownModel) {
       state = state.copyWith(selectedModel: model);
@@ -103,9 +125,9 @@ class SettingsController extends _$SettingsController {
 
     final fallback = await settings.getFallbackModel();
     if (fallback != null) {
-      final isKnownFallback = availableModels.any(
-        (m) => m.id == fallback && m.id != 'custom',
-      );
+      final isKnownFallback =
+          usesPresets &&
+          availableModels.any((m) => m.id == fallback && m.id != 'custom');
       if (isKnownFallback) {
         state = state.copyWith(fallbackModel: fallback);
       } else {
@@ -123,6 +145,10 @@ class SettingsController extends _$SettingsController {
       );
       onProfileLoaded(profile);
     }
+  }
+
+  void updateProvider(String providerId) {
+    state = state.copyWith(selectedProvider: providerId);
   }
 
   void updateModel(String modelId) {
@@ -153,6 +179,7 @@ class SettingsController extends _$SettingsController {
     required String apiKey,
     required String customModel,
     required String customFallbackModel,
+    required String customBaseUrl,
     required String nutritionistInstructions,
     required String trainerInstructions,
     required String age,
@@ -166,19 +193,39 @@ class SettingsController extends _$SettingsController {
     try {
       final settings = ref.read(settingsServiceProvider);
       await settings.saveApiKey(apiKey.trim());
+      await settings.saveProvider(state.selectedProvider);
+      await settings.saveCustomBaseUrl(customBaseUrl.trim());
       await settings.saveNutritionistInstructions(nutritionistInstructions);
       await settings.saveTrainerInstructions(trainerInstructions);
 
-      final modelToSave = state.selectedModel == 'custom'
-          ? customModel.trim()
-          : state.selectedModel;
+      final usesPresets = state.usesModelPresets;
+
+      String modelToSave;
+      if (usesPresets) {
+        modelToSave = state.selectedModel == 'custom'
+            ? customModel.trim()
+            : state.selectedModel;
+      } else {
+        // Free-text providers store whatever the user typed, defaulting to the
+        // provider's suggested model when left blank.
+        modelToSave = customModel.trim();
+        if (modelToSave.isEmpty) {
+          modelToSave = providerById(state.selectedProvider).suggestedModel;
+        }
+      }
       if (modelToSave.isNotEmpty) {
         await settings.saveAIModel(modelToSave);
       }
 
-      final fallbackToSave = state.fallbackModel == 'custom'
-          ? customFallbackModel.trim()
-          : state.fallbackModel;
+      final String? fallbackToSave;
+      if (usesPresets) {
+        fallbackToSave = state.fallbackModel == 'custom'
+            ? customFallbackModel.trim()
+            : state.fallbackModel;
+      } else {
+        final trimmed = customFallbackModel.trim();
+        fallbackToSave = trimmed.isEmpty ? null : trimmed;
+      }
       await settings.saveFallbackModel(fallbackToSave);
 
       final parsedAge = int.tryParse(age.trim());

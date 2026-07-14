@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nutrinutri/core/services/ai_service.dart';
+import 'package:nutrinutri/features/settings/domain/ai_provider.dart';
 
 /// Define the benchmark cases
 class FoodBenchmarkCase {
@@ -422,7 +423,12 @@ void main() {
     try {
       for (final model in modelsToTest) {
         print('\nTesting Model: $model');
-        final aiService = AIService(apiKey: apiKey, model: model);
+        final aiService = AIService(
+          apiKey: apiKey,
+          model: model,
+          baseUrl: resolveChatEndpoint(providerById(kDefaultProviderId), null),
+          extraHeaders: providerHeaders(providerById(kDefaultProviderId)),
+        );
 
         for (final foodCase in cases) {
           print('  Running case: ${foodCase.name}...');

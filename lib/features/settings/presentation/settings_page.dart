@@ -126,6 +126,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     return shouldPop ?? false;
   }
 
+  void _onProviderChanged(SettingsController controller, String? value) {
+    if (value == null) return;
+    controller.updateProvider(value);
+  }
+
   void _onModelChanged(SettingsController controller, String? value) {
     if (value == null) return;
     controller.updateModel(value);
@@ -176,6 +181,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       currentUser: currentUser,
       controller: controller,
       formManager: _formManager,
+      onProviderChanged: (value) => _onProviderChanged(controller, value),
       onModelChanged: (value) => _onModelChanged(controller, value),
       onFallbackModelChanged: controller.updateFallbackModel,
       onGenderChanged: (value) => _onGenderChanged(controller, value),
@@ -272,6 +278,7 @@ class _SettingsSections extends StatelessWidget {
     required this.currentUser,
     required this.controller,
     required this.formManager,
+    required this.onProviderChanged,
     required this.onModelChanged,
     required this.onFallbackModelChanged,
     required this.onGenderChanged,
@@ -284,6 +291,7 @@ class _SettingsSections extends StatelessWidget {
   final GoogleUserInfo? currentUser;
   final SettingsController controller;
   final SettingsFormManager formManager;
+  final ValueChanged<String?> onProviderChanged;
   final ValueChanged<String?> onModelChanged;
   final ValueChanged<String?> onFallbackModelChanged;
   final ValueChanged<String?> onGenderChanged;
@@ -301,6 +309,8 @@ class _SettingsSections extends StatelessWidget {
           customModelController: formManager.customModelController,
           customFallbackModelController:
               formManager.customFallbackModelController,
+          customBaseUrlController: formManager.customBaseUrlController,
+          selectedProvider: state.selectedProvider,
           nutritionistInstructionsController:
               formManager.nutritionistInstructionsController,
           trainerInstructionsController:
@@ -308,6 +318,7 @@ class _SettingsSections extends StatelessWidget {
           selectedModel: state.selectedModel,
           fallbackModel: state.fallbackModel,
           availableModels: controller.availableModels,
+          onProviderChanged: onProviderChanged,
           onModelChanged: onModelChanged,
           onFallbackModelChanged: onFallbackModelChanged,
         ),

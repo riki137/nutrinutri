@@ -6,6 +6,7 @@ import 'package:nutrinutri/core/services/google_user_info.dart';
 import 'package:nutrinutri/core/services/settings_service.dart';
 import 'package:nutrinutri/core/services/sync_service.dart';
 import 'package:nutrinutri/features/diary/data/diary_service.dart';
+import 'package:nutrinutri/features/settings/domain/ai_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'providers.g.dart';
@@ -55,11 +56,15 @@ Future<AIService> aiService(Ref ref) async {
   final apiKey = await ref.watch(apiKeyProvider.future);
   final settings = ref.watch(settingsServiceProvider);
   final model = await settings.getAIModel();
+  final provider = providerById(await settings.getProvider());
+  final customBaseUrl = await settings.getCustomBaseUrl();
   final nutritionistInstructions = await settings.getNutritionistInstructions();
   final trainerInstructions = await settings.getTrainerInstructions();
   return AIService(
     apiKey: apiKey ?? '',
     model: model,
+    baseUrl: resolveChatEndpoint(provider, customBaseUrl),
+    extraHeaders: providerHeaders(provider),
     nutritionistInstructions: nutritionistInstructions,
     trainerInstructions: trainerInstructions,
   );
