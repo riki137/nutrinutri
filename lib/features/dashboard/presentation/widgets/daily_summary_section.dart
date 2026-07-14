@@ -161,55 +161,74 @@ class DailySummarySection extends ConsumerWidget {
               ),
             ),
             const Gap(24),
-            Wrap(
-              spacing: 16,
-              runSpacing: 16,
-              alignment: WrapAlignment.center,
-              children: [
-                MetricRing(
-                  label: NutritionMetricType.protein.label,
-                  value: summary[NutritionMetricType.protein.key] ?? 0,
-                  goal: profile.goalFor(NutritionMetricType.protein),
-                  unit: NutritionMetricType.protein.unit,
-                  color: _metricColor(NutritionMetricType.protein),
-                ),
-                MetricRing(
-                  label: NutritionMetricType.carbs.label,
-                  value: summary[NutritionMetricType.carbs.key] ?? 0,
-                  goal: profile.goalFor(NutritionMetricType.carbs),
-                  unit: NutritionMetricType.carbs.unit,
-                  color: _metricColor(NutritionMetricType.carbs),
-                  subLabel: NutritionMetricType.sugars.label,
-                  subValue: summary[NutritionMetricType.sugars.key] ?? 0,
-                  subGoal: profile.goalFor(NutritionMetricType.sugars),
-                  subColor: _metricColor(NutritionMetricType.sugars),
-                ),
-                MetricRing(
-                  label: NutritionMetricType.fats.label,
-                  value: summary[NutritionMetricType.fats.key] ?? 0,
-                  goal: profile.goalFor(NutritionMetricType.fats),
-                  unit: NutritionMetricType.fats.unit,
-                  color: _metricColor(NutritionMetricType.fats),
-                  subLabel: 'Sat. Fats',
-                  subValue: summary[NutritionMetricType.saturatedFats.key] ?? 0,
-                  subGoal: profile.goalFor(NutritionMetricType.saturatedFats),
-                  subColor: _metricColor(NutritionMetricType.saturatedFats),
-                ),
-                MetricRing(
-                  label: NutritionMetricType.fiber.label,
-                  value: summary[NutritionMetricType.fiber.key] ?? 0,
-                  goal: profile.goalFor(NutritionMetricType.fiber),
-                  unit: NutritionMetricType.fiber.unit,
-                  color: _metricColor(NutritionMetricType.fiber),
-                ),
-                MetricRing(
-                  label: NutritionMetricType.sodium.label,
-                  value: summary[NutritionMetricType.sodium.key] ?? 0,
-                  goal: profile.goalFor(NutritionMetricType.sodium),
-                  unit: NutritionMetricType.sodium.unit,
-                  color: _metricColor(NutritionMetricType.sodium),
-                ),
-              ],
+            // Three rings per row (protein / carbs / fats), the remaining two
+            // (fiber / sodium) wrap onto the next row. Each ring is sized to a
+            // third of the available width so the arrangement holds at every
+            // phone width instead of depending on a fixed ring size fitting.
+            LayoutBuilder(
+              builder: (context, constraints) {
+                const spacing = 16.0;
+                final itemWidth =
+                    ((constraints.maxWidth - spacing * 2) / 3).floorToDouble();
+                return Wrap(
+                  spacing: spacing,
+                  runSpacing: 16,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    MetricRing(
+                      width: itemWidth,
+                      label: NutritionMetricType.protein.label,
+                      value: summary[NutritionMetricType.protein.key] ?? 0,
+                      goal: profile.goalFor(NutritionMetricType.protein),
+                      unit: NutritionMetricType.protein.unit,
+                      color: _metricColor(NutritionMetricType.protein),
+                    ),
+                    MetricRing(
+                      width: itemWidth,
+                      label: NutritionMetricType.carbs.label,
+                      value: summary[NutritionMetricType.carbs.key] ?? 0,
+                      goal: profile.goalFor(NutritionMetricType.carbs),
+                      unit: NutritionMetricType.carbs.unit,
+                      color: _metricColor(NutritionMetricType.carbs),
+                      subLabel: NutritionMetricType.sugars.label,
+                      subValue: summary[NutritionMetricType.sugars.key] ?? 0,
+                      subGoal: profile.goalFor(NutritionMetricType.sugars),
+                      subColor: _metricColor(NutritionMetricType.sugars),
+                    ),
+                    MetricRing(
+                      width: itemWidth,
+                      label: NutritionMetricType.fats.label,
+                      value: summary[NutritionMetricType.fats.key] ?? 0,
+                      goal: profile.goalFor(NutritionMetricType.fats),
+                      unit: NutritionMetricType.fats.unit,
+                      color: _metricColor(NutritionMetricType.fats),
+                      subLabel: 'Sat. Fats',
+                      subValue:
+                          summary[NutritionMetricType.saturatedFats.key] ?? 0,
+                      subGoal: profile.goalFor(
+                        NutritionMetricType.saturatedFats,
+                      ),
+                      subColor: _metricColor(NutritionMetricType.saturatedFats),
+                    ),
+                    MetricRing(
+                      width: itemWidth,
+                      label: NutritionMetricType.fiber.label,
+                      value: summary[NutritionMetricType.fiber.key] ?? 0,
+                      goal: profile.goalFor(NutritionMetricType.fiber),
+                      unit: NutritionMetricType.fiber.unit,
+                      color: _metricColor(NutritionMetricType.fiber),
+                    ),
+                    MetricRing(
+                      width: itemWidth,
+                      label: NutritionMetricType.sodium.label,
+                      value: summary[NutritionMetricType.sodium.key] ?? 0,
+                      goal: profile.goalFor(NutritionMetricType.sodium),
+                      unit: NutritionMetricType.sodium.unit,
+                      color: _metricColor(NutritionMetricType.sodium),
+                    ),
+                  ],
+                );
+              },
             ),
           ],
         ),
