@@ -9,39 +9,6 @@ part of 'dashboard_providers.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
-@ProviderFor(syncUpdate)
-final syncUpdateProvider = SyncUpdateProvider._();
-
-final class SyncUpdateProvider
-    extends $FunctionalProvider<AsyncValue<void>, void, Stream<void>>
-    with $FutureModifier<void>, $StreamProvider<void> {
-  SyncUpdateProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'syncUpdateProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$syncUpdateHash();
-
-  @$internal
-  @override
-  $StreamProviderElement<void> $createElement($ProviderPointer pointer) =>
-      $StreamProviderElement(pointer);
-
-  @override
-  Stream<void> create(Ref ref) {
-    return syncUpdate(ref);
-  }
-}
-
-String _$syncUpdateHash() => r'10a4d54f9d17cc704a6e664d05cc1510e593301c';
-
 @ProviderFor(dailySummary)
 final dailySummaryProvider = DailySummaryFamily._();
 

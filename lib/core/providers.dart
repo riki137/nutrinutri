@@ -30,13 +30,23 @@ SettingsService settingsService(Ref ref) {
   );
 }
 
+/// Emits whenever a Drive sync pulls down changes that were applied
+/// locally, so keepAlive providers reading synced data (API key, profile,
+/// diary entries) know to refetch instead of serving a stale cached value.
+@riverpod
+Stream<void> syncUpdate(Ref ref) {
+  return ref.watch(syncServiceProvider).onSyncCompleted;
+}
+
 @Riverpod(keepAlive: true)
 Future<String?> apiKey(Ref ref) async {
+  ref.watch(syncUpdateProvider);
   return ref.watch(settingsServiceProvider).getApiKey();
 }
 
 @Riverpod(keepAlive: true)
 Future<UserProfile?> userProfile(Ref ref) async {
+  ref.watch(syncUpdateProvider);
   return ref.watch(settingsServiceProvider).getUserProfile();
 }
 

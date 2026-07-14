@@ -134,6 +134,50 @@ final class SettingsServiceProvider
 
 String _$settingsServiceHash() => r'3a244e957496328dc9b67abf4413d6d6a2bb13fc';
 
+/// Emits whenever a Drive sync pulls down changes that were applied
+/// locally, so keepAlive providers reading synced data (API key, profile,
+/// diary entries) know to refetch instead of serving a stale cached value.
+
+@ProviderFor(syncUpdate)
+final syncUpdateProvider = SyncUpdateProvider._();
+
+/// Emits whenever a Drive sync pulls down changes that were applied
+/// locally, so keepAlive providers reading synced data (API key, profile,
+/// diary entries) know to refetch instead of serving a stale cached value.
+
+final class SyncUpdateProvider
+    extends $FunctionalProvider<AsyncValue<void>, void, Stream<void>>
+    with $FutureModifier<void>, $StreamProvider<void> {
+  /// Emits whenever a Drive sync pulls down changes that were applied
+  /// locally, so keepAlive providers reading synced data (API key, profile,
+  /// diary entries) know to refetch instead of serving a stale cached value.
+  SyncUpdateProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'syncUpdateProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$syncUpdateHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<void> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<void> create(Ref ref) {
+    return syncUpdate(ref);
+  }
+}
+
+String _$syncUpdateHash() => r'10a4d54f9d17cc704a6e664d05cc1510e593301c';
+
 @ProviderFor(apiKey)
 final apiKeyProvider = ApiKeyProvider._();
 
@@ -165,7 +209,7 @@ final class ApiKeyProvider
   }
 }
 
-String _$apiKeyHash() => r'924832eaef3085a68ee2a4785acc71d4f23887b0';
+String _$apiKeyHash() => r'820b66d2e07b3f387fe97a276e86000ac1684663';
 
 @ProviderFor(userProfile)
 final userProfileProvider = UserProfileProvider._();
@@ -204,7 +248,7 @@ final class UserProfileProvider
   }
 }
 
-String _$userProfileHash() => r'72317a9f015e7d336011f2e22f1c7ccd45601ae3';
+String _$userProfileHash() => r'4917d99f66f7a2287d291b8aa29b07ccfb7cb536';
 
 @ProviderFor(aiService)
 final aiServiceProvider = AiServiceProvider._();

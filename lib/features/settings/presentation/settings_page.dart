@@ -72,6 +72,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Future<void> _handleSync() async {
     try {
       final result = await ref.read(settingsControllerProvider.notifier).sync();
+      if (result.downloaded > 0) {
+        await _loadSettings();
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

@@ -13,11 +13,6 @@ class DailySummaryData {
 }
 
 @riverpod
-Stream<void> syncUpdate(Ref ref) {
-  return ref.watch(syncServiceProvider).onSyncCompleted;
-}
-
-@riverpod
 Future<Map<String, double>> dailySummary(Ref ref, DateTime date) async {
   ref.watch(syncUpdateProvider);
   final diaryService = ref.watch(diaryServiceProvider);
