@@ -6,15 +6,26 @@ import 'package:flutter/foundation.dart';
 class PlatformHelper {
   PlatformHelper._();
 
+  /// Test-only override used by the screenshot harness to force the mobile
+  /// (`false`) or desktop (`true`) layout on a desktop host, since the real
+  /// detection keys off `dart:io` and cannot be swapped via
+  /// `defaultTargetPlatform`. Leave `null` in production.
+  @visibleForTesting
+  static bool? debugIsDesktopOrWebOverride;
+
   /// Returns true if the app is running on a desktop platform (Windows, macOS, Linux)
   /// or on the web
   static bool get isDesktopOrWeb {
+    if (debugIsDesktopOrWebOverride != null) return debugIsDesktopOrWebOverride!;
     if (kIsWeb) return true;
     return Platform.isWindows || Platform.isMacOS || Platform.isLinux;
   }
 
   /// Returns true if the app is running on a mobile platform (iOS, Android)
   static bool get isMobile {
+    if (debugIsDesktopOrWebOverride != null) {
+      return !debugIsDesktopOrWebOverride!;
+    }
     if (kIsWeb) return false;
     return Platform.isIOS || Platform.isAndroid;
   }

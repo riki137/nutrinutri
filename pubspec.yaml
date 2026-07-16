@@ -74,3 +74,6 @@ flutter:
     - assets/images/nutrinutri.png
     - assets/images/nutrinutri-frame.svg
     - assets/images/nutrinutri-frame.png
+    # Outfit font, bundled so the screenshot harness renders text offline
+    # (google_fonts loads these instead of fetching over the network).
+    - assets/google_fonts/

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
@@ -14,6 +16,7 @@ class MetricRing extends StatelessWidget {
     this.subValue,
     this.subGoal,
     this.subColor,
+    this.width = 100,
   });
 
   final String label;
@@ -26,6 +29,10 @@ class MetricRing extends StatelessWidget {
   final double? subValue;
   final double? subGoal;
   final Color? subColor;
+
+  /// Overall width of the ring + its labels. The ring itself scales down to fit
+  /// so three rings can sit side by side on narrow phones without overflowing.
+  final double width;
 
   @override
   Widget build(BuildContext context) {
@@ -45,13 +52,17 @@ class MetricRing extends StatelessWidget {
     final subHasGoal = subGoal != null && subGoal! > 0;
     final subIsOver = subHasGoal && subValue != null && subValue! > subGoal!;
 
+    // Keep the ring at its natural size when there's room, but shrink it to
+    // fit inside [width] on narrow layouts so it never overflows the column.
+    final ringDiameter = math.min(70.0, width - 8);
+
     return SizedBox(
-      width: 100,
+      width: width,
       child: Column(
         children: [
           SizedBox(
-            height: 70,
-            width: 70,
+            height: ringDiameter,
+            width: ringDiameter,
             child: Stack(
               children: [
                 PieChart(

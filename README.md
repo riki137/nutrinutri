@@ -7,6 +7,7 @@
 **Your Personal AI Nutritionist.**
 _Simple. Private. Open Source. Not-for-profit._
 
+[![Get it on Google Play](https://img.shields.io/badge/Google%20Play-Download-3DDC84?logo=googleplay&logoColor=white)](https://play.google.com/store/apps/details?id=sk.popelis.nutrinutri)
 [![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Built with Flutter](https://img.shields.io/badge/Built%20with-Flutter-02569B?logo=flutter)](https://flutter.dev/)
 [![Website](https://img.shields.io/badge/Website-nutrinutri.popelis.sk-2EA043)](http://nutrinutri.popelis.sk/)
@@ -30,6 +31,52 @@ No endless food databases. No barcode hunting. No subscriptions. Just a tool tha
 - **📱 Runs Everywhere** Web, Android, Linux, macOS, and Windows. One app, every device.
 - **💸 Free Forever** Bring your own [OpenRouter](https://openrouter.ai/) key and pay only for what you use. No middlemen, no markup.
 - **❤️ Non-Profit & Open Source** Built in the open under GPLv3. No VC money, no dark patterns, no growth hacks.
+
+## 📸 Screenshots
+
+<div align="center">
+
+<table>
+<tr>
+<td align="center" width="33%">
+<picture>
+<source media="(prefers-color-scheme: dark)" srcset="landing/public/img/android-screenshot-home-dark.png" />
+<img src="landing/public/img/android-screenshot-home.png" alt="Dashboard" />
+</picture>
+<br /><sub><b>Dashboard</b> — your day at a glance</sub>
+</td>
+<td align="center" width="33%">
+<picture>
+<source media="(prefers-color-scheme: dark)" srcset="landing/public/img/android-screenshot-add-dark.png" />
+<img src="landing/public/img/android-screenshot-add.png" alt="AI food logging" />
+</picture>
+<br /><sub><b>Snap &amp; log</b> — AI does the rest</sub>
+</td>
+<td align="center" width="33%">
+<picture>
+<source media="(prefers-color-scheme: dark)" srcset="landing/public/img/android-screenshot-settings-dark.png" />
+<img src="landing/public/img/android-screenshot-settings.png" alt="Settings" />
+</picture>
+<br /><sub><b>Settings</b> — your key, your data</sub>
+</td>
+</tr>
+</table>
+
+<picture>
+<source media="(prefers-color-scheme: dark)" srcset="landing/public/img/macos-screenshot-dark.png" />
+<img src="landing/public/img/macos-screenshot.png" width="90%" alt="NutriNutri on desktop" />
+</picture>
+
+<sub>The same app on desktop — one responsive codebase, every device.</sub>
+
+</div>
+
+## 📲 Download
+
+- **Android** — [Get it on Google Play](https://play.google.com/store/apps/details?id=sk.popelis.nutrinutri)
+- **Web** — [run it in your browser](https://riki137.github.io/nutrinutri/), no install needed
+- **Windows / macOS / Linux** — grab the latest build from [Releases](https://github.com/riki137/nutrinutri/releases)
+- **iOS** — not available (use the web app)
 
 ## 🏁 Getting Started
 

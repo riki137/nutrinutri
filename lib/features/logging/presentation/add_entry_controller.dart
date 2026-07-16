@@ -84,6 +84,14 @@ class AddEntryController extends _$AddEntryController {
     );
   }
 
+  /// Test-only: injects a selected image directly, bypassing the
+  /// `image_picker` platform channel. Used by the screenshot harness to show a
+  /// real food photo in the AI wizard.
+  @visibleForTesting
+  void debugSetImage(File image) {
+    state = state.copyWith(image: image);
+  }
+
   Future<File?> pickImage(ImageSource source) async {
     final pickedFile = await _picker.pickImage(
       source: source,
