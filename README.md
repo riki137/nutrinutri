@@ -7,6 +7,7 @@
 **Your Personal AI Nutritionist.**
 _Simple. Private. Open Source. Not-for-profit._
 
+[![Get it on Google Play](https://img.shields.io/badge/Google%20Play-Download-3DDC84?logo=googleplay&logoColor=white)](https://play.google.com/store/apps/details?id=sk.popelis.nutrinutri)
 [![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Built with Flutter](https://img.shields.io/badge/Built%20with-Flutter-02569B?logo=flutter)](https://flutter.dev/)
 [![Website](https://img.shields.io/badge/Website-nutrinutri.popelis.sk-2EA043)](http://nutrinutri.popelis.sk/)
@@ -69,6 +70,13 @@ No endless food databases. No barcode hunting. No subscriptions. Just a tool tha
 <sub>The same app on desktop — one responsive codebase, every device.</sub>
 
 </div>
+
+## 📲 Download
+
+- **Android** — [Get it on Google Play](https://play.google.com/store/apps/details?id=sk.popelis.nutrinutri)
+- **Web** — [run it in your browser](https://riki137.github.io/nutrinutri/), no install needed
+- **Windows / macOS / Linux** — grab the latest build from [Releases](https://github.com/riki137/nutrinutri/releases)
+- **iOS** — not available (use the web app)
 
 ## 🏁 Getting Started
 
