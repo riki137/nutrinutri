@@ -49,3 +49,6 @@ app.*.map.json
 google-services.json
 GoogleService-Info.plist
 wes_client_secret.json
+
+# Local browser-inspection artifacts
+.playwright-mcp/
