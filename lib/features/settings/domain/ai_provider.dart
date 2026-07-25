@@ -1,9 +1,12 @@
-/// Describes an OpenAI-API-compatible AI provider the user can pick in Settings.
+import 'package:nutrinutri/core/domain/ai_api_protocol.dart';
+
+/// Describes an AI provider the user can pick in Settings.
 ///
-/// Every provider speaks the same chat-completions protocol; they differ only in
-/// base URL, the page where you obtain an API key, and (for OpenRouter) a couple
-/// of required extra headers.  The `custom` provider carries no base URL — the
-/// user supplies one at runtime.
+/// Most providers speak the OpenAI chat-completions protocol and differ only
+/// in base URL, the page where you obtain an API key, and (for OpenRouter) a
+/// couple of required extra headers.  Anthropic speaks its own Messages API,
+/// which [protocol] captures.  The `custom` provider carries no base URL —
+/// the user supplies one at runtime.
 class AiProviderInfo {
   const AiProviderInfo({
     required this.id,
@@ -13,6 +16,7 @@ class AiProviderInfo {
     required this.keyHint,
     required this.suggestedModel,
     this.sendOpenRouterHeaders = false,
+    this.protocol = AiApiProtocol.openAiChat,
   });
 
   /// Stable identifier persisted in settings (e.g. `openrouter`, `openai`).
@@ -35,6 +39,9 @@ class AiProviderInfo {
 
   /// Whether OpenRouter's required `HTTP-Referer` / `X-Title` headers are sent.
   final bool sendOpenRouterHeaders;
+
+  /// Which wire protocol the provider's API speaks.
+  final AiApiProtocol protocol;
 
   bool get isCustom => id == kCustomProviderId;
 }
@@ -63,6 +70,15 @@ const List<AiProviderInfo> kAiProviders = [
     apiKeyUrl: 'https://platform.openai.com/api-keys',
     keyHint: 'sk-...',
     suggestedModel: 'gpt-5.5',
+  ),
+  AiProviderInfo(
+    id: 'anthropic',
+    name: 'Anthropic',
+    baseUrl: 'https://api.anthropic.com/v1',
+    apiKeyUrl: 'https://platform.claude.com/settings/keys',
+    keyHint: 'sk-ant-...',
+    suggestedModel: 'claude-opus-5',
+    protocol: AiApiProtocol.anthropicMessages,
   ),
   AiProviderInfo(
     id: 'groq',
@@ -106,11 +122,12 @@ AiProviderInfo providerById(String? id) {
   );
 }
 
-/// Resolves the full chat-completions endpoint for [provider].
+/// Resolves the full request endpoint for [provider].
 ///
 /// For custom providers [customBaseUrl] is used, otherwise the provider's own
 /// base URL.  The URL is normalized so users can paste either a base
 /// (`https://host/v1`) or a full endpoint (`https://host/v1/chat/completions`).
+/// Anthropic providers resolve to the Messages API path (`/messages`) instead.
 String resolveChatEndpoint(AiProviderInfo provider, String? customBaseUrl) {
   final raw = provider.isCustom ? customBaseUrl : provider.baseUrl;
   var base = (raw ?? '').trim();
@@ -118,8 +135,11 @@ String resolveChatEndpoint(AiProviderInfo provider, String? customBaseUrl) {
     base = base.substring(0, base.length - 1);
   }
   if (base.isEmpty) return '';
-  if (base.endsWith('/chat/completions')) return base;
-  return '$base/chat/completions';
+  final path = provider.protocol == AiApiProtocol.anthropicMessages
+      ? '/messages'
+      : '/chat/completions';
+  if (base.endsWith(path)) return base;
+  return '$base$path';
 }
 
 /// Provider-specific extra request headers (OpenRouter requires these).

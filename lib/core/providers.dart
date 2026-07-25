@@ -64,6 +64,7 @@ Future<AIService> aiService(Ref ref) async {
     apiKey: apiKey ?? '',
     model: model,
     baseUrl: resolveChatEndpoint(provider, customBaseUrl),
+    protocol: provider.protocol,
     extraHeaders: providerHeaders(provider),
     nutritionistInstructions: nutritionistInstructions,
     trainerInstructions: trainerInstructions,
