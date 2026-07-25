@@ -52,3 +52,4 @@ wes_client_secret.json
 
 # Local browser-inspection artifacts
 .playwright-mcp/
+*.apk 
