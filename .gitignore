@@ -54,3 +54,4 @@ wes_client_secret.json
 .playwright-mcp/
 *.apk 
 "node_modules/" 
+"dist/" 
