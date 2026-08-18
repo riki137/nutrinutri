@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,14 +12,34 @@ import 'package:nutrinutri/features/logging/presentation/add_entry_page.dart';
 import 'package:nutrinutri/features/onboarding/presentation/onboarding_page.dart';
 import 'package:nutrinutri/features/settings/presentation/settings_page.dart';
 
+/// Notifies GoRouter to re-run its redirect whenever [stream] emits.
+class _StreamListenable extends ChangeNotifier {
+  _StreamListenable(Stream<void> stream) {
+    _sub = stream.listen((_) => notifyListeners());
+  }
+  late final StreamSubscription<void> _sub;
+
+  @override
+  void dispose() {
+    _sub.cancel();
+    super.dispose();
+  }
+}
+
 final routerProvider = Provider<GoRouter>((ref) {
   final settingsService = ref.watch(settingsServiceProvider);
+  final syncService = ref.watch(syncServiceProvider);
+
+  final refresh = _StreamListenable(syncService.onSyncCompleted);
+  ref.onDispose(refresh.dispose);
 
   return GoRouter(
     initialLocation: '/',
+    // Re-run redirect when a Drive sync pulls down changes, so a device that
+    // downloads an already-configured profile leaves onboarding instead of
+    // re-prompting for profile info that already exists in the cloud.
+    refreshListenable: refresh,
     redirect: (context, state) async {
-      // Simple check to redirect to onboarding if not configured
-      // Note: In a real app this should probably be reactive to a 'userStateProvider'
       final onboarded = await settingsService.isOnboarded();
       final isGoingToOnboarding = state.matchedLocation == '/onboarding';
 
