@@ -1,3 +1,6 @@
+// Standalone AI benchmark harness (run manually); console output is the point.
+// ignore_for_file: avoid_print, sort_constructors_first
+
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
