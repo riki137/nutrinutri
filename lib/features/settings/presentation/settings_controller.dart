@@ -295,10 +295,10 @@ class SettingsController extends _$SettingsController {
   // text-only models (e.g. DeepSeek, Nemotron) fail on image input.
   // Prices are shown per 100 logs (≈ a month of typical use) so they are easy
   // to picture; they come from the real average cost-per-call in the
-  // OpenRouter activity log (2026-07-09) × 100. Accuracy is 100% minus the
-  // median calorie error %, from test/benchmark_report/index.md of the
-  // food-benchmark run (test/benchmark_ai.dart). Both are measured, not
-  // estimated.
+  // OpenRouter activity log (2026-07-09, extended 2026-08-18 for the newer
+  // entries) × 100. Accuracy is 100% minus the median calorie error %, from
+  // test/benchmark_report/index.md of the food-benchmark run
+  // (test/benchmark_ai.dart). Both are measured, not estimated.
   //
   // Ordered best-first by value — balancing accuracy, price, and speed —
   // so the top of the list is the smart default. 'custom' stays last.
@@ -309,6 +309,13 @@ class SettingsController extends _$SettingsController {
       price: r'~$0.22 / 100 logs',
       accuracy: 96,
       description: 'Recommended default — fast, cheap, multilingual, and among the most accurate',
+    ),
+    AIModelInfo(
+      id: 'google/gemini-3.7-flash',
+      name: 'Gemini 3.7 Flash',
+      price: r'~$0.14 / 100 logs',
+      accuracy: 95,
+      description: 'Good accuracy for the price, but ~3x slower than 3.5 Flash with no accuracy gain',
     ),
     AIModelInfo(
       id: 'google/gemini-3-flash-preview',
@@ -339,6 +346,13 @@ class SettingsController extends _$SettingsController {
       description: 'Solid all-rounder: mid cost, mid speed, good accuracy',
     ),
     AIModelInfo(
+      id: 'openai/gpt-5.6-luna-pro',
+      name: 'GPT-5.6 Luna Pro',
+      price: r'~$0.23 / 100 logs',
+      accuracy: 94,
+      description: 'Matches Claude Sonnet 5\'s accuracy for near half the price, but the 2nd-slowest model here',
+    ),
+    AIModelInfo(
       id: 'openai/gpt-5.5',
       name: 'GPT-5.5',
       price: r'~$1.17 / 100 logs',
@@ -353,6 +367,13 @@ class SettingsController extends _$SettingsController {
       description: 'Slow and pricey, with no accuracy gain over 3.5 Flash',
     ),
     AIModelInfo(
+      id: 'openai/gpt-5.6-terra-pro',
+      name: 'GPT-5.6 Terra Pro',
+      price: r'~$1.70 / 100 logs',
+      accuracy: 95,
+      description: 'Same accuracy as much cheaper options — the priciest and among the slowest models here',
+    ),
+    AIModelInfo(
       id: 'minimax/minimax-m3',
       name: 'MiniMax M3',
       price: r'~$0.07 / 100 logs',
@@ -363,21 +384,21 @@ class SettingsController extends _$SettingsController {
       id: 'openai/gpt-5.4-mini',
       name: 'GPT-5.4 Mini',
       price: r'~$0.09 / 100 logs',
-      accuracy: 87,
+      accuracy: 88,
       description: 'Very fast and cheap, but clearly the least accurate',
     ),
     AIModelInfo(
       id: 'google/gemma-4-31b-it',
       name: 'Gemma 4 31B',
       price: r'~$0.01 / 100 logs',
-      accuracy: 87,
+      accuracy: 89,
       description: 'Cheapest of all, but the least accurate — expect big misses on some foods',
     ),
     AIModelInfo(
       id: 'xiaomi/mimo-v2.5',
       name: 'MiMo V2.5',
       price: r'~$0.02 / 100 logs',
-      accuracy: 87,
+      accuracy: 88,
       description: 'Very cheap, but painfully slow (~30s/log) and among the least accurate',
     ),
     AIModelInfo(

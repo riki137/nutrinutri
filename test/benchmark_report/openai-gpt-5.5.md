@@ -47,9 +47,9 @@
 ## Apple, 1 large (~200g) (Text only)
 | Iteration | Time (s) | Cal (Real/AI) | Prot (Real/AI) | Carb (Real/AI) | Fat (Real/AI) | Cal Err % |
 |---|---|---|---|---|---|---|
-| 1 | 6.02 | 74 / 116 | 0 / 1 | 15 / 31 | 0 / 0 | 56.8% |
-| 2 | 4.56 | 74 / 116 | 0 / 1 | 15 / 31 | 0 / 0 | 56.8% |
-| 3 | 5.71 | 74 / 116 | 0 / 1 | 15 / 31 | 0 / 0 | 56.8% |
+| 1 | 6.02 | 104 / 116 | 1 / 1 | 28 / 31 | 0 / 0 | 11.5% |
+| 2 | 4.56 | 104 / 116 | 1 / 1 | 28 / 31 | 0 / 0 | 11.5% |
+| 3 | 5.71 | 104 / 116 | 1 / 1 | 28 / 31 | 0 / 0 | 11.5% |
 
 ## Banana, 1 medium (~125g) (Text only)
 | Iteration | Time (s) | Cal (Real/AI) | Prot (Real/AI) | Carb (Real/AI) | Fat (Real/AI) | Cal Err % |
@@ -89,9 +89,9 @@
 ## Cottage Cheese (Image Only)
 | Iteration | Time (s) | Cal (Real/AI) | Prot (Real/AI) | Carb (Real/AI) | Fat (Real/AI) | Cal Err % |
 |---|---|---|---|---|---|---|
-| 1 | 8.13 | 138 / 200 | 24 / 24 | 4 / 6 | 3 / 9 | 44.9% |
-| 2 | 7.00 | 138 / 194 | 24 / 24 | 4 / 6 | 3 / 9 | 40.6% |
-| 3 | 7.86 | 138 / 200 | 24 / 24 | 4 / 7 | 3 / 8 | 44.9% |
+| 1 | 8.13 | 210 / 200 | 26 / 24 | 6 / 6 | 9 / 9 | 4.8% |
+| 2 | 7.00 | 210 / 194 | 26 / 24 | 6 / 6 | 9 / 9 | 7.6% |
+| 3 | 7.86 | 210 / 200 | 26 / 24 | 6 / 7 | 9 / 8 | 4.8% |
 
 ## Cheddar Cheese, 1 slice (~20g) (Text only)
 | Iteration | Time (s) | Cal (Real/AI) | Prot (Real/AI) | Carb (Real/AI) | Fat (Real/AI) | Cal Err % |

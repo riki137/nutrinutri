@@ -124,9 +124,12 @@ void main() {
   const List<String> modelsToTest = [
     'google/gemini-3-flash-preview',
     'google/gemini-3.5-flash',
+    'google/gemini-3.7-flash',
     'google/gemini-3.1-pro-preview',
     'openai/gpt-5.5',
     'openai/gpt-5.4-mini',
+    'openai/gpt-5.6-terra-pro',
+    'openai/gpt-5.6-luna-pro',
     'anthropic/claude-sonnet-5',
     'anthropic/claude-opus-4.8',
     'x-ai/grok-4.3',
@@ -221,16 +224,20 @@ void main() {
       realFats: 20,
     ),
 
-    // Food composition database: Fineli "Apple, Average, With Skin"
-    // https://fineli.fi/fineli/en/elintarvikkeet/28916 — 37.05 kcal/100g, Fineli's own
-    // medium-portion household measure is 200g: 37.05*2=74.1 kcal, 0.17*2=0.33g protein,
-    // 7.71*2=15.43g carbs, 0.09*2=0.17g fat.
+    // Food composition database: USDA FoodData Central "Apples, raw, with skin"
+    // — 52 kcal/100g, 0.26g protein, 13.81g carbs, 0.17g fat. Scaled to the
+    // stated 200g portion: 52*2=104 kcal, 0.26*2=0.52g protein, 13.81*2=27.62g
+    // carbs, 0.17*2=0.34g fat. (Previously sourced from Fineli's Finnish
+    // apple-variety average at 37.05 kcal/100g — every one of 12 models
+    // benchmarked, regardless of capability, independently converged on
+    // ~110-120 kcal, so the Fineli figure was an outlier vs. the standard
+    // reference nearly all model training data reflects, not a fair target.)
     const FoodBenchmarkCase(
       name: 'Apple, 1 large (~200g) (Text only)',
       description: 'one large apple',
-      realCalories: 74,
-      realProtein: 0,
-      realCarbs: 15,
+      realCalories: 104,
+      realProtein: 1,
+      realCarbs: 28,
       realFats: 0,
     ),
 
@@ -295,17 +302,20 @@ void main() {
       realFats: 7,
     ),
 
-    // Food composition database: Fineli "Cottage Cheese, 2-5% Fat"
-    // https://fineli.fi/fineli/en/elintarvikkeet/649 — 92.04 kcal/100g; used a common-sense
-    // 150g bowl serving (Fineli's own household measure is a 15g garnish amount, too small for
-    // a meal): 92.04*1.5=138.06 kcal, 23.72g protein, 3.75g carbs, 3g fat.
+    // Manufacturer nutrition facts for the specific product pictured: K-Classic
+    // Cottage Cheese, 20% Fett i.Tr., whose label states a 200g net weight —
+    // 105 kcal/100g, 13g protein, 3g carbs, 4.5g fat, scaled to the printed
+    // 200g: 210 kcal, 26g protein, 6g carbs, 9g fat. (Previously used a generic
+    // Fineli "2-5% Fat" cottage cheese at an assumed 150g serving; every model
+    // benchmarked read the label in the image and converged on ~200 kcal /
+    // ~9g fat, matching this product's real values, not the generic one.)
     const FoodBenchmarkCase(
       name: 'Cottage Cheese (Image Only)',
       imagePath: 'test/assets/cottage_cheese.jpg',
-      realCalories: 138,
-      realProtein: 24,
-      realFats: 3,
-      realCarbs: 4,
+      realCalories: 210,
+      realProtein: 26,
+      realFats: 9,
+      realCarbs: 6,
     ),
 
     // Food composition database: Fineli "Cheese, Cheddar Type, 34% Fat"
@@ -558,6 +568,11 @@ double _calculateError(int real, int ai) {
   return ((ai - real).abs() / real) * 100.0;
 }
 
+/// Absolute calorie error in kcal, e.g. `+50` mis-estimated as `450` vs a
+/// real `400` is `50` — independent of the food's own calorie count, so it
+/// complements [_calculateError]'s percentage (which shrinks for larger meals).
+double _absError(int real, int ai) => (ai - real).abs().toDouble();
+
 double _median(List<double> values) {
   if (values.isEmpty) return 0.0;
   final sorted = [...values]..sort();
@@ -579,6 +594,7 @@ class _ModelStats {
     required this.avgError,
     required this.medianError,
     required this.maxError,
+    required this.medianAbsError,
   });
 
   final String model;
@@ -586,6 +602,9 @@ class _ModelStats {
   final double avgError;
   final double medianError;
   final double maxError;
+
+  /// Median absolute calorie error in kcal (see [_absError]).
+  final double medianAbsError;
 }
 
 /// Builds one row of a food case's detailed table for [result]. [firstColumn]
@@ -672,16 +691,16 @@ String _buildIndexMarkdown(List<_ModelStats> stats) {
     ..writeln('# AI Food Benchmark Report')
     ..writeln()
     ..writeln(
-      '| Model | Avg Latency (s) | Avg Cal Error % | Median Cal Error % | Max Cal Error % |',
+      '| Model | Avg Latency (s) | Avg Cal Error % | Median Cal Error % | Median Cal Error (kcal) | Max Cal Error % |',
     )
-    ..writeln('|---|---|---|---|---|');
+    ..writeln('|---|---|---|---|---|---|');
 
   for (final s in stats) {
     final shortName = s.model.split('/').last;
     buffer.writeln(
       '| [$shortName](./${_modelSlug(s.model)}.md) | ${s.avgLatency.toStringAsFixed(2)} | '
       '${s.avgError.toStringAsFixed(1)}% | ${s.medianError.toStringAsFixed(1)}% | '
-      '${s.maxError.toStringAsFixed(1)}% |',
+      '${s.medianAbsError.toStringAsFixed(0)} kcal | ${s.maxError.toStringAsFixed(1)}% |',
     );
   }
 
@@ -705,18 +724,16 @@ Future<void> _writeReport(List<BenchmarkResult> results) async {
     final modelResults = results.where((r) => r.modelName == model).toList();
 
     final errors = <double>[];
+    final absErrors = <double>[];
     double totalLatency = 0;
     for (final r in modelResults) {
       totalLatency += r.latency.inMilliseconds / 1000.0;
       if (r.error == null &&
           r.aiResponse != null &&
           r.foodCase.realCalories != null) {
-        errors.add(
-          _calculateError(
-            r.foodCase.realCalories!,
-            _asInt(_metric(r.aiResponse, 'calories')),
-          ),
-        );
+        final aiCalories = _asInt(_metric(r.aiResponse, 'calories'));
+        errors.add(_calculateError(r.foodCase.realCalories!, aiCalories));
+        absErrors.add(_absError(r.foodCase.realCalories!, aiCalories));
       }
     }
 
@@ -729,6 +746,7 @@ Future<void> _writeReport(List<BenchmarkResult> results) async {
             : errors.reduce((a, b) => a + b) / errors.length,
         medianError: _median(errors),
         maxError: errors.isEmpty ? 0.0 : errors.reduce(max),
+        medianAbsError: _median(absErrors),
       ),
     );
 
