@@ -29,7 +29,7 @@ No endless food databases. No barcode hunting. No subscriptions. Just a tool tha
 - **🏃 Activity Tracking** Log workouts and see calories burned alongside what you've eaten.
 - **🔒 Privacy-First** Your health data is yours. No analytics, no tracking, no selling - ever.
 - **📱 Runs Everywhere** Web, Android, Linux, macOS, and Windows. One app, every device.
-- **💸 Free Forever** Bring your own [OpenRouter](https://openrouter.ai/) key and pay only for what you use. No middlemen, no markup.
+- **💸 Free Forever** Bring your own API key — [OpenRouter](https://openrouter.ai/), [OpenAI](https://platform.openai.com/), [Anthropic](https://platform.claude.com/), Groq, Together, DeepSeek, or any OpenAI-compatible endpoint — and pay only for what you use. No middlemen, no markup.
 - **❤️ Non-Profit & Open Source** Built in the open under GPLv3. No VC money, no dark patterns, no growth hacks.
 
 ## 📸 Screenshots
@@ -83,7 +83,7 @@ No endless food databases. No barcode hunting. No subscriptions. Just a tool tha
 ### Prerequisites
 
 - [Flutter SDK](https://flutter.dev/docs/get-started/install)
-- [OpenRouter API Key](https://openrouter.ai/): needed for the AI features
+- An API key for the AI features, from any supported provider: [OpenRouter](https://openrouter.ai/) (default), [OpenAI](https://platform.openai.com/api-keys), [Anthropic](https://platform.claude.com/settings/keys), [Groq](https://console.groq.com/keys), [Together](https://api.together.xyz/settings/api-keys), [DeepSeek](https://platform.deepseek.com/api_keys), or any OpenAI-compatible API via a custom base URL
 
 ### Run it locally
 
@@ -98,7 +98,7 @@ flutter run
 
 1. Open the app
 2. Head to **Settings**
-3. Paste your **OpenRouter API Key**
+3. Pick your **AI Provider** (OpenRouter, OpenAI, Anthropic, Groq, Together, DeepSeek, or a custom OpenAI-compatible URL) and paste your **API Key**
 
 That's it, you're ready to log your first meal.
 
@@ -115,7 +115,7 @@ Have an idea? [Open an issue](https://github.com/riki137/nutrinutri/issues). I'd
 ## 🛠️ Built With
 
 - [**Flutter**](https://flutter.dev/) one codebase, every platform.
-- [**OpenRouter**](https://openrouter.ai/) flexible access to the best models, on your terms.
+- **Your AI provider of choice** — [OpenRouter](https://openrouter.ai/), [OpenAI](https://platform.openai.com/), [Anthropic](https://www.anthropic.com/), Groq, Together, DeepSeek, or any OpenAI-compatible API.
 
 ## 🤝 Contributing
 

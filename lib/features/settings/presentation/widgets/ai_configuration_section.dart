@@ -342,8 +342,9 @@ class AIConfigurationSection extends StatelessWidget {
         ),
         const Gap(16),
         const Text(
-          'This app uses an OpenAI-compatible AI provider to analyze your food. '
-          'Pick a provider and supply your own API key.',
+          'This app uses an AI provider to analyze your food — OpenRouter, '
+          'OpenAI, Anthropic, any OpenAI-compatible API, and more. Pick a '
+          'provider and supply your own API key.',
           style: TextStyle(color: Colors.grey),
         ),
         const Gap(16),
