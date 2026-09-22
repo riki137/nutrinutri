@@ -29,7 +29,7 @@ modules:
       - ln -s /app/NutriNutri /app/bin/NutriNutri
       - install -Dm644 sk.popelis.nutrinutri.desktop /app/share/applications/sk.popelis.nutrinutri.desktop
       - install -Dm644 sk.popelis.nutrinutri.metainfo.xml /app/share/metainfo/sk.popelis.nutrinutri.metainfo.xml
-      - install -Dm644 app_icon.png /app/share/icons/hicolor/1024x1024/apps/sk.popelis.nutrinutri.png
+      - install -Dm644 sk.popelis.nutrinutri.svg /app/share/icons/hicolor/scalable/apps/sk.popelis.nutrinutri.svg
     sources:
       # See README.md: CI overwrites this file to point at the bundle it just
       # built; the committed version pins the latest tagged GitHub release,
@@ -40,4 +40,8 @@ modules:
       - type: file
         path: sk.popelis.nutrinutri.metainfo.xml
       - type: file
-        path: ../linux/runner/resources/app_icon.png
+        # appstreamcli compose only recognizes fixed PNG sizes or a scalable
+        # SVG under hicolor/apps/ — the app's only icon source is the 1024px
+        # PNG, so use the vector original instead.
+        path: ../assets/images/nutrinutri.svg
+        dest-filename: sk.popelis.nutrinutri.svg
