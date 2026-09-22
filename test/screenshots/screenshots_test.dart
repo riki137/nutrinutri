@@ -108,6 +108,68 @@ void main() {
     );
   });
 
+  testWidgets('dashboard - tablet - light', (tester) async {
+    await _shoot(
+      tester,
+      device: tablet,
+      brightness: Brightness.light,
+      route: '/',
+      out: 'tablet-screenshot-home.png',
+    );
+  });
+
+  testWidgets('dashboard - tablet - dark', (tester) async {
+    await _shoot(
+      tester,
+      device: tablet,
+      brightness: Brightness.dark,
+      route: '/',
+      out: 'tablet-screenshot-home-dark.png',
+    );
+  });
+
+  testWidgets('add entry - tablet - light', (tester) async {
+    await _shoot(
+      tester,
+      device: tablet,
+      brightness: Brightness.light,
+      route: '/add-entry?type=food',
+      out: 'tablet-screenshot-add.png',
+      foodPhoto: File('test/assets/bun_bo_nam_bo.jpg'),
+    );
+  });
+
+  testWidgets('add entry - tablet - dark', (tester) async {
+    await _shoot(
+      tester,
+      device: tablet,
+      brightness: Brightness.dark,
+      route: '/add-entry?type=food',
+      out: 'tablet-screenshot-add-dark.png',
+      foodPhoto: File('test/assets/bun_bo_nam_bo.jpg'),
+    );
+  });
+
+  testWidgets('settings - tablet - light', (tester) async {
+    await _shoot(
+      tester,
+      device: tablet,
+      brightness: Brightness.light,
+      route: '/settings',
+      out: 'tablet-screenshot-settings.png',
+    );
+  });
+
+  testWidgets('settings - tablet - dark', (tester) async {
+    await _shoot(
+      tester,
+      device: tablet,
+      brightness: Brightness.dark,
+      route: '/settings',
+      out: 'tablet-screenshot-settings-dark.png',
+    );
+  });
+
   testWidgets('dashboard - desktop - light', (tester) async {
     await _shoot(
       tester,

@@ -63,6 +63,16 @@ const desktop = DeviceProfile(
   desktop: true,
 );
 
+/// Tablet: 1600×2560 px (10" portrait, Play Store's recommended size).
+/// `desktop: false` matches real behavior — the app has no width-based
+/// layout switch, so an Android tablet still renders the mobile UI.
+const tablet = DeviceProfile(
+  label: 'tablet',
+  logical: Size(800, 1280),
+  dpr: 2,
+  desktop: false,
+);
+
 /// Directory (relative to the package root) the PNGs are written to.
 const screenshotOutputDir = 'build/screenshots';
 

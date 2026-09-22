@@ -2,10 +2,15 @@
 #
 # Regenerates the app screenshots and copies them into the landing site.
 #
-# Renders the key screens (dashboard, add-entry, settings) for phone and
-# desktop, in light and dark themes, with no emulator — see
+# Renders the key screens (dashboard, add-entry, settings) for phone, tablet
+# and desktop, in light and dark themes, with no emulator — see
 # test/screenshots/screenshots_test.dart. Output PNGs land in build/screenshots/
 # and the canonical set is copied into landing/public/img/.
+#
+# The desktop render has no macOS-specific chrome (RepaintBoundary only
+# captures app content, not OS window decoration), so it's also valid as the
+# Linux screenshot used in flatpak/*.metainfo.xml — copied under a linux-*
+# name below instead of re-rendering.
 #
 # Usage:  bash tool/screenshots.sh
 set -euo pipefail
@@ -27,6 +32,12 @@ for png in \
   android-screenshot-add-dark.png \
   android-screenshot-settings.png \
   android-screenshot-settings-dark.png \
+  tablet-screenshot-home.png \
+  tablet-screenshot-home-dark.png \
+  tablet-screenshot-add.png \
+  tablet-screenshot-add-dark.png \
+  tablet-screenshot-settings.png \
+  tablet-screenshot-settings-dark.png \
   macos-screenshot.png \
   macos-screenshot-dark.png; do
   if [[ -f "$OUT_DIR/$png" ]]; then
@@ -36,5 +47,9 @@ for png in \
     echo "    WARNING: $OUT_DIR/$png missing" >&2
   fi
 done
+
+echo "==> Copying desktop render as Linux screenshots (identical content, no OS chrome)"
+cp "$LANDING_DIR/macos-screenshot.png" "$LANDING_DIR/linux-screenshot.png"
+cp "$LANDING_DIR/macos-screenshot-dark.png" "$LANDING_DIR/linux-screenshot-dark.png"
 
 echo "==> Done. Screenshots in $OUT_DIR and $LANDING_DIR"
