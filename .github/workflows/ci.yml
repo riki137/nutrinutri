@@ -80,6 +80,11 @@ jobs:
         run: |
           sudo apt-get install -y flatpak flatpak-builder
           sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          # Pre-install as root: the action runs as the unprivileged runner
+          # user, and an unprivileged `flatpak --system install` needs
+          # polkit, which isn't available headless.
+          RUNTIME_VERSION=$(grep '^runtime-version:' flatpak/sk.popelis.nutrinutri.yml | awk '{print $2}' | tr -d "'\"")
+          sudo flatpak install -y flathub "org.gnome.Platform//$RUNTIME_VERSION" "org.gnome.Sdk//$RUNTIME_VERSION"
       - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           bundle: nutrinutri-linux.flatpak
