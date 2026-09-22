@@ -76,6 +76,10 @@ jobs:
           cat > flatpak/nutrinutri-source.json <<EOF
           [{"type": "archive", "path": "nutrinutri-linux.tar.gz", "sha256": "$SHA256"}]
           EOF
+      - name: Install flatpak-builder
+        run: |
+          sudo apt-get install -y flatpak flatpak-builder
+          sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
       - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           bundle: nutrinutri-linux.flatpak
