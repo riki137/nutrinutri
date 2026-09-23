@@ -28,6 +28,12 @@ const _destinations = [
     selectedIcon: Icons.dashboard,
   ),
   DesktopNavDestination(
+    path: '/charts',
+    label: 'Charts',
+    icon: Icons.bar_chart_outlined,
+    selectedIcon: Icons.bar_chart,
+  ),
+  DesktopNavDestination(
     path: '/settings',
     label: 'Settings',
     icon: Icons.settings_outlined,
@@ -60,9 +66,13 @@ class AdaptiveShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // On mobile, just return the child directly
+    // On mobile, always use the bottom navigation bar layout.
     if (PlatformHelper.isMobile) {
-      return child;
+      return _MobileLayoutShell(
+        currentPath: currentPath,
+        selectedIndex: _selectedIndex,
+        child: child,
+      );
     }
 
     // On desktop/web, use LayoutBuilder to be responsive

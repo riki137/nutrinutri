@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nutrinutri/core/providers.dart';
-import 'package:nutrinutri/core/utils/platform_helper.dart';
 import 'package:nutrinutri/core/widgets/adaptive_shell.dart';
+import 'package:nutrinutri/features/charts/presentation/charts_page.dart';
 import 'package:nutrinutri/features/dashboard/presentation/dashboard_page.dart';
 import 'package:nutrinutri/features/diary/domain/diary_entry.dart';
 import 'package:nutrinutri/features/logging/presentation/add_entry_page.dart';
@@ -54,23 +54,23 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      // Shell route for main navigation on desktop
+      // Shell route for main navigation. AdaptiveShell itself branches
+      // between desktop nav rail/sidebar and mobile bottom nav bar.
       ShellRoute(
         builder: (context, state, child) {
-          // On desktop/web, wrap with adaptive shell
-          if (PlatformHelper.isDesktopOrWeb) {
-            return AdaptiveShell(
-              currentPath: state.matchedLocation,
-              child: child,
-            );
-          }
-          // On mobile, just return child directly
-          return child;
+          return AdaptiveShell(
+            currentPath: state.matchedLocation,
+            child: child,
+          );
         },
         routes: [
           GoRoute(
             path: '/',
             builder: (context, state) => const DashboardPage(),
+          ),
+          GoRoute(
+            path: '/charts',
+            builder: (context, state) => const ChartsPage(),
           ),
           GoRoute(
             path: '/settings',
