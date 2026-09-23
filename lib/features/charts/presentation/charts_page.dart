@@ -53,97 +53,93 @@ class _ChartsPageState extends ConsumerState<ChartsPage> {
   @override
   Widget build(BuildContext context) {
     final bounds = _bounds;
-    final dataAsync = ref.watch(
-      chartsDataProvider(bounds.start, bounds.end),
-    );
+    final dataAsync = ref.watch(chartsDataProvider(bounds.start, bounds.end));
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Charts')),
-      body: SafeArea(
-        child: Align(
-          alignment: Alignment.topCenter,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 900),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  SegmentedButton<ChartPeriod>(
-                    segments: const [
-                      ButtonSegment(
-                        value: ChartPeriod.week,
-                        label: Text('Week'),
-                      ),
-                      ButtonSegment(
-                        value: ChartPeriod.month,
-                        label: Text('Month'),
-                      ),
-                    ],
-                    selected: {_period},
-                    onSelectionChanged: (selection) {
-                      setState(() => _period = selection.first);
-                    },
-                  ),
-                  const Gap(12),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.chevron_left),
-                        onPressed: () => _shiftPeriod(-1),
-                      ),
-                      Expanded(
-                        child: Text(
-                          _periodLabel,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.titleMedium,
+    return DefaultTabController(
+      length: ChartPeriod.values.length,
+      initialIndex: _period.index,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Charts'),
+          bottom: TabBar(
+            tabs: const [
+              Tab(text: 'Week'),
+              Tab(text: 'Month'),
+            ],
+            onTap: (index) {
+              setState(() => _period = ChartPeriod.values[index]);
+            },
+          ),
+        ),
+        body: SafeArea(
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 900),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.chevron_left),
+                          onPressed: () => _shiftPeriod(-1),
                         ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.chevron_right),
-                        onPressed: _containsToday
-                            ? null
-                            : () => _shiftPeriod(1),
-                      ),
-                    ],
-                  ),
-                  const Gap(8),
-                  DropdownButtonFormField<NutritionMetricType>(
-                    initialValue: _metric,
-                    decoration: const InputDecoration(
-                      labelText: 'Metric',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: NutritionMetricType.values
-                        .map(
-                          (type) => DropdownMenuItem(
-                            value: type,
-                            child: Text('${type.label} (${type.unit})'),
+                        Expanded(
+                          child: Text(
+                            _periodLabel,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.titleMedium,
                           ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      if (value != null) setState(() => _metric = value);
-                    },
-                  ),
-                  const Gap(24),
-                  dataAsync.when(
-                    data: (data) {
-                      if (data == null) {
-                        return const Text('Profile not found');
-                      }
-                      return _ChartContent(
-                        profile: data.profile,
-                        dailyTotals: data.dailyTotals,
-                        metric: _metric,
-                      );
-                    },
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
-                    error: (err, stack) => Text('Error: $err'),
-                  ),
-                  const Gap(24),
-                ],
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.chevron_right),
+                          onPressed: _containsToday
+                              ? null
+                              : () => _shiftPeriod(1),
+                        ),
+                      ],
+                    ),
+                    const Gap(8),
+                    DropdownButtonFormField<NutritionMetricType>(
+                      initialValue: _metric,
+                      decoration: const InputDecoration(
+                        labelText: 'Metric',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: NutritionMetricType.values
+                          .map(
+                            (type) => DropdownMenuItem(
+                              value: type,
+                              child: Text('${type.label} (${type.unit})'),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) setState(() => _metric = value);
+                      },
+                    ),
+                    const Gap(24),
+                    dataAsync.when(
+                      data: (data) {
+                        if (data == null) {
+                          return const Text('Profile not found');
+                        }
+                        return _ChartContent(
+                          profile: data.profile,
+                          dailyTotals: data.dailyTotals,
+                          metric: _metric,
+                        );
+                      },
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (err, stack) => Text('Error: $err'),
+                    ),
+                    const Gap(24),
+                  ],
+                ),
               ),
             ),
           ),
@@ -172,11 +168,11 @@ class _ChartContent extends StatelessWidget {
     ];
     final goal = profile.goalFor(metric);
     final total = values.fold(0.0, (a, b) => a + b);
-    final average = values.isEmpty ? 0.0 : total / values.length;
-    final maxValue = [
-      goal,
-      ...values,
-    ].fold(0.0, (a, b) => b > a ? b : a);
+    final loggedDays = days
+        .where((d) => dailyTotals[d]!.values.any((v) => v != 0))
+        .length;
+    final average = loggedDays == 0 ? 0.0 : total / loggedDays;
+    final maxValue = [goal, ...values].fold(0.0, (a, b) => b > a ? b : a);
     final isSingleMonth = days.length > 7;
 
     return Column(
@@ -267,7 +263,11 @@ class _ChartContent extends StatelessWidget {
 }
 
 class _StatTile extends StatelessWidget {
-  const _StatTile({required this.label, required this.value, required this.unit});
+  const _StatTile({
+    required this.label,
+    required this.value,
+    required this.unit,
+  });
 
   final String label;
   final double value;
@@ -280,9 +280,9 @@ class _StatTile extends StatelessWidget {
         Text(label, style: Theme.of(context).textTheme.bodySmall),
         Text(
           '${value.toStringAsFixed(value == value.roundToDouble() ? 0 : 1)} $unit',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
       ],
     );
