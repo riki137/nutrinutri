@@ -196,16 +196,27 @@ class DiaryService {
   }
 
   Future<Map<String, double>> getSummary(DateTime date) async {
-    final bounds = _dayBounds(date);
+    final day = DateTime(date.year, date.month, date.day);
+    return (await getDailyTotals(day, day))[day]!;
+  }
+
+  /// Per-day totals for every local day in `[startDay, endDay]` inclusive,
+  /// keyed by midnight `DateTime`. Days with no entries are still present,
+  /// zeroed, so callers can render a gap-free chart.
+  Future<Map<DateTime, Map<String, double>>> getDailyTotals(
+    DateTime startDay,
+    DateTime endDay,
+  ) async {
+    final start = DateTime(startDay.year, startDay.month, startDay.day);
+    final end = DateTime(endDay.year, endDay.month, endDay.day);
+    final startMs = _dayBounds(start).startMs;
+    final endMsInclusive = _dayBounds(end).endMsInclusive;
 
     final rows =
         await (_db.select(_db.diaryEntries)..where(
               (t) =>
                   t.deletedAt.isNull() &
-                  t.timestamp.isBetweenValues(
-                    bounds.startMs,
-                    bounds.endMsInclusive,
-                  ),
+                  t.timestamp.isBetweenValues(startMs, endMsInclusive),
             ))
             .get();
 
@@ -213,12 +224,26 @@ class DiaryService {
       rows.map((row) => row.id).toList(growable: false),
     );
 
-    final summary = <String, double>{
-      for (final metric in NutritionMetricType.values) metric.key: 0,
-      'caloriesBurned': 0,
-    };
+    final totals = <DateTime, Map<String, double>>{};
+    for (var d = start; !d.isAfter(end); d = DateTime(d.year, d.month, d.day + 1)) {
+      totals[d] = <String, double>{
+        for (final metric in NutritionMetricType.values) metric.key: 0,
+        'caloriesBurned': 0,
+      };
+    }
 
     for (final row in rows) {
+      final entryTimestamp = DateTime.fromMillisecondsSinceEpoch(
+        row.timestamp,
+      );
+      final day = DateTime(
+        entryTimestamp.year,
+        entryTimestamp.month,
+        entryTimestamp.day,
+      );
+      final summary = totals[day];
+      if (summary == null) continue;
+
       final metrics =
           metricsByEntryId[row.id] ?? const <NutritionMetricType, double>{};
 
@@ -235,7 +260,7 @@ class DiaryService {
       }
     }
 
-    return summary;
+    return totals;
   }
 
   Future<List<DiaryEntry>> searchEntrySuggestions(

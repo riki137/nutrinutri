@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 enum NutritionMetricType {
   calories,
   carbs,
@@ -128,6 +130,31 @@ extension NutritionMetricTypeX on NutritionMetricType {
         return 'ml';
       default:
         return 'g';
+    }
+  }
+
+  Color get color {
+    switch (this) {
+      case NutritionMetricType.calories:
+        return Colors.deepOrange;
+      case NutritionMetricType.protein:
+        return Colors.blue;
+      case NutritionMetricType.carbs:
+        return Colors.amber;
+      case NutritionMetricType.sugars:
+        return Colors.orange;
+      case NutritionMetricType.fats:
+        return Colors.redAccent;
+      case NutritionMetricType.saturatedFats:
+        return Colors.red;
+      case NutritionMetricType.fiber:
+        return Colors.green;
+      case NutritionMetricType.sodium:
+        return Colors.teal;
+      case NutritionMetricType.caffeine:
+        return Colors.brown;
+      case NutritionMetricType.water:
+        return Colors.lightBlue;
     }
   }
 

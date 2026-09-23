@@ -91,7 +91,7 @@ class DailySummarySection extends ConsumerWidget {
                     value: summary[NutritionMetricType.caffeine.key] ?? 0,
                     goal: profile.goalFor(NutritionMetricType.caffeine),
                     unit: NutritionMetricType.caffeine.unit,
-                    color: _metricColor(NutritionMetricType.caffeine),
+                    color: NutritionMetricType.caffeine.color,
                   ),
                   SizedBox(
                     height: 150,
@@ -155,7 +155,7 @@ class DailySummarySection extends ConsumerWidget {
                     value: summary[NutritionMetricType.water.key] ?? 0,
                     goal: profile.goalFor(NutritionMetricType.water),
                     unit: NutritionMetricType.water.unit,
-                    color: _metricColor(NutritionMetricType.water),
+                    color: NutritionMetricType.water.color,
                   ),
                 ],
               ),
@@ -181,7 +181,7 @@ class DailySummarySection extends ConsumerWidget {
                       value: summary[NutritionMetricType.protein.key] ?? 0,
                       goal: profile.goalFor(NutritionMetricType.protein),
                       unit: NutritionMetricType.protein.unit,
-                      color: _metricColor(NutritionMetricType.protein),
+                      color: NutritionMetricType.protein.color,
                     ),
                     MetricRing(
                       width: itemWidth,
@@ -189,11 +189,11 @@ class DailySummarySection extends ConsumerWidget {
                       value: summary[NutritionMetricType.carbs.key] ?? 0,
                       goal: profile.goalFor(NutritionMetricType.carbs),
                       unit: NutritionMetricType.carbs.unit,
-                      color: _metricColor(NutritionMetricType.carbs),
+                      color: NutritionMetricType.carbs.color,
                       subLabel: NutritionMetricType.sugars.label,
                       subValue: summary[NutritionMetricType.sugars.key] ?? 0,
                       subGoal: profile.goalFor(NutritionMetricType.sugars),
-                      subColor: _metricColor(NutritionMetricType.sugars),
+                      subColor: NutritionMetricType.sugars.color,
                     ),
                     MetricRing(
                       width: itemWidth,
@@ -201,14 +201,14 @@ class DailySummarySection extends ConsumerWidget {
                       value: summary[NutritionMetricType.fats.key] ?? 0,
                       goal: profile.goalFor(NutritionMetricType.fats),
                       unit: NutritionMetricType.fats.unit,
-                      color: _metricColor(NutritionMetricType.fats),
+                      color: NutritionMetricType.fats.color,
                       subLabel: 'Sat. Fats',
                       subValue:
                           summary[NutritionMetricType.saturatedFats.key] ?? 0,
                       subGoal: profile.goalFor(
                         NutritionMetricType.saturatedFats,
                       ),
-                      subColor: _metricColor(NutritionMetricType.saturatedFats),
+                      subColor: NutritionMetricType.saturatedFats.color,
                     ),
                     MetricRing(
                       width: itemWidth,
@@ -216,7 +216,7 @@ class DailySummarySection extends ConsumerWidget {
                       value: summary[NutritionMetricType.fiber.key] ?? 0,
                       goal: profile.goalFor(NutritionMetricType.fiber),
                       unit: NutritionMetricType.fiber.unit,
-                      color: _metricColor(NutritionMetricType.fiber),
+                      color: NutritionMetricType.fiber.color,
                     ),
                     MetricRing(
                       width: itemWidth,
@@ -224,7 +224,7 @@ class DailySummarySection extends ConsumerWidget {
                       value: summary[NutritionMetricType.sodium.key] ?? 0,
                       goal: profile.goalFor(NutritionMetricType.sodium),
                       unit: NutritionMetricType.sodium.unit,
-                      color: _metricColor(NutritionMetricType.sodium),
+                      color: NutritionMetricType.sodium.color,
                     ),
                   ],
                 );
@@ -236,28 +236,4 @@ class DailySummarySection extends ConsumerWidget {
     );
   }
 
-  Color _metricColor(NutritionMetricType metric) {
-    switch (metric) {
-      case NutritionMetricType.protein:
-        return Colors.blue;
-      case NutritionMetricType.carbs:
-        return Colors.amber;
-      case NutritionMetricType.sugars:
-        return Colors.orange;
-      case NutritionMetricType.fats:
-        return Colors.redAccent;
-      case NutritionMetricType.saturatedFats:
-        return Colors.red;
-      case NutritionMetricType.fiber:
-        return Colors.green;
-      case NutritionMetricType.sodium:
-        return Colors.teal;
-      case NutritionMetricType.caffeine:
-        return Colors.brown;
-      case NutritionMetricType.water:
-        return Colors.lightBlue;
-      case NutritionMetricType.calories:
-        return Colors.deepOrange;
-    }
-  }
 }

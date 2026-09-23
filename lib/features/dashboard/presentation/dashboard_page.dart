@@ -138,12 +138,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                       const Text('NutriNutri'),
                     ],
                   ),
-                  actions: [
-                    IconButton(
-                      icon: const Icon(Icons.settings),
-                      onPressed: () => context.push('/settings'),
-                    ),
-                  ],
                 ),
           body: isWide
               ? _buildDesktopLayout(context, constraints)
