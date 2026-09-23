@@ -54,7 +54,7 @@ jobs:
 
   # Packages the Linux build as a Flatpak to smoke-test flatpak/*.yml — a
   # broken manifest, desktop file, or metainfo would otherwise only surface
-  # at release time. See flatpak/README.md for how the source pin works.
+  # at release time.
   build_flatpak:
     name: Build Flatpak (smoke test)
     runs-on: ubuntu-latest

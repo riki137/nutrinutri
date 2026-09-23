@@ -94,7 +94,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # Same bundle as build_linux, repackaged as a Flatpak. This is also the
-  # manifest submitted to Flathub — see flatpak/README.md.
+  # manifest submitted to Flathub.
   build_flatpak:
     name: Build Flatpak
     runs-on: ubuntu-latest

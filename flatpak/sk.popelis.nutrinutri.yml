@@ -31,9 +31,9 @@ modules:
       - install -Dm644 sk.popelis.nutrinutri.metainfo.xml /app/share/metainfo/sk.popelis.nutrinutri.metainfo.xml
       - install -Dm644 sk.popelis.nutrinutri.svg /app/share/icons/hicolor/scalable/apps/sk.popelis.nutrinutri.svg
     sources:
-      # See README.md: CI overwrites this file to point at the bundle it just
-      # built; the committed version pins the latest tagged GitHub release,
-      # which is what gets submitted to Flathub.
+      # CI overwrites this file to point at the bundle it just built; the
+      # committed version pins the latest tagged GitHub release, which is what
+      # gets submitted to Flathub.
       - nutrinutri-source.json
       - type: file
         path: sk.popelis.nutrinutri.desktop
