@@ -20,6 +20,13 @@ import 'package:nutrinutri/main.dart';
 
 import 'capture.dart';
 import 'seed_data.dart';
+import 'window_frame.dart';
+
+/// Bundled system font used to look up SF Pro on macOS hosts. Its license
+/// forbids redistribution, so unlike Adwaita Sans it's never committed —
+/// on hosts where it's missing (e.g. CI on Linux), the macOS titlebar falls
+/// back to Adwaita Sans instead.
+const _sfProPath = '/System/Library/Fonts/SFNS.ttf';
 
 // A single database + provider container is shared across every shot. This is
 // deliberate: `SyncService` builds a `GoogleSignIn`, whose global parameters can
@@ -29,12 +36,27 @@ import 'seed_data.dart';
 late AppDatabase _db;
 late ProviderContainer _container;
 
+/// Font family the macOS window frame's titlebar renders in. Real SF Pro
+/// when the host has it (any Mac); Adwaita Sans elsewhere (e.g. Linux CI),
+/// which is committed as a test asset and always available.
+late String _macTitleFamily;
+
 void main() {
   setUpAll(() async {
     // Text must render in the bundled Outfit font, never fetched over the wire.
     GoogleFonts.config.allowRuntimeFetching = false;
     // Register icon fonts etc. that `flutter test` otherwise leaves unloaded.
     await loadAppFonts();
+    await loadFontFile(
+      'Adwaita Sans',
+      'test/assets/fonts/AdwaitaSans-Regular.ttf',
+    );
+    if (File(_sfProPath).existsSync()) {
+      await loadFontFile('SF Pro', _sfProPath);
+      _macTitleFamily = 'SF Pro';
+    } else {
+      _macTitleFamily = 'Adwaita Sans';
+    }
     _db = await buildSeededDb();
     _container = ProviderContainer(
       overrides: [appDatabaseProvider.overrideWithValue(_db)],
@@ -170,23 +192,47 @@ void main() {
     );
   });
 
-  testWidgets('dashboard - desktop - light', (tester) async {
+  testWidgets('dashboard - macos - light', (tester) async {
     await _shoot(
       tester,
       device: desktop,
       brightness: Brightness.light,
       route: '/',
       out: 'macos-screenshot.png',
+      frame: WindowChrome.macos,
     );
   });
 
-  testWidgets('dashboard - desktop - dark', (tester) async {
+  testWidgets('dashboard - macos - dark', (tester) async {
     await _shoot(
       tester,
       device: desktop,
       brightness: Brightness.dark,
       route: '/',
       out: 'macos-screenshot-dark.png',
+      frame: WindowChrome.macos,
+    );
+  });
+
+  testWidgets('dashboard - linux - light', (tester) async {
+    await _shoot(
+      tester,
+      device: linuxDesktop,
+      brightness: Brightness.light,
+      route: '/',
+      out: 'linux-screenshot.png',
+      frame: WindowChrome.gnome,
+    );
+  });
+
+  testWidgets('dashboard - linux - dark', (tester) async {
+    await _shoot(
+      tester,
+      device: linuxDesktop,
+      brightness: Brightness.dark,
+      route: '/',
+      out: 'linux-screenshot-dark.png',
+      frame: WindowChrome.gnome,
     );
   });
 }
@@ -198,6 +244,7 @@ Future<void> _shoot(
   required String route,
   required String out,
   File? foodPhoto,
+  WindowChrome? frame,
 }) async {
   tester.view.physicalSize = device.physical;
   tester.view.devicePixelRatio = device.dpr;
@@ -250,7 +297,47 @@ Future<void> _shoot(
     // by the plain `_settle` pumps never resolves real file I/O.
     await _realAsyncSettle(tester);
 
-    await captureToPng(tester, boundaryKey, out);
+    if (frame == null) {
+      await captureToPng(tester, boundaryKey, out);
+      return;
+    }
+
+    // Capture the app content on its own first, then pump a second,
+    // differently-sized tree that draws OS window chrome around it and
+    // capture that instead. `WidgetsApp` derives its layout from the view's
+    // `MediaQuery.size`, so the content can't be laid out *inside* the frame
+    // at its original size without a second pump at the frame's larger size.
+    final contentImage = await captureBoundaryImage(tester, boundaryKey);
+    try {
+      final margin = WindowFrame.margin(frame);
+      final titlebar = WindowFrame.titlebarHeight(frame);
+      tester.view.physicalSize =
+          Size(
+            device.logical.width + margin.horizontal,
+            device.logical.height + titlebar + margin.vertical,
+          ) *
+          device.dpr;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final frameKey = GlobalKey();
+      await tester.pumpWidget(
+        RepaintBoundary(
+          key: frameKey,
+          child: WindowFrame(
+            chrome: frame,
+            brightness: brightness,
+            contentSize: device.logical,
+            macTitleFamily: _macTitleFamily,
+            child: RawImage(image: contentImage, scale: device.dpr),
+          ),
+        ),
+      );
+      await _realAsyncSettle(tester);
+
+      await captureToPng(tester, frameKey, out);
+    } finally {
+      contentImage.dispose();
+    }
   } finally {
     debugDisableShadows = true;
   }
