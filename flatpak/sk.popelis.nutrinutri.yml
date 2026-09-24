@@ -1,0 +1,47 @@
+app-id: sk.popelis.nutrinutri
+runtime: org.gnome.Platform
+runtime-version: '51'
+sdk: org.gnome.Sdk
+command: NutriNutri
+
+# NutriNutri only needs network (AI backend + Google Drive sync) and a display.
+# No filesystem permissions: the sqlite db lives under the app's own XDG data
+# dir, and file pickers/URL opening go through portals, which need no grant.
+finish-args:
+  - --share=network
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+
+modules:
+  - name: nutrinutri
+    buildsystem: simple
+    # The archive below is `flutter build linux --release`'s bundle/ dir,
+    # tarred as-is (see build_linux in ../.github/workflows/release.yml).
+    # We just lay it out at the paths Flutter's linux runner expects
+    # ($ORIGIN/lib, $ORIGIN/data) and register desktop metadata.
+    build-commands:
+      - install -d /app/lib /app/data /app/bin
+      - cp -r lib/* /app/lib/
+      - cp -r data/* /app/data/
+      - install -Dm755 NutriNutri /app/NutriNutri
+      - ln -s /app/NutriNutri /app/bin/NutriNutri
+      - install -Dm644 sk.popelis.nutrinutri.desktop /app/share/applications/sk.popelis.nutrinutri.desktop
+      - install -Dm644 sk.popelis.nutrinutri.metainfo.xml /app/share/metainfo/sk.popelis.nutrinutri.metainfo.xml
+      - install -Dm644 sk.popelis.nutrinutri.svg /app/share/icons/hicolor/scalable/apps/sk.popelis.nutrinutri.svg
+    sources:
+      # CI overwrites this file to point at the bundle it just built; the
+      # committed version pins the latest tagged GitHub release, which is what
+      # gets submitted to Flathub.
+      - nutrinutri-source.json
+      - type: file
+        path: sk.popelis.nutrinutri.desktop
+      - type: file
+        path: sk.popelis.nutrinutri.metainfo.xml
+      - type: file
+        # appstreamcli compose only recognizes fixed PNG sizes or a scalable
+        # SVG under hicolor/apps/ — the app's only icon source is the 1024px
+        # PNG, so use the vector original instead.
+        path: ../assets/images/nutrinutri.svg
+        dest-filename: sk.popelis.nutrinutri.svg

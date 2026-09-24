@@ -2,10 +2,12 @@
 #
 # Regenerates the app screenshots and copies them into the landing site.
 #
-# Renders the key screens (dashboard, add-entry, settings) for phone and
-# desktop, in light and dark themes, with no emulator — see
-# test/screenshots/screenshots_test.dart. Output PNGs land in build/screenshots/
-# and the canonical set is copied into landing/public/img/.
+# Renders the key screens (dashboard, add-entry, settings) for phone, tablet
+# and desktop, in light and dark themes, with no emulator — see
+# test/screenshots/screenshots_test.dart. Desktop shots are additionally
+# framed with native-looking macOS/GNOME window chrome (see window_frame.dart).
+# Output PNGs land in build/screenshots/ and the canonical set is copied into
+# landing/public/img/.
 #
 # Usage:  bash tool/screenshots.sh
 set -euo pipefail
@@ -27,8 +29,16 @@ for png in \
   android-screenshot-add-dark.png \
   android-screenshot-settings.png \
   android-screenshot-settings-dark.png \
+  tablet-screenshot-home.png \
+  tablet-screenshot-home-dark.png \
+  tablet-screenshot-add.png \
+  tablet-screenshot-add-dark.png \
+  tablet-screenshot-settings.png \
+  tablet-screenshot-settings-dark.png \
   macos-screenshot.png \
-  macos-screenshot-dark.png; do
+  macos-screenshot-dark.png \
+  linux-screenshot.png \
+  linux-screenshot-dark.png; do
   if [[ -f "$OUT_DIR/$png" ]]; then
     cp "$OUT_DIR/$png" "$LANDING_DIR/$png"
     echo "    $png"
