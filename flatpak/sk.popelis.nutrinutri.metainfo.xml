@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2026 riki137 -->
+<component type="desktop-application">
+  <id>sk.popelis.nutrinutri</id>
+
+  <name>NutriNutri</name>
+  <summary>Your personal AI nutritionist</summary>
+
+  <developer id="sk.popelis">
+    <name>riki137</name>
+  </developer>
+
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-only</project_license>
+
+  <categories>
+    <category>Utility</category>
+  </categories>
+
+  <description>
+    <p>
+      NutriNutri makes nutrition tracking effortless. Photograph your meal, or
+      just describe it in plain English, and the AI handles the rest:
+      ingredients, portions, calories and macros, all logged in seconds.
+    </p>
+    <p>
+      No food databases to search, no barcode hunting, no subscriptions.
+      NutriNutri is non-profit, open source, and privacy-first: your data
+      stays yours, with no analytics and no tracking.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">sk.popelis.nutrinutri.desktop</launchable>
+
+  <url type="homepage">https://nutrinutri.popelis.sk/</url>
+  <url type="bugtracker">https://github.com/riki137/nutrinutri/issues</url>
+  <url type="vcs-browser">https://github.com/riki137/nutrinutri</url>
+
+  <content_rating type="oars-1.1"/>
+
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/riki137/nutrinutri/main/landing/public/img/linux-screenshot.png</image>
+      <caption>Home screen with today's nutrition summary</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/riki137/nutrinutri/main/landing/public/img/linux-screenshot-dark.png</image>
+      <caption>Home screen in dark mode</caption>
+    </screenshot>
+  </screenshots>
+
+  <releases>
+    <release version="1.3.2" date="2026-08-19">
+      <description>
+        <p>See https://github.com/riki137/nutrinutri/releases/tag/v1.3.2</p>
+      </description>
+    </release>
+  </releases>
+</component>

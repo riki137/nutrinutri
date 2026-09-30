@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=NutriNutri
+GenericName=Nutrition Tracker
+Comment=Your Personal AI Nutritionist
+Exec=NutriNutri
+Icon=sk.popelis.nutrinutri
+Terminal=false
+Categories=Utility;
+StartupWMClass=sk.popelis.nutrinutri
