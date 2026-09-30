@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:nutrinutri/core/domain/ai_api_protocol.dart';
 import 'package:nutrinutri/core/domain/user_profile.dart';
 
 /// An error raised while talking to the AI provider that carries a message
@@ -19,15 +20,21 @@ class AIService {
     required this.apiKey,
     required this.model,
     required this.baseUrl,
+    this.protocol = AiApiProtocol.openAiChat,
     this.extraHeaders = const {},
     this.nutritionistInstructions,
     this.trainerInstructions,
   });
 
-  /// Full chat-completions endpoint of the selected provider.
+  /// Full request endpoint of the selected provider (chat completions for
+  /// OpenAI-style providers, `/v1/messages` for Anthropic).
   final String baseUrl;
   final String apiKey;
   final String model;
+
+  /// Wire protocol the provider speaks; controls auth headers, request body
+  /// shape and response parsing.
+  final AiApiProtocol protocol;
 
   /// Provider-specific extra headers (e.g. OpenRouter's HTTP-Referer/X-Title).
   final Map<String, String> extraHeaders;
@@ -62,11 +69,25 @@ class AIService {
   // Track active clients for cancellation
   final Map<String, http.Client> _activeRequests = {};
 
-  Map<String, String> _headers() => {
-    'Authorization': 'Bearer $apiKey',
-    'Content-Type': 'application/json',
-    ...extraHeaders,
-  };
+  Map<String, String> _headers() {
+    if (protocol == AiApiProtocol.anthropicMessages) {
+      return {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        // Opts in to CORS so the web build can call api.anthropic.com
+        // directly. "Dangerous" refers to shipping an API key in a browser,
+        // which is this app's bring-your-own-key model on every provider.
+        'anthropic-dangerous-direct-browser-access': 'true',
+        'Content-Type': 'application/json',
+        ...extraHeaders,
+      };
+    }
+    return {
+      'Authorization': 'Bearer $apiKey',
+      'Content-Type': 'application/json',
+      ...extraHeaders,
+    };
+  }
 
   List<Map<String, dynamic>> _foodMessages({
     String? textDescription,
@@ -234,11 +255,18 @@ Calculate calories based on the user profile provided and standard MET values.
       _activeRequests[requestId] = client;
     }
 
-    final body = jsonEncode({
-      'model': modelOverride ?? model,
-      'messages': messages,
-      'response_format': {'type': 'json_object'},
-    });
+    final body = jsonEncode(
+      protocol == AiApiProtocol.anthropicMessages
+          ? _anthropicRequestBody(
+              messages: messages,
+              model: modelOverride ?? model,
+            )
+          : {
+              'model': modelOverride ?? model,
+              'messages': messages,
+              'response_format': {'type': 'json_object'},
+            },
+    );
 
     try {
       final response = await client.post(
@@ -257,16 +285,9 @@ Calculate calories based on the user profile provided and standard MET values.
       // Some providers return HTTP 200 with a malformed/empty body (no
       // `choices`, or an `error` field). Guard the indexing so that surfaces
       // as a clean, user-facing error rather than a cryptic NoSuchMethodError.
-      String? content;
-      if (data is Map &&
-          data['choices'] is List &&
-          (data['choices'] as List).isNotEmpty) {
-        final first = (data['choices'] as List).first;
-        if (first is Map && first['message'] is Map) {
-          final rawContent = (first['message'] as Map)['content'];
-          if (rawContent is String) content = rawContent;
-        }
-      }
+      final content = protocol == AiApiProtocol.anthropicMessages
+          ? _extractAnthropicText(data)
+          : _extractChatCompletionText(data);
       if (content == null) {
         throw AiRequestException(
           _describeApiError(response.statusCode, response.body),
@@ -293,6 +314,89 @@ Calculate calories based on the user profile provided and standard MET values.
       }
       client.close();
     }
+  }
+
+  /// Pulls the assistant text out of an OpenAI-style chat-completions reply.
+  String? _extractChatCompletionText(dynamic data) {
+    if (data is Map &&
+        data['choices'] is List &&
+        (data['choices'] as List).isNotEmpty) {
+      final first = (data['choices'] as List).first;
+      if (first is Map && first['message'] is Map) {
+        final rawContent = (first['message'] as Map)['content'];
+        if (rawContent is String) return rawContent;
+      }
+    }
+    return null;
+  }
+
+  /// Pulls the first text block out of an Anthropic Messages API reply
+  /// (`{"content": [{"type": "text", "text": ...}, ...]}`).
+  String? _extractAnthropicText(dynamic data) {
+    if (data is Map && data['content'] is List) {
+      for (final block in data['content'] as List) {
+        if (block is Map && block['type'] == 'text' && block['text'] is String) {
+          return block['text'] as String;
+        }
+      }
+    }
+    return null;
+  }
+
+  /// Converts the internal OpenAI-style [messages] into an Anthropic Messages
+  /// API request body: system messages move to the top-level `system` field,
+  /// data-URL image parts become base64 `image` content blocks, and the
+  /// mandatory `max_tokens` is set. The Messages API has no
+  /// `response_format: json_object`; the strict-JSON prompt plus
+  /// [parseModelJson]'s fence stripping cover that.
+  Map<String, dynamic> _anthropicRequestBody({
+    required List<Map<String, dynamic>> messages,
+    required String model,
+  }) {
+    final systemParts = <String>[];
+    final converted = <Map<String, dynamic>>[];
+    for (final message in messages) {
+      if (message['role'] == 'system') {
+        final content = message['content'];
+        if (content is String) systemParts.add(content);
+        continue;
+      }
+      converted.add({
+        'role': message['role'],
+        'content': _anthropicContent(message['content']),
+      });
+    }
+    return {
+      'model': model,
+      'max_tokens': 2048,
+      if (systemParts.isNotEmpty) 'system': systemParts.join('\n\n'),
+      'messages': converted,
+    };
+  }
+
+  /// Rewrites OpenAI `image_url` data-URL parts into Anthropic base64 `image`
+  /// content blocks; plain strings and text parts pass through unchanged.
+  dynamic _anthropicContent(dynamic content) {
+    if (content is! List) return content;
+    return content.map((part) {
+      if (part is Map && part['type'] == 'image_url') {
+        final url = ((part['image_url'] as Map)['url'] as String);
+        final comma = url.indexOf(',');
+        final semicolon = url.indexOf(';');
+        final mediaType = url.startsWith('data:') && semicolon > 5
+            ? url.substring(5, semicolon)
+            : 'image/jpeg';
+        return {
+          'type': 'image',
+          'source': {
+            'type': 'base64',
+            'media_type': mediaType,
+            'data': comma >= 0 ? url.substring(comma + 1) : url,
+          },
+        };
+      }
+      return part;
+    }).toList();
   }
 
   /// Analyzes food from text description or base64 image
